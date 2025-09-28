@@ -4,7 +4,7 @@
 echo "=== Creando imagen Docker y container para TPE Arqui ==="
 
 # Nombre de la imagen y del container
-IMAGE_NAME="agodio/itba-so:2.0"
+IMAGE_NAME="agodio/itba-so-multi-platform:3.0"
 CONTAINER_NAME="tpe_arqui_1q2025"
 
 # Verificar si Docker está corriendo
