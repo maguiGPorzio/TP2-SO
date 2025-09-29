@@ -1,0 +1,49 @@
+############################################
+# Build / artefactos generados (no commitear)
+############################################
+
+# Objetos de compilación C / ASM
+*.o
+*.d
+*.lst
+
+# Binarios finales del kernel y módulos (scoped para no ignorar otros .bin legítimos en raíz ajena)
+Kernel/*.bin
+Userland/*.bin
+Toolchain/ModulePacker/mp.bin
+
+# Paquetes / empaquetados intermedios
+packedKernel.bin
+
+# Imágenes de disco generadas
+Image/*.img
+Image/*.qcow2
+Image/*.vmdk
+Image/*.bin
+
+# ISO (si en el futuro se genera)
+*.iso
+
+# Archivos temporales de editores / backup
+*~
+*.swp
+*.swo
+.#*
+
+# Logs temporales
+*.log
+
+# Directorios de trabajo temporales (si se crean)
+tmp/
+build/
+out/
+
+# QEMU (nvram / estado) si aparecieran
+*.nvram
+*.lock
+
+# Ignorar dumps / core dumps
+core
+core.*
+
+# Puedes eliminar cualquiera de estos patrones si necesitas versionar algún artefacto específico.
