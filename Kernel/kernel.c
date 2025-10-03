@@ -8,6 +8,8 @@
 #include "videoDriver.h"
 #include "sound.h"
 #include "interrupts.h"
+#include "memoryManager.h"
+#include "memoryManagerADT/memoryManager.c"
 
 extern uint8_t text;
 extern uint8_t rodata;
@@ -61,54 +63,29 @@ int main() {
 	 // Inicializar Memory Manager
     initKernelMemoryManager();
 
-	// Test básico del memory manager
-    testMemoryManager();
+	MemoryManagerADT aux=getKernelMemoryManager();
 
-	((EntryPoint)sampleCodeModuleAddress)();
+    //printMemState(aux);
+	allocMemory(aux,1000);
+    //printMemState(aux);
+	allocMemory(aux,2000);
+    //printMemState(aux);
+	void * ptr= allocMemory(aux,3000);
+    //printMemState(aux);
+	freeMemory(aux,ptr);
+	printMemState(aux);
+	//allocMemory(aux,4000);
+	//printMemState(aux);
+	// allocMemory(aux,5000);
+    // printMemState(aux);
+	// freeMemory(aux,aux);
+	// printMemState(aux);
+	// allocMemory(aux,6000);
+    // printMemState(aux);
+	// allocMemory(aux,7000);
+	// printMemState(aux);
+
+	//((EntryPoint)sampleCodeModuleAddress)();
 	
 	return 0;
 }
-
-// Función de test para verificar que funciona
-void testMemoryManager() {
-    print("\n=== Testing Memory Manager ===\n");
-    
-    // Test 1: Allocación simple
-    void* ptr1 = sys_malloc(100);
-    print("Test 1: Allocated 100 bytes at %p\n", ptr1);
-    
-    // Test 2: Múltiples allocaciones
-    void* ptr2 = sys_malloc(200);
-    void* ptr3 = sys_malloc(300);
-    print("Test 2: Allocated 200 bytes at %p\n", ptr2);
-    print("Test 2: Allocated 300 bytes at %p\n", ptr3);
-    
-    // Mostrar estado
-    MemStatus status = sys_memStatus();
-    print("\nMemory Status:\n");
-    print("  Total: %d KB\n", status.totalMemory / 1024);
-    print("  Used: %d KB\n", status.usedMemory / 1024);
-    print("  Free: %d KB\n", status.freeMemory / 1024);
-    print("  Blocks: %d\n", status.allocatedBlocks);
-    
-    // Test 3: Free
-    sys_free(ptr2);
-    print("\nTest 3: Freed ptr2\n");
-    
-    // Test 4: Realloc en el espacio liberado
-    void* ptr4 = sys_malloc(150);
-    print("Test 4: Allocated 150 bytes at %p (should reuse freed space)\n", ptr4);
-    
-    // Liberar todo
-    sys_free(ptr1);
-    sys_free(ptr3);
-    sys_free(ptr4);
-    
-    print("\nAll memory freed\n");
-    status = sys_memStatus();
-    print("Final - Used: %d bytes, Blocks: %d\n", 
-          status.usedMemory, status.allocatedBlocks);
-    
-    print("=== Memory Manager Test Complete ===\n\n");
-}
-

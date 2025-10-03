@@ -1,10 +1,10 @@
 // This is a personal academic project. Dear PVS-Studio, please check it.
 // PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
-#ifndef USE_BUDDY
 
-#include "../include/memoryManagerADT.h"
+#include "../include/memoryManager.h"
 #include <string.h>
 #include <stdbool.h>
+#include "naiveConsole.h"
 
 // ============================================
 //           CONFIGURACIÓN INTERNA
@@ -210,16 +210,26 @@ MemStatus getMemStatus(MemoryManagerADT memManager) {
 
 void printMemState(MemoryManagerADT memManager) {
     if (memManager == NULL) {
-        print("Memory Manager: NULL\n");
+        ncPrint("Memory Manager: NULL\n");
         return;
     }
     
-    print("=== MEMORY STATE ===\n");
-    print("Base Address: 0x%x\n", (uint64_t)memManager->startAddress);
-    print("Total Size: %d KB\n", memManager->totalSize / 1024);
-    print("Allocated: %d KB in %d blocks\n", 
-          memManager->totalAllocated / 1024, 
-          memManager->allocatedBlocks);
+    ncPrint("=== MEMORY STATE ===\n");
+    ncPrint("Base Address: 0x");
+    ncPrintHex(memManager->startAddress);
+    ncPrint("\n");
+
+    ncPrint("Total Size:");
+    ncPrintDec(memManager->totalSize / 1024);
+    ncPrint(" KB\n");
+
+
+    ncPrint("Allocated: ");
+    ncPrintDec(memManager->totalAllocated / 1024);
+    ncPrint(" KB in ");
+    ncPrintDec(memManager->allocatedBlocks);
+    ncPrint(" blocks\n");
+
     
     // Contar bloques libres y fragmentación
     int freeBlocks = 0;
@@ -227,7 +237,7 @@ void printMemState(MemoryManagerADT memManager) {
     size_t totalFree = 0;
     
     MemBlock* current = memManager->firstBlock;
-    print("\nBlock List:\n");
+    ncPrint("\nBlock List:\n");
     int i = 0;
     
     while (current != NULL && i < 10) { // Mostrar máximo 10 bloques
@@ -237,18 +247,40 @@ void printMemState(MemoryManagerADT memManager) {
             if (current->size > largestFree) {
                 largestFree = current->size;
             }
-            print("  [%d] FREE - Size: %d bytes\n", i, current->size);
+            ncPrint("  [");
+            ncPrintDec(i);
+            ncPrint("] FREE - Size: ");
+            ncPrintDec(current->size);
+            ncPrint(" bytes\n");
+            
         } else {
-            print("  [%d] USED - Size: %d bytes\n", i, current->size);
+            ncPrint("  [");
+            ncPrintDec(i);
+            ncPrint("] USED - Size: ");
+            ncPrintDec(current->size);
+            ncPrint(" bytes\n");
         }
+
         current = current->next;
         i++;
     }
     
-    print("\nFree Memory: %d KB in %d blocks\n", totalFree / 1024, freeBlocks);
-    print("Largest Free Block: %d KB\n", largestFree / 1024);
-    print("Fragmentation: %d blocks\n", freeBlocks);
-    print("====================\n");
+    //print("\nFree Memory: %d KB in %d blocks\n", totalFree / 1024, freeBlocks);
+    //print("Largest Free Block: %d KB\n", largestFree / 1024);
+    //print("Fragmentation: %d blocks\n", freeBlocks);
+    //print("====================\n");
+    ncPrint("\nFree Memory: ");
+    ncPrintDec(totalFree / 1024);
+    ncPrint(" KB in ");
+    ncPrintDec(freeBlocks);
+    ncPrint(" blocks\n");
+    ncPrint("Largest Free Block: ");
+    ncPrintDec(largestFree / 1024);
+    ncPrint(" KB\n");
+    ncPrint("Fragmentation: ");
+    ncPrintDec(freeBlocks);
+    ncPrint(" blocks\n");
+    ncPrint("====================\n");
 }
 
 // ============================================
@@ -260,12 +292,15 @@ void initKernelMemoryManager(void) {
     
     if (kernelMemManager == NULL) {
         // Kernel panic
-        print("KERNEL PANIC: Failed to initialize memory manager\n");
+        ncPrint("KERNEL PANIC: Failed to initialize memory manager\n");
         while(1); // Halt
     }
     
-    print("Memory Manager initialized at 0x%x with %d MB\n", 
-          HEAP_START_ADDRESS, HEAP_SIZE / (1024 * 1024));
+        ncPrint("Memory Manager initialized at 0x");
+    ncPrintHex(HEAP_START_ADDRESS);
+    ncPrint(" with ");
+    ncPrintDec(HEAP_SIZE / (1024 * 1024));
+    ncPrint(" MB\n");
 }
 
 MemoryManagerADT getKernelMemoryManager(void) {
