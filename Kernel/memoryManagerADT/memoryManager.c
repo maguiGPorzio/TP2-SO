@@ -1,0 +1,289 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
+#ifndef USE_BUDDY
+
+#include "../include/memoryManagerADT.h"
+#include <string.h>
+#include <stdbool.h>
+
+// ============================================
+//           CONFIGURACIÓN INTERNA
+// ============================================
+
+#define MIN_BLOCK_SIZE 32       // Tamaño mínimo de bloque
+#define ALIGN_SIZE 8            // Alineación de memoria
+#define MAGIC_NUMBER 0xDEADBEEF // Para detectar corrupción
+
+// ============================================
+//           ESTRUCTURAS PRIVADAS
+// ============================================
+
+// Header de cada bloque de memoria
+typedef struct MemBlock {
+    size_t size;                // Tamaño del bloque (sin incluir header)
+    struct MemBlock* next;      // Siguiente bloque en la lista
+    struct MemBlock* prev;      // Bloque anterior
+    bool free;                  // true si está libre, false si está ocupado
+    uint32_t magic;             // Número mágico para verificación
+} MemBlock;
+
+// Estructura del Memory Manager (CDT)
+struct MemoryManagerCDT {
+    void* startAddress;         // Dirección base de la memoria
+    size_t totalSize;           // Tamaño total
+    MemBlock* firstBlock;       // Primer bloque de la lista
+    size_t allocatedBlocks;     // Contador de bloques allocados
+    size_t totalAllocated;      // Total de bytes allocados
+};
+
+// ============================================
+//         VARIABLES GLOBALES DEL KERNEL
+// ============================================
+
+static MemoryManagerADT kernelMemManager = NULL;
+
+// ============================================
+//          FUNCIONES AUXILIARES PRIVADAS
+// ============================================
+
+// Alinea un tamaño al múltiplo de ALIGN_SIZE
+static size_t align(size_t size) {
+    return (size + ALIGN_SIZE - 1) & ~(ALIGN_SIZE - 1);
+}
+
+// Divide un bloque si es muy grande
+static void splitBlock(MemBlock* block, size_t size) {
+    // Solo dividir si queda espacio suficiente para otro bloque
+    size_t totalSize = sizeof(MemBlock) + size;
+    
+    if (block->size >= totalSize + sizeof(MemBlock) + MIN_BLOCK_SIZE) {
+        // Crear nuevo bloque con el espacio restante
+        MemBlock* newBlock = (MemBlock*)((char*)block + sizeof(MemBlock) + size);
+        newBlock->size = block->size - size - sizeof(MemBlock);
+        newBlock->free = true;
+        newBlock->magic = MAGIC_NUMBER;
+        newBlock->next = block->next;
+        newBlock->prev = block;
+        
+        if (block->next != NULL) {
+            block->next->prev = newBlock;
+        }
+        
+        block->next = newBlock;
+        block->size = size;
+    }
+}
+
+// Fusiona bloques libres adyacentes
+static void coalesceBlocks(MemBlock* block) {
+    // Fusionar con el siguiente si está libre
+    if (block->next != NULL && block->next->free) {
+        block->size += sizeof(MemBlock) + block->next->size;
+        block->next = block->next->next;
+        if (block->next != NULL) {
+            block->next->prev = block;
+        }
+    }
+    
+    // Fusionar con el anterior si está libre
+    if (block->prev != NULL && block->prev->free) {
+        block->prev->size += sizeof(MemBlock) + block->size;
+        block->prev->next = block->next;
+        if (block->next != NULL) {
+            block->next->prev = block->prev;
+        }
+    }
+}
+
+// Busca el primer bloque libre que tenga el tamaño suficiente (First Fit)
+static MemBlock* findFreeBlock(MemoryManagerADT memManager, size_t size) {
+    MemBlock* current = memManager->firstBlock;
+    
+    while (current != NULL) {
+        if (current->free && current->size >= size && current->magic == MAGIC_NUMBER) {
+            return current;
+        }
+        current = current->next;
+    }
+    
+    return NULL;
+}
+
+// ============================================
+//        IMPLEMENTACIÓN DE LA INTERFAZ
+// ============================================
+
+MemoryManagerADT createMemoryManager(void* startAddress, size_t size) {
+    if (startAddress == NULL || size < sizeof(struct MemoryManagerCDT) + sizeof(MemBlock) + MIN_BLOCK_SIZE) {
+        return NULL;
+    }
+    
+    // El memory manager se almacena al inicio del área de memoria
+    MemoryManagerADT memManager = (MemoryManagerADT)startAddress;
+    
+    // Inicializar estructura
+    memManager->startAddress = startAddress;
+    memManager->totalSize = size;
+    memManager->allocatedBlocks = 0;
+    memManager->totalAllocated = 0;
+    
+    // Crear el primer bloque libre después del CDT
+    memManager->firstBlock = (MemBlock*)((char*)startAddress + sizeof(struct MemoryManagerCDT));
+    memManager->firstBlock->size = size - sizeof(struct MemoryManagerCDT) - sizeof(MemBlock);
+    memManager->firstBlock->free = true;
+    memManager->firstBlock->next = NULL;
+    memManager->firstBlock->prev = NULL;
+    memManager->firstBlock->magic = MAGIC_NUMBER;
+    
+    return memManager;
+}
+
+void* allocMemory(MemoryManagerADT memManager, size_t size) {
+    if (memManager == NULL || size == 0) {
+        return NULL;
+    }
+    
+    // Alinear el tamaño
+    size = align(size);
+    
+    // Buscar un bloque libre
+    MemBlock* block = findFreeBlock(memManager, size);
+    
+    if (block == NULL) {
+        return NULL; // No hay memoria disponible
+    }
+    
+    // Dividir el bloque si es necesario
+    splitBlock(block, size);
+    
+    // Marcar como ocupado
+    block->free = false;
+    memManager->allocatedBlocks++;
+    memManager->totalAllocated += block->size;
+    
+    // Retornar puntero después del header
+    return (char*)block + sizeof(MemBlock);
+}
+
+void freeMemory(MemoryManagerADT memManager, void* ptr) {
+    if (memManager == NULL || ptr == NULL) {
+        return;
+    }
+    
+    // Obtener el bloque desde el puntero
+    MemBlock* block = (MemBlock*)((char*)ptr - sizeof(MemBlock));
+    
+    // Verificar número mágico
+    if (block->magic != MAGIC_NUMBER) {
+        // Memoria corrupta o puntero inválido
+        return;
+    }
+    
+    // Verificar que no esté ya libre (double free)
+    if (block->free) {
+        return;
+    }
+    
+    // Marcar como libre
+    block->free = true;
+    memManager->allocatedBlocks--;
+    memManager->totalAllocated -= block->size;
+    
+    // Fusionar con bloques adyacentes
+    coalesceBlocks(block);
+}
+
+MemStatus getMemStatus(MemoryManagerADT memManager) {
+    MemStatus status = {0};
+    
+    if (memManager != NULL) {
+        status.totalMemory = memManager->totalSize;
+        status.usedMemory = memManager->totalAllocated;
+        status.freeMemory = status.totalMemory - status.usedMemory - 
+                           sizeof(struct MemoryManagerCDT) - 
+                           (memManager->allocatedBlocks * sizeof(MemBlock));
+        status.allocatedBlocks = memManager->allocatedBlocks;
+    }
+    
+    return status;
+}
+
+void printMemState(MemoryManagerADT memManager) {
+    if (memManager == NULL) {
+        print("Memory Manager: NULL\n");
+        return;
+    }
+    
+    print("=== MEMORY STATE ===\n");
+    print("Base Address: 0x%x\n", (uint64_t)memManager->startAddress);
+    print("Total Size: %d KB\n", memManager->totalSize / 1024);
+    print("Allocated: %d KB in %d blocks\n", 
+          memManager->totalAllocated / 1024, 
+          memManager->allocatedBlocks);
+    
+    // Contar bloques libres y fragmentación
+    int freeBlocks = 0;
+    size_t largestFree = 0;
+    size_t totalFree = 0;
+    
+    MemBlock* current = memManager->firstBlock;
+    print("\nBlock List:\n");
+    int i = 0;
+    
+    while (current != NULL && i < 10) { // Mostrar máximo 10 bloques
+        if (current->free) {
+            freeBlocks++;
+            totalFree += current->size;
+            if (current->size > largestFree) {
+                largestFree = current->size;
+            }
+            print("  [%d] FREE - Size: %d bytes\n", i, current->size);
+        } else {
+            print("  [%d] USED - Size: %d bytes\n", i, current->size);
+        }
+        current = current->next;
+        i++;
+    }
+    
+    print("\nFree Memory: %d KB in %d blocks\n", totalFree / 1024, freeBlocks);
+    print("Largest Free Block: %d KB\n", largestFree / 1024);
+    print("Fragmentation: %d blocks\n", freeBlocks);
+    print("====================\n");
+}
+
+// ============================================
+//      FUNCIONES GLOBALES DEL KERNEL
+// ============================================
+
+void initKernelMemoryManager(void) {
+    kernelMemManager = createMemoryManager((void*)HEAP_START_ADDRESS, HEAP_SIZE);
+    
+    if (kernelMemManager == NULL) {
+        // Kernel panic
+        print("KERNEL PANIC: Failed to initialize memory manager\n");
+        while(1); // Halt
+    }
+    
+    print("Memory Manager initialized at 0x%x with %d MB\n", 
+          HEAP_START_ADDRESS, HEAP_SIZE / (1024 * 1024));
+}
+
+MemoryManagerADT getKernelMemoryManager(void) {
+    return kernelMemManager;
+}
+
+// ============================================
+//         WRAPPERS PARA SYSCALLS
+// ============================================
+
+void* sys_malloc(size_t size) {
+    return allocMemory(kernelMemManager, size);
+}
+
+void sys_free(void* ptr) {
+    freeMemory(kernelMemManager, ptr);
+}
+
+MemStatus sys_memStatus(void) {
+    return getMemStatus(kernelMemManager);
+}
