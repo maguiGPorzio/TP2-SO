@@ -11,20 +11,20 @@
 // ============================================
 
 #define MIN_BLOCK_SIZE 32       // Tamaño mínimo de bloque
-#define ALIGN_SIZE 8            // Alineación de memoria
+#define ALIGN_SIZE 8            // Alineación de memoria (8 bytes)
 #define MAGIC_NUMBER 0xDEADBEEF // Para detectar corrupción
 
 // ============================================
 //           ESTRUCTURAS PRIVADAS
 // ============================================
 
-// Header de cada bloque de memoria
+// Header de cada bloque de memoria. Es una lista doblemente enlazada.
 typedef struct MemBlock {
     size_t size;                // Tamaño del bloque (sin incluir header)
     struct MemBlock* next;      // Siguiente bloque en la lista
     struct MemBlock* prev;      // Bloque anterior
     bool free;                  // true si está libre, false si está ocupado
-    uint32_t magic;             // Número mágico para verificación
+    uint32_t magic;             // Número mágico para verificación.  Al liberar (freeMemory) se verifica que block->magic == MAGIC_NUMBER antes de confiar en el puntero; si alguien pasó una dirección que no proviene del gestor (o fue sobrescrita), la comparación falla y se ignora la operación
 } MemBlock;
 
 // Estructura del Memory Manager (CDT)
@@ -74,25 +74,34 @@ static void splitBlock(MemBlock* block, size_t size) {
     }
 }
 
-// Fusiona bloques libres adyacentes
-static void coalesceBlocks(MemBlock* block) {
-    // Fusionar con el siguiente si está libre
-    if (block->next != NULL && block->next->free) {
-        block->size += sizeof(MemBlock) + block->next->size;
-        block->next = block->next->next;
+static inline void coalesceNext(MemBlock* block) {
+    if (block == NULL) return;
+    MemBlock* next = block->next;
+    if (next != NULL && next->free) {
+        block->size += sizeof(MemBlock) + next->size;
+        block->next = next->next;
         if (block->next != NULL) {
             block->next->prev = block;
         }
     }
-    
-    // Fusionar con el anterior si está libre
-    if (block->prev != NULL && block->prev->free) {
-        block->prev->size += sizeof(MemBlock) + block->size;
-        block->prev->next = block->next;
+}
+
+static inline void coalescePrev(MemBlock* block) {
+    if (block == NULL) return;
+    MemBlock* prev = block->prev;
+    if (prev != NULL && prev->free) {
+        prev->size += sizeof(MemBlock) + block->size;
+        prev->next = block->next;
         if (block->next != NULL) {
-            block->next->prev = block->prev;
+            block->next->prev = prev;
         }
     }
+}
+
+// Fusiona bloques libres adyacentes usando funciones auxiliares
+static void coalesceBlocks(MemBlock* block) {
+    coalesceNext(block);
+    coalescePrev(block);
 }
 
 // Busca el primer bloque libre que tenga el tamaño suficiente (First Fit)
@@ -106,7 +115,7 @@ static MemBlock* findFreeBlock(MemoryManagerADT memManager, size_t size) {
         current = current->next;
     }
     
-    return NULL;
+    return NULL; // No hay bloque libre suficiente
 }
 
 // ============================================
@@ -114,12 +123,14 @@ static MemBlock* findFreeBlock(MemoryManagerADT memManager, size_t size) {
 // ============================================
 
 MemoryManagerADT createMemoryManager(void* startAddress, size_t size) {
+    // Valida tamaño mínimo para el memory manager y al menos un bloque
     if (startAddress == NULL || size < sizeof(struct MemoryManagerCDT) + sizeof(MemBlock) + MIN_BLOCK_SIZE) {
         return NULL;
     }
     
     // El memory manager se almacena al inicio del área de memoria
     MemoryManagerADT memManager = (MemoryManagerADT)startAddress;
+    // El gestor guarda su propia estructura directamente en la memoria gestionada: el puntero apunta al inicio del heap y se interpreta como la estructura para poder escribir sus campos.
     
     // Inicializar estructura
     memManager->startAddress = startAddress;
@@ -129,7 +140,7 @@ MemoryManagerADT createMemoryManager(void* startAddress, size_t size) {
     
     // Crear el primer bloque libre después del CDT
     memManager->firstBlock = (MemBlock*)((char*)startAddress + sizeof(struct MemoryManagerCDT));
-    memManager->firstBlock->size = size - sizeof(struct MemoryManagerCDT) - sizeof(MemBlock);
+    memManager->firstBlock->size = size - sizeof(struct MemoryManagerCDT) - sizeof(MemBlock); // Resto del espacio del memory manager
     memManager->firstBlock->free = true;
     memManager->firstBlock->next = NULL;
     memManager->firstBlock->prev = NULL;
@@ -161,7 +172,7 @@ void* allocMemory(MemoryManagerADT memManager, size_t size) {
     memManager->allocatedBlocks++;
     memManager->totalAllocated += block->size;
     
-    // Retornar puntero después del header
+    // Retornar puntero después del header (donde arranca el espacio utilizable del bloque)
     return (char*)block + sizeof(MemBlock);
 }
 
@@ -188,7 +199,7 @@ void freeMemory(MemoryManagerADT memManager, void* ptr) {
     block->free = true;
     memManager->allocatedBlocks--;
     memManager->totalAllocated -= block->size;
-    
+
     // Fusionar con bloques adyacentes
     coalesceBlocks(block);
 }
