@@ -53,14 +53,12 @@ static size_t align(size_t size) {
 
 // Divide un bloque si es muy grande
 static void splitBlock(MemBlock* block, size_t size) {
-    // Solo dividir si queda espacio suficiente para otro bloque
-    size_t totalSize = sizeof(MemBlock) + size;
     
-    if (block->size >= totalSize + sizeof(MemBlock) + MIN_BLOCK_SIZE) {
+    if (block->size >= size + sizeof(MemBlock) + MIN_BLOCK_SIZE) {
         // Crear nuevo bloque con el espacio restante
         MemBlock* newBlock = (MemBlock*)((char*)block + sizeof(MemBlock) + size);
         newBlock->size = block->size - size - sizeof(MemBlock);
-        newBlock->free = true;
+        newBlock->free = true; // ACA
         newBlock->magic = MAGIC_NUMBER;
         newBlock->next = block->next;
         newBlock->prev = block;
@@ -98,7 +96,7 @@ static inline void coalescePrev(MemBlock* block) {
     }
 }
 
-// Fusiona bloques libres adyacentes usando funciones auxiliares
+// Fusiona bloques libres adyacentes usando funciones auxiliares. TIENEN QUE ESTAR EN ESE ORDEN!
 static void coalesceBlocks(MemBlock* block) {
     coalesceNext(block);
     coalescePrev(block);
@@ -226,12 +224,12 @@ void printMemState(MemoryManagerADT memManager) {
     }
     
     ncPrint("=== MEMORY STATE ===\n");
-    ncPrint("Base Address: 0x");
+    ncPrint("Start Address: 0x");
     ncPrintHex(memManager->startAddress);
     ncPrint("\n");
 
     ncPrint("Total Size:");
-    ncPrintDec(memManager->totalSize / 1024);
+    ncPrintDec(memManager->totalSize / 1024); // Se divide por 1024 para mostrar en KB
     ncPrint(" KB\n");
 
 
@@ -276,10 +274,6 @@ void printMemState(MemoryManagerADT memManager) {
         i++;
     }
     
-    //print("\nFree Memory: %d KB in %d blocks\n", totalFree / 1024, freeBlocks);
-    //print("Largest Free Block: %d KB\n", largestFree / 1024);
-    //print("Fragmentation: %d blocks\n", freeBlocks);
-    //print("====================\n");
     ncPrint("\nFree Memory: ");
     ncPrintDec(totalFree / 1024);
     ncPrint(" KB in ");
