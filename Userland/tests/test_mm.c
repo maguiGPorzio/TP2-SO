@@ -1,4 +1,4 @@
-#include "usrlib.h" // para sys_* y MemStatus
+#include "../include/test_mm.h" // para sys_* y MemStatus
 
 #define MAX_BLOCKS 128
 
@@ -55,7 +55,7 @@ uint8_t memcheck(void *start, uint8_t value, uint32_t size) {
 }
 
 
-uint64_t test_mm(uint64_t argc, char *argv[]) {
+int64_t test_mm(uint64_t argc, char * argv[]){
 
   mm_rq mm_rqs[MAX_BLOCKS];
   uint8_t rq;

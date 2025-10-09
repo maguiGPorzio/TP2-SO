@@ -1,5 +1,5 @@
-#include "shell.h"
-#include "golf.h"
+#include "../include/shell.h"
+#include "../golf/golf.h"
 
 #define E5 659
 #define B4 494
@@ -18,7 +18,7 @@
 #define E 200  // corchea
 #define S 100  // semicorchea
 
-#define COMMAND_COUNT 9
+#define COMMAND_COUNT 10
 
 // COMANDOS
 static Command commands[] = {
@@ -30,7 +30,9 @@ static Command commands[] = {
     { "print time", print_time },
     { "song", song },
     { "test div0", test_division_zero }, // prueba de división por cero
-    { "test invopcode", test_invalid_opcode }, // prueba de opcode inválidoc
+    { "test invopcode", test_invalid_opcode }, // prueba de opcode inválido
+    { "test mm", test_mm_command }, // prueba del memory manager
+    {0,0}
 };
 
 static int clean_history;
@@ -174,4 +176,10 @@ void song() {
     sys_beep(880, 500);
     sys_beep(880, 500);
     sys_clear_input_buffer();
+}
+
+// Llama al test de memory manager con un límite predeterminado
+void test_mm_command() {
+    static char * args[] = { "20000" }; // tamaño máximo configurable aquí
+    test_mm(1, args);
 }

@@ -2,7 +2,7 @@
 #define _USR_LIB_H_
 
 #include <stdint.h>
-#include "../include/commonTypes.h"
+#include "commonTypes.h"
 
 // File descriptors
 #define STDOUT  1

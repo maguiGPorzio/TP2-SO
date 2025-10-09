@@ -1,5 +1,11 @@
 include Makefile.inc
 
+ifdef MM
+    MM_FLAG := -D$(MM)
+else
+    MM_FLAG :=
+endif
+
 KERNEL=kernel.bin
 SOURCES=$(wildcard *.c)
 SOURCES_IDT=$(wildcard idt/*.c)
@@ -21,7 +27,7 @@ $(KERNEL): $(LOADEROBJECT) $(OBJECTS) $(STATICLIBS) $(OBJECTS_ASM)
 	$(LD) $(LDFLAGS) -T kernel.ld -o $(KERNEL) $(LOADEROBJECT) $(OBJECTS) $(OBJECTS_ASM) $(STATICLIBS)
 
 %.o: %.c
-	$(GCC) $(GCCFLAGS) -I./include -c $< -o $@
+	$(GCC) $(GCCFLAGS) -I./include -c $< -o $@ $(MM_FLAG)
 
 %.o : %.asm
 	$(ASM) $(ASMFLAGS) $< -o $@

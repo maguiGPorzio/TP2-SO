@@ -1,4 +1,4 @@
-#include "shell.h"
+#include "../include/shell.h"
 
 // historial para redibujar
 static HistoryEntry history[HISTORY_MAX];

@@ -6,7 +6,7 @@
 #define GOLF_H
 
 #include <stdint.h>
-#include "usrlib.h"
+#include "../include/usrlib.h"
 
 // -------------------------------------------------------------------------
 // CONSTANTES DEL JUEGO

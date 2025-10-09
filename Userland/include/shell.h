@@ -1,4 +1,5 @@
-#include "../usrlib/usrlib.h"
+#include "usrlib.h"
+#include "test_mm.h"
 
 #define INPUT_MAX 100
 #define HISTORY_MAX 4096 
@@ -40,3 +41,5 @@ void play_golf();
 void print_time();
 void print_date();
 void song();
+void test_mm_command();
+
