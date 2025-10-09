@@ -8,8 +8,6 @@
 #include "videoDriver.h"
 #include "sound.h"
 #include "interrupts.h"
-#include "memoryManager.h"
-#include "memoryManagerADT/memoryManager.c"
 
 extern uint8_t text;
 extern uint8_t rodata;
@@ -60,32 +58,8 @@ void * initializeKernelBinary()
 
 
 int main() {
-	 // Inicializar Memory Manager
-    initKernelMemoryManager();
 
-	MemoryManagerADT aux=getKernelMemoryManager();
-
-    //printMemState(aux);
-	allocMemory(aux,1000);
-    //printMemState(aux);
-	allocMemory(aux,2000);
-    //printMemState(aux);
-	void * ptr= allocMemory(aux,3000);
-    //printMemState(aux);
-	freeMemory(aux,ptr);
-	printMemState(aux);
-	//allocMemory(aux,4000);
-	//printMemState(aux);
-	// allocMemory(aux,5000);
-    // printMemState(aux);
-	// freeMemory(aux,aux);
-	// printMemState(aux);
-	// allocMemory(aux,6000);
-    // printMemState(aux);
-	// allocMemory(aux,7000);
-	// printMemState(aux);
-
-	//((EntryPoint)sampleCodeModuleAddress)();
+	((EntryPoint)sampleCodeModuleAddress)();
 	
 	return 0;
 }
