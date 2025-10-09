@@ -199,7 +199,7 @@ _irq05Handler:
 _irq128Handler:
     pushState
     ; chequear el indice
-    cmp rax, 23
+	cmp rax, 26
     jge .syscall_end
 	; rax es el indice, 8 el size de un puntero en 64 bits
     call [syscalls + rax * 8] ; llamamos a la syscall

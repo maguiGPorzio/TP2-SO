@@ -2,11 +2,13 @@
 #define _SYSCALL_DISPATCHER_H_
 
 #include <stdint.h>
+#include <stddef.h>
+#include "memoryManager.h"
 
 #define STDOUT 1
 #define STDERR 2
 
-#define SYSCALL_COUNT 23 // incrementar al agregar una syscall y cambiar el chequeo del indice en asm
+#define SYSCALL_COUNT 26 // actualizar también el chequeo en asm/interrupts.asm
 
 extern void * syscalls[SYSCALL_COUNT];
 
@@ -35,5 +37,10 @@ static uint64_t sys_key_status(char c);
 static void sys_sleep(uint64_t miliseconds);
 static void sys_clear_input_buffer();
 static uint64_t sys_ticks();
+
+// Memory management syscalls
+static void * sys_malloc(size_t size);
+static void sys_free(void * ptr);
+static MemStatus sys_memStatus(void);
 
 #endif

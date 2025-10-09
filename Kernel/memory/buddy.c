@@ -321,4 +321,9 @@ void initKernelMemoryManager(void) {
     ncPrint(")\n");
 }
 
+
+MemoryManagerADT getKernelMemoryManager(void) {
+    return kernelMemManager;
+}
+
 #endif // USE_BUDDY

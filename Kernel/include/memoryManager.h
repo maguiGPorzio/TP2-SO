@@ -55,5 +55,6 @@ MemStatus getMemStatus(MemoryManagerADT memManager);
  */
 void initKernelMemoryManager(void);
 
+MemoryManagerADT getKernelMemoryManager(void);
 
 #endif // MEMORY_MANAGER_ADT_H

@@ -1,9 +1,10 @@
- #include <stdint.h>
+#include <stddef.h>
 #include "videoDriver.h"
 #include "time.h"
 #include "keyboard.h"
 #include "sound.h"
 #include "sysCallDispatcher.h"
+#include "memoryManager.h"
 
 #define MIN_CHAR 0
 #define MAX_CHAR 256
@@ -31,7 +32,10 @@ void * syscalls[] = {
     &sys_key_status,
     &sys_sleep,
     &sys_clear_input_buffer,
-    &sys_ticks
+    &sys_ticks,
+    &sys_malloc,
+    &sys_free,
+    &sys_memStatus
 };
 
 static uint64_t sys_regs(char * buffer){
@@ -150,4 +154,17 @@ static void sys_clear_input_buffer() {
 
 static uint64_t sys_ticks() {
     return ticks_elapsed();
+}
+
+// Memory management syscalls
+static void * sys_malloc(size_t size) {
+    return allocMemory(getKernelMemoryManager(), size);
+}
+
+static void sys_free(void * ptr) {
+    freeMemory(getKernelMemoryManager(), ptr);
+}
+
+static MemStatus sys_memStatus(void) {
+    return getMemStatus(getKernelMemoryManager());
 }
