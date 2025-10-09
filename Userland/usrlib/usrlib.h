@@ -2,6 +2,7 @@
 #define _USR_LIB_H_
 
 #include <stdint.h>
+#include "../include/commonTypes.h"
 
 // File descriptors
 #define STDOUT  1
@@ -48,6 +49,11 @@ extern void generate_invalid_opcode();
 extern uint64_t printf(const char *fmt, ...);
 extern uint64_t scanf(const char *fmt, ...);
 
+/*-- SYSTEMCALLS DE MEMORIA --*/
+extern void * sys_malloc(uint64_t size);
+extern void sys_free(void * ptr);
+extern MemStatus sys_memstatus(void);
+
 /*-- FUNCIONES DE I/O --*/
 uint64_t print_err(char *str);
 uint64_t print_string(char *str);
@@ -73,6 +79,5 @@ uint64_t num_to_str(uint64_t value, char * buffer, uint32_t base);
 
 /*-- FUNCIONES DE MATEMATICAS --*/
 float inv_sqrt(float number);
-
 
 #endif 

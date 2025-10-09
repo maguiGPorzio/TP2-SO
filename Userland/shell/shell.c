@@ -1,5 +1,3 @@
-
-
 #include "shell.h"
 
 // historial para redibujar

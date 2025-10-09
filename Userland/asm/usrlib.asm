@@ -3,6 +3,7 @@ global  sys_increase_fontsize, sys_decrease_fontsize, sys_beep
 global  sys_screen_size, sys_circle, sys_rectangle, sys_line, sys_draw_string
 global  sys_enable_textmode, sys_disable_textmode, sys_put_pixel, sys_key_status
 global  sys_sleep, sys_clear_input_buffer, sys_ticks
+global  sys_malloc, sys_free, sys_memstatus
 global generate_invalid_opcode
 global printf
 global scanf
@@ -108,6 +109,18 @@ sys_clear_input_buffer:
 ; 22 - void sys_clear_input_buffer
 sys_ticks:
 	SYSCALL 22
+
+; 23 - void * sys_malloc(size_t size)
+sys_malloc:
+    SYSCALL 23
+
+; 24 - void sys_free(void * ptr)
+sys_free:
+    SYSCALL 24
+
+; 25 - MemStatus sys_memstatus(void)
+sys_memstatus:
+    SYSCALL 25
 
 generate_invalid_opcode:
     ud2         ; Genera excepción de opcode inválido
