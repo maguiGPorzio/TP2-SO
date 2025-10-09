@@ -1,20 +1,13 @@
-// buddy_mm.c - Buddy System Memory Manager
+#ifdef USE_BUDDY
+
 #include "../include/memoryManager.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include "naiveConsole.h"
 
-// ============================================
-//           CONFIGURACIÓN DEL BUDDY
-// ============================================
-
 #define MIN_ORDER 5        // 2^5 = 32 bytes (tamaño mínimo)
 #define MAX_ORDER 20       // 2^20 = 1 MB (tamaño máximo de bloque)
 #define NUM_ORDERS (MAX_ORDER - MIN_ORDER + 1)  // 16 niveles
-
-// ============================================
-//           ESTRUCTURAS PRIVADAS
-// ============================================
 
 // Nodo de la lista libre para cada orden
 typedef struct BuddyNode {
@@ -43,25 +36,25 @@ static MemoryManagerADT kernelMemManager = NULL;
 //          FUNCIONES AUXILIARES
 // ============================================
 
+// Calcula el tamaño de un bloque dado su orden
+static size_t orderToSize(uint8_t order) {
+    return (1ULL << order);
+}
+
 // Calcula el orden necesario para un tamaño dado
 static uint8_t sizeToOrder(size_t size) {
     // Incluir espacio para el header
     size += sizeof(BuddyNode);
     
     uint8_t order = MIN_ORDER;
-    size_t blockSize = (1ULL << order);
+    size_t blockSize = orderToSize(order); //ESTO SERIA 32 PORQUE MIN_ORDER ES 5
     
     while (blockSize < size && order < MAX_ORDER) {
         order++;
-        blockSize = (1ULL << order);
+        blockSize = orderToSize(order);
     }
     
     return order;
-}
-
-// Calcula el tamaño de un bloque dado su orden
-static size_t orderToSize(uint8_t order) {
-    return (1ULL << order);
 }
 
 // Calcula la dirección del buddy de un bloque
@@ -79,6 +72,7 @@ static bool areBuddies(void* addr1, void* addr2, uint8_t order) {
 
 // Elimina un nodo de su lista libre
 static void removeFromFreeList(BuddyNode* node, uint8_t order) {
+    if (order < MIN_ORDER || order > MAX_ORDER) return; // o assert CHECK
     uint8_t index = order - MIN_ORDER;
     
     if (node->prev) {
@@ -98,6 +92,7 @@ static void removeFromFreeList(BuddyNode* node, uint8_t order) {
 
 // Agrega un nodo al inicio de su lista libre
 static void addToFreeList(BuddyNode* node, uint8_t order) {
+    if (order < MIN_ORDER || order > MAX_ORDER) return; // o assert CHECK
     uint8_t index = order - MIN_ORDER;
     
     node->next = kernelMemManager->freeLists[index];
@@ -345,3 +340,5 @@ void printMemState(MemoryManagerADT memManager) {
     
     ncPrint("==========================\n");
 }
+
+#endif // USE_BUDDY
