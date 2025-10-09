@@ -4,9 +4,11 @@ KERNEL=kernel.bin
 SOURCES=$(wildcard *.c)
 SOURCES_IDT=$(wildcard idt/*.c)
 SOURCES_DRIVERS=$(wildcard drivers/*.c)
+SOURCES_MEMORY=$(wildcard memory/*.c)
 SOURCES_ASM=$(wildcard asm/*.asm)
 SOURCES_ASM_IDT=$(wildcard idt/*.asm)
-OBJECTS=$(SOURCES:.c=.o) $(SOURCES_IDT:.c=.o) $(SOURCES_DRIVERS:.c=.o)
+
+OBJECTS=$(SOURCES:.c=.o) $(SOURCES_IDT:.c=.o) $(SOURCES_DRIVERS:.c=.o) $(SOURCES_MEMORY:.c=.o)
 OBJECTS_ASM=$(SOURCES_ASM:.asm=.o) $(SOURCES_ASM_IDT:.asm=.o)
 LOADERSRC=loader.asm
 

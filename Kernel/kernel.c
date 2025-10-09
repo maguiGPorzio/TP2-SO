@@ -8,6 +8,7 @@
 #include "videoDriver.h"
 #include "sound.h"
 #include "interrupts.h"
+#include "memoryManager.h"
 
 extern uint8_t text;
 extern uint8_t rodata;
@@ -58,6 +59,8 @@ void * initializeKernelBinary()
 
 
 int main() {
+
+	initKernelMemoryManager();
 
 	((EntryPoint)sampleCodeModuleAddress)();
 	
