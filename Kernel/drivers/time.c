@@ -10,8 +10,9 @@ uint8_t getYear();
 
 static uint64_t ticks = 0;
 
-void timer_handler() {
-	ticks++;
+void timer_handler(void) {
+    ticks++;
+    scheduler_tick();  // ← Llamar al scheduler en cada tick
 }
 
 uint64_t ticks_elapsed() {

@@ -9,6 +9,7 @@
 #include "sound.h"
 #include "interrupts.h"
 #include "memoryManager.h"
+#include "scheduler.h"
 
 extern uint8_t text;
 extern uint8_t rodata;
@@ -56,11 +57,28 @@ void * initializeKernelBinary()
 	return getStackBase();
 }
 
-
+// Wrapper para ejecutar el código de userland
+void userland_wrapper(void) {
+    ((EntryPoint)sampleCodeModuleAddress)();
+}
 
 int main() {
 
 	initKernelMemoryManager();
+
+	// Inicializar scheduler
+    scheduler_init();
+    
+    // Crear algunos procesos de prueba
+    create_process(userland_wrapper, "shell", PRIORITY_NORMAL, true);
+    
+    // Iniciar scheduler
+    scheduler_start();
+    
+    // El scheduler toma el control
+    while(1) {
+        __asm__ __volatile__("hlt");
+    }
 
 	((EntryPoint)sampleCodeModuleAddress)();
 	
