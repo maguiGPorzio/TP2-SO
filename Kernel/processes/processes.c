@@ -25,10 +25,14 @@ void init_processes(void) {
 	}
 }
 
+// TODO: separar las cosas de scheduler y de processes en dos archivos
+
 int proc_spawn(process_entry_t entry, int argc, const char **argv, const char *name) {
 	if (entry == NULL) return NO_PID;
 
 	// Find free slot
+    // TODO: refactorizar esto porque esta gaga, hace lo mismo el alloc_pid
+    // refactorizar para que no use dos arrays y use el terminated
 	int slot = -1;
 	for (int i = 0; i < MAX_PROCESSES; i++) {
 		if (!pid_in_use[i]) { slot = i; break; }
@@ -43,10 +47,13 @@ int proc_spawn(process_entry_t entry, int argc, const char **argv, const char *n
 
 	p->pid = pid;
 	p->parent_pid = (current_index >= 0) ? proc_table[current_index].pid : NO_PID;
+    // TODO: ver si hace falta lo del parent y por ahora sacarlo
+    // TODO: sacar el waitpid
 	p->status = PS_READY;
 	p->entry = entry;
 	p->argc = argc;
 
+    // TODO: preguntar por que hace esto
 	// Duplicate argv in kernel heap: array of char* and each string
 	if (argc > 0 && argv != NULL) {
 		p->argv = (char**)allocMemory(getKernelMemoryManager(), sizeof(char*) * (size_t)argc);
@@ -85,6 +92,8 @@ int proc_spawn(process_entry_t entry, int argc, const char **argv, const char *n
 	return pid;
 }
 
+
+// TODO: ver de que llame al siguiente a correr
 void proc_exit(int status) {
 	if (current_index < 0) return;
 	PCB *cur = &proc_table[current_index];
@@ -218,7 +227,8 @@ static int alloc_pid(void) {
 }
 
 static void free_pid(int pid) {
-	if (pid >= 0 && pid < MAX_PROCESSES) pid_in_use[pid] = 0;
+	if (pid >= 0 && pid < MAX_PROCESSES) 
+        pid_in_use[pid] = 0;
 }
 
 // Layout we push on the new process stack so that when restored it executes:

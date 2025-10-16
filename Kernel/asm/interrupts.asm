@@ -202,8 +202,7 @@ _irq128Handler:
 	mov [syscall_frame_ptr], rsp
 	mov [syscall_id_tmp], rax
 	pushState
-	; chequear el indice
-	cmp rax, 31
+	cmp rax, 31 ; ------> aca hay que cambiar la syscall
     jge .syscall_end
 	; rax es el indice, 8 el size de un puntero en 64 bits
     call [syscalls + rax * 8] ; llamamos a la syscall

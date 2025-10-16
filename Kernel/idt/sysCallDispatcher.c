@@ -20,6 +20,7 @@ static void    sys_yield(void);
 static int64_t sys_waitpid(int pid);
 
 void * syscalls[] = {
+    // syscalls de arqui
     &sys_regs,               // 0
     &sys_time,               // 1
     &sys_date,               // 2
@@ -43,9 +44,13 @@ void * syscalls[] = {
     &sys_sleep,              // 20
     &sys_clear_input_buffer, // 21
     &sys_ticks,              // 22
+
+    // syscalls de memoria
     &sys_malloc,             // 23
     &sys_free,               // 24
     &sys_memStatus,          // 25
+
+    // syscalls de procesos
     &sys_spawn,              // 26
     &sys_exit,               // 27
     &sys_getpid,             // 28
