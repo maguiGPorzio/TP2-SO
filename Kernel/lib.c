@@ -58,3 +58,32 @@ void * memcpy(void * destination, const void * source, uint64_t length)
 
 	return destination;
 }
+
+void * memset64(void * destination, uint64_t pattern, uint64_t length)
+{
+	uint8_t *d = (uint8_t *)destination;
+	uint64_t i = 0;
+
+	// Write bytes until destination is 8-byte aligned or until no bytes left
+	while (i < length && ((uint64_t)(d + i) % sizeof(uint64_t) != 0)) {
+		d[i++] = (uint8_t)pattern; // Use LSB of pattern for tail bytes
+	}
+
+	// Now destination is aligned or no more bytes left
+	uint64_t remaining = length - i;
+	uint64_t words = remaining / sizeof(uint64_t);
+
+	uint64_t *d64 = (uint64_t *)(d + i);
+	for (uint64_t j = 0; j < words; j++) {
+		d64[j] = pattern;
+	}
+
+	i += words * sizeof(uint64_t);
+
+	// Trailing bytes
+	while (i < length) {
+		d[i++] = (uint8_t)pattern;
+	}
+
+	return destination;
+}

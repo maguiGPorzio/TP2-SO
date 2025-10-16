@@ -18,7 +18,6 @@
 #define E 200  // corchea
 #define S 100  // semicorchea
 
-#define COMMAND_COUNT 11
 
 // COMANDOS
 static Command commands[] = {
@@ -32,33 +31,25 @@ static Command commands[] = {
     { "test div0", "causes division by zero exception", test_division_zero }, // prueba de división por cero
     { "test invopcode", "causes invalid opcode exception", test_invalid_opcode }, // prueba de opcode inválido
     { "test mm", "runs a memory manager test", test_mm_command }, // prueba del memory manager
-    {0,0}
+    {0,0, 0}
 };
 
 static int clean_history;
 
-static int binary_search_command(char * line) {
-    int left = 0;
-    int right = COMMAND_COUNT - 1;
-    
-    while (left <= right) {
-        int mid = left + (right - left) / 2;
-        int cmp = strcmp(line, commands[mid].name);
-        
-        if (cmp == 0) {
-            return mid; 
-        } else if (cmp < 0) {
-            right = mid - 1; 
-        } else {
-            left = mid + 1; 
+static int get_command_idx(char * line) {
+
+    for (int i = 0; commands[i].name; i++) {
+        if (strcmp(line, commands[i].name) == 0) {
+            return i;
         }
     }
-    return -1; 
+
+    return -1;
 }
 
 void process_line(char * line, uint32_t * history_len) {
     clean_history = 0;
-    int idx = binary_search_command(line);
+    int idx = get_command_idx(line);
 
     if (idx < 0) {
         shell_print_err("Unknown command: '");
@@ -91,7 +82,7 @@ void help() {
     shell_newline();
 }
 
-void cls()      { 
+void cls() { 
     sys_clear(); 
     clean_history = 1; 
 }

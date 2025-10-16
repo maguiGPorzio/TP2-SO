@@ -5,7 +5,7 @@
 #define abs(x) ((x) < 0 ? -(x) : (x))
 #define ENABLED 1
 #define DISABLED 0
-#define BKG_COLOR 0x000000
+#define BKG_COLOR 0x000000 // cuidado si lo cambiamos hay que cambiar el clear implementando un memset custom
 #define MAX_SIZE 4
 
 struct vbe_mode_info_structure {
@@ -237,9 +237,11 @@ void vdClear() {
     if (!text_mode) {
         return;
     }
+    // fillRectangle(0, 0, VBE_mode_info->width, VBE_mode_info->width, BKG_COLOR);
+    uint64_t length = getScreenHeight() * getScreenWidth() * VBE_mode_info->bpp / 8;
+    memset64(VBE_mode_info->framebuffer, 0, length); // hardcodeado que el background color es negro
     cursor_x = 0;
     cursor_y = 0;
-    fillRectangle(0, 0, VBE_mode_info->width, VBE_mode_info->width, BKG_COLOR);
 }
 
 
