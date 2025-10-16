@@ -23,6 +23,7 @@ GLOBAL reg_array ; array donde se almacenan los registros cunado se toco ctrl
 EXTERN irqDispatcher
 EXTERN exceptionDispatcher
 EXTERN syscalls
+EXTERN scheduler_tick_from_syscall
 EXTERN printRegisters
 EXTERN getStackBase
 EXTERN main
@@ -197,15 +198,22 @@ _irq05Handler:
 
 
 _irq128Handler:
-    pushState
-    ; chequear el indice
-	cmp rax, 26
+	; Guardar puntero al frame de iret de la syscall (RSP al entrar)
+	mov [syscall_frame_ptr], rsp
+	mov [syscall_id_tmp], rax
+	pushState
+	; chequear el indice
+	cmp rax, 31
     jge .syscall_end
 	; rax es el indice, 8 el size de un puntero en 64 bits
     call [syscalls + rax * 8] ; llamamos a la syscall
 
 .syscall_end:
     mov [aux], rax ; preservamos el valor de retorno de la syscall
+	; Llamar al scheduler cooperativo para posible cambio de contexto
+	mov rdi, [syscall_frame_ptr]
+	mov rsi, [syscall_id_tmp]
+	call scheduler_tick_from_syscall
     popState
     mov rax, [aux]
     iretq
@@ -232,3 +240,5 @@ SECTION .bss
 	pressed_key resq 1
 	reg_array resq 20 ; 20 registros
 	SNAPSHOT_KEY equ 0x1D ; Left Ctrl key scancode
+	syscall_frame_ptr resq 1
+	syscall_id_tmp   resq 1

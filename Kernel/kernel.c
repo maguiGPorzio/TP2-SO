@@ -9,6 +9,7 @@
 #include "sound.h"
 #include "interrupts.h"
 #include "memoryManager.h"
+#include "processes.h"
 
 extern uint8_t text;
 extern uint8_t rodata;
@@ -61,6 +62,7 @@ void * initializeKernelBinary()
 int main() {
 
 	initKernelMemoryManager();
+	init_processes();
 
 	((EntryPoint)sampleCodeModuleAddress)();
 	

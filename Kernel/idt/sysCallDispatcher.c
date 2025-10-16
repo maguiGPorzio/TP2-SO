@@ -1,41 +1,56 @@
+// Clean implementation with process syscalls added
 #include <stddef.h>
+#include <stdint.h>
 #include "videoDriver.h"
 #include "time.h"
 #include "keyboard.h"
 #include "sound.h"
 #include "sysCallDispatcher.h"
 #include "memoryManager.h"
+#include "processes.h"
 
 #define MIN_CHAR 0
 #define MAX_CHAR 256
 
+// Forward declarations for process syscalls (26..30)
+static int64_t sys_spawn(uint64_t entry, int argc, const char **argv, const char *name);
+static void    sys_exit(int status);
+static int64_t sys_getpid(void);
+static void    sys_yield(void);
+static int64_t sys_waitpid(int pid);
+
 void * syscalls[] = {
-    &sys_regs,
-    &sys_time,
-    &sys_date,
-    &sys_read,
-    &sys_write,
-    &sys_increase_fontsize,
-    &sys_decrease_fontsize,
-    &sys_beep,
-    &sys_screensize,
-    &sys_circle,
-    &sys_rectangle,
-    &sys_draw_line,
-    &sys_draw_string,
-    &sys_clear,
-    &sys_speaker_start,
-    &sys_speaker_stop,
-    &sys_textmode,
-    &sys_videomode,
-    &sys_putpixel,
-    &sys_key_status,
-    &sys_sleep,
-    &sys_clear_input_buffer,
-    &sys_ticks,
-    &sys_malloc,
-    &sys_free,
-    &sys_memStatus
+    &sys_regs,               // 0
+    &sys_time,               // 1
+    &sys_date,               // 2
+    &sys_read,               // 3
+    &sys_write,              // 4
+    &sys_increase_fontsize,  // 5
+    &sys_decrease_fontsize,  // 6
+    &sys_beep,               // 7
+    &sys_screensize,         // 8
+    &sys_circle,             // 9
+    &sys_rectangle,          // 10
+    &sys_draw_line,          // 11
+    &sys_draw_string,        // 12
+    &sys_clear,              // 13
+    &sys_speaker_start,      // 14
+    &sys_speaker_stop,       // 15
+    &sys_textmode,           // 16
+    &sys_videomode,          // 17
+    &sys_putpixel,           // 18
+    &sys_key_status,         // 19
+    &sys_sleep,              // 20
+    &sys_clear_input_buffer, // 21
+    &sys_ticks,              // 22
+    &sys_malloc,             // 23
+    &sys_free,               // 24
+    &sys_memStatus,          // 25
+    &sys_spawn,              // 26
+    &sys_exit,               // 27
+    &sys_getpid,             // 28
+    &sys_yield,              // 29
+    &sys_waitpid             // 30
 };
 
 static uint64_t sys_regs(char * buffer){
@@ -167,4 +182,25 @@ static void sys_free(void * ptr) {
 
 static MemStatus sys_memStatus(void) {
     return getMemStatus(getKernelMemoryManager());
+}
+
+// ===================== Processes syscalls =====================
+static int64_t sys_spawn(uint64_t entry, int argc, const char **argv, const char *name) {
+    return (int64_t)proc_spawn((process_entry_t)entry, argc, argv, name);
+}
+
+static void sys_exit(int status) {
+    proc_exit(status);
+}
+
+static int64_t sys_getpid(void) {
+    return (int64_t)proc_getpid();
+}
+
+static void sys_yield(void) {
+    proc_yield();
+}
+
+static int64_t sys_waitpid(int pid) {
+    return (int64_t)proc_waitpid(pid);
 }

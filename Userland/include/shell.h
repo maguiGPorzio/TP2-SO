@@ -42,4 +42,5 @@ void print_time();
 void print_date();
 void song();
 void test_mm_command();
+void test_spawn_a();
 

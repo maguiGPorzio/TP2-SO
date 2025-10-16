@@ -6,10 +6,12 @@
 *.o
 *.d
 *.lst
+*.sys
 
 # Binarios finales del kernel y módulos (scoped para no ignorar otros .bin legítimos en raíz ajena)
 Kernel/*.bin
 Userland/*.bin
+Bootloader/BMFS/*.bin
 Toolchain/ModulePacker/mp.bin
 
 # Paquetes / empaquetados intermedios
