@@ -9,7 +9,6 @@ SAMPLE_DATA=0001-sampleDataModule.bin
 SOURCES=$(wildcard *.c)
 SOURCES_SHELL=$(wildcard shell/*.c)
 SOURCES_USRLIB=$(wildcard usrlib/*.c)
-SOURCES_GOLF=$(wildcard golf/*.c)
 SOURCES_TESTS=$(wildcard tests/*.c)
 SOURCES_ASM=$(wildcard asm/*.asm)
 

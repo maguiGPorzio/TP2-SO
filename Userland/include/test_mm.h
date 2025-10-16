@@ -4,7 +4,8 @@
 
 #include "usrlib.h" // para sys_* y MemStatus
 
-#define MAX_BLOCKS 20
+// lo comente porque tambien esta definido en el .c, despues vemos de dejar uno solo y en donde
+// #define MAX_BLOCKS 20
 
 void * memset(void * destination, int32_t character, uint64_t length);
 void * memcpy(void * destination, const void * source, uint64_t length);

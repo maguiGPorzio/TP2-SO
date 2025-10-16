@@ -1,5 +1,5 @@
 #include "../include/shell.h"
-#include "../golf/golf.h"
+
 
 #define E5 659
 #define B4 494
@@ -22,17 +22,16 @@
 
 // COMANDOS
 static Command commands[] = {
-    { "clear",    cls      },
-    { "help",     help     },
-    { "play golf", play_golf },
-    { "print date", print_date },
-    { "print regs", print_saved_registers },
-    { "print time", print_time },
-    { "spawn a", test_spawn_a }, // prueba de procesos: imprime 'a'
-    { "song", song },
-    { "test div0", test_division_zero }, // prueba de división por cero
-    { "test invopcode", test_invalid_opcode }, // prueba de opcode inválido
-    { "test mm", test_mm_command }, // prueba del memory manager
+    { "clear", "clears the screen",    cls      },
+    { "help", "provides commands information",     help     },
+    { "print date", "prints system's date", print_date },
+    { "print regs", "prints the last saved register values", print_saved_registers },
+    { "print time", "prints system's time", print_time },
+    { "spawn a", "runs a process that writes a to stdout", test_spawn_a }, // prueba de procesos: imprime 'a'
+    { "song", "plays tetris song", song },
+    { "test div0", "causes division by zero exception", test_division_zero }, // prueba de división por cero
+    { "test invopcode", "causes invalid opcode exception", test_invalid_opcode }, // prueba de opcode inválido
+    { "test mm", "runs a memory manager test", test_mm_command }, // prueba del memory manager
     {0,0}
 };
 
@@ -79,11 +78,15 @@ void process_line(char * line, uint32_t * history_len) {
 /*-- IMPLEMENTACION DE LOS COMANDOS --*/
 
 void help() {
+    shell_newline();
     shell_print_string(HELP_MSG); 
+    shell_newline();
     for (Command *cmd = commands; cmd->name; ++cmd) {
-        shell_print_string("  \'");
+        shell_print_string("    ");
         shell_print_string(cmd->name);
-        shell_print_string("\'");
+        shell_print_string(" - ");
+        shell_print_string(cmd->description);
+        shell_newline();
     }
     shell_newline();
 }
@@ -113,14 +116,6 @@ void print_saved_registers() {
     } else {
         shell_print_err("No register snapshot available. Press left ctrl to take one\n");
     }
-}
-
-void play_golf() {
-    sys_disable_textmode();
-    golf_main();
-    sys_clear_input_buffer();
-    sys_enable_textmode();
-    redraw_history();
 }
 
 // funcion helper para horas y fechas

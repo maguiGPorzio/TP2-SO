@@ -33,3 +33,5 @@ if [[ $MAKE_TOOLCHAIN_EXIT_CODE -eq 0 && $MAKE_ROOT_EXIT_CODE -eq 0 ]]; then
 else
     echo -e "${RED}Compilation failed!${NC}"
 fi
+
+# docker stop $CONTAINER_NAME
