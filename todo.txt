@@ -1,4 +1,4 @@
-˝limpiar lo que esta funcionando ahora de procesos
+limpiar lo que esta funcionando ahora de procesos
 
 que pueda hacer un context switch sin schedular (non preemptive solo uno corriendo nadie ready)
 
