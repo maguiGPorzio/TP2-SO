@@ -1,4 +1,4 @@
-hacer que cree el proceso main
+ver que concha pasa que no esta imprimiendo la a
 
 implementar lo del run_next_process (non_preemtive)
 

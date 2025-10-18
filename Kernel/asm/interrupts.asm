@@ -25,7 +25,7 @@ GLOBAL setup_initial_stack
 EXTERN irqDispatcher
 EXTERN exceptionDispatcher
 EXTERN syscalls
-EXTERN scheduler_tick_from_syscall
+; EXTERN scheduler_tick_from_syscall
 EXTERN printRegisters
 EXTERN getStackBase
 EXTERN main
@@ -212,16 +212,16 @@ _irq128Handler:
 .syscall_end:
     mov [aux], rax ; preservamos el valor de retorno de la syscall
 	; Llamar al scheduler cooperativo para posible cambio de contexto
-	mov rdi, [syscall_frame_ptr]
-	mov rsi, [syscall_id_tmp]
-	call scheduler_tick_from_syscall
+	; mov rdi, [syscall_frame_ptr]
+	; mov rsi, [syscall_id_tmp]
+	; call scheduler_tick_from_syscall
     popState
     mov rax, [aux]
     iretq
 
 
 ; rdi = caller, rsi = pid, rdx = stack_pointer, rcx
-setup_stack_frame:
+setup_initial_stack:
 	mov r8, rsp        ; 1) Guarda el rsp del llamador (kernel actual)
 	mov r9, rbp        ;    y rbp para restaurarlos al final
 	mov rsp, rdx       ; 2) Cambia a la pila del nuevo proceso (rdx = stack_pointer)

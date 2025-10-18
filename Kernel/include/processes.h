@@ -20,7 +20,6 @@ typedef enum {
 
 typedef int (*process_entry_t)(int argc, char **argv);
 
-extern void * steup_stack_frame(void * caller, int pid, void * stack_pointer);
 
 typedef struct PCB {
 	// info

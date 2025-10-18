@@ -1,6 +1,6 @@
 #include <processes.h>
 #include <memoryManager.h>
-#include <string.h>
+#include "lib.h"
 
 // TODO: despues pasar todo lo de scheduling a otro archivo scheduler.c y en lo posible hacerlo adt
 // onda la idea seria que si tiene estado interno sea ADT y sino que sea tipo libreria de funciones 
@@ -10,15 +10,52 @@ static PCB * processes[MAX_PROCESSES] = {0};
 static int current_process = -1;
 // lo manejo como un coso circular non preemptive
 
+extern void * setup_initial_stack(void * caller, int pid, void * stack_pointer);
+
+
 // auxiliares
 static int asign_pid();
-static char **duplicateArgv(char **argv, int argc, MemoryManagerADT mm);
+static char **duplicateArgv(const char **argv, int argc, MemoryManagerADT mm);
 static void run_next_process();
 static void process_caller(int pid);
 
 
 
 void init_processes(); // este tiene que crear el proceso de la shell que va a ser el unico en principio
+
+void init_processes() {
+	// Limpiar tabla y estado
+	for (int i = 0; i < MAX_PROCESSES; i++) {
+		processes[i] = NULL;
+	}
+	current_process = -1;
+
+	MemoryManagerADT mm = getKernelMemoryManager();
+
+	// Crear PCB para la shell (PID 0)
+	PCB *p = allocMemory(mm, sizeof(PCB));
+	if (p == NULL) {
+		return; // sin memoria, no hay mucho más que podamos hacer aquí
+	}
+	p->pid = 0;
+	p->status = PS_RUNNING;
+	p->stack_base = NULL;
+	p->stack_pointer = NULL;
+	p->argc = 0;
+	p->argv = duplicateArgv(NULL, 0, mm); // argv minimal
+	if (p->argv == NULL) {
+		freeMemory(mm, p);
+		return;
+	}
+	strncpy(p->name, "shell", MAX_NAME_LENGTH);
+	processes[p->pid] = p;
+	current_process = p->pid;
+
+	// Ejecutar la shell: entrypoint del módulo de código en 0x400000
+	int (*shell_entry)(int, char**) = (int (*)(int, char**))0x400000;
+	int ret = shell_entry(p->argc, p->argv);
+	(void)ret; // si alguna vez retorna, podríamos hacer proc_exit(ret)
+}
 
 // Lifecycle
 // siempre que spawnea un proceso es el proximo en correr
@@ -57,18 +94,24 @@ int proc_spawn(process_entry_t entry, int argc, const char **argv, const char *n
 
 	processes[p->pid] = p;
 
-	p->stack_pointer = steup_stack_frame(&process_caller, p->pid, p->stack_pointer);
+	p->stack_pointer = setup_initial_stack(&process_caller, p->pid, p->stack_pointer);
 	// deja seteado con rdi para que cuando retorne vuelva a process_caller
 	// no habria que hacer ninguna llamada a funcion de este punto en adelante
 	return p->pid;
 
 }
 
-void proc_exit(int status);
+void proc_exit(int status) {
 
-int  proc_getpid(void);
+}
 
-void proc_yield(void);
+int  proc_getpid(void) {
+	return current_process;
+}
+
+void proc_yield(void) {
+
+}
 
 // auxiliares
 
@@ -92,7 +135,7 @@ static int asign_pid() {
 	return -1;
 }
 
-static char **duplicateArgv(char **argv, int argc, MemoryManagerADT mm) {
+static char **duplicateArgv(const char **argv, int argc, MemoryManagerADT mm) {
     if (argv == NULL || argv[0] == NULL) {
         char **new_argv = allocMemory(mm, sizeof(char *));
         if (new_argv == NULL)
