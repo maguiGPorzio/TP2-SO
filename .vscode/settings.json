@@ -1,5 +1,7 @@
 {
     "files.associations": {
-        "videodriver.h": "c"
+        "videodriver.h": "c",
+        "processes.h": "c",
+        "memorymanager.h": "c"
     }
 }

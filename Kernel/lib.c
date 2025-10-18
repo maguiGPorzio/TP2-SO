@@ -87,3 +87,25 @@ void * memset64(void * destination, uint64_t pattern, uint64_t length)
 
 	return destination;
 }
+
+// Copia hasta n caracteres de src a dst
+char *strncpy(char *dst, const char *src, int n) {
+    char *ret = dst;
+    while (n > 0 && *src) {
+        *dst++ = *src++;
+        n--;
+    }
+    while (n > 0) {
+        *dst++ = '\0'; // Rellenamos con '\0' si src terminó antes
+        n--;
+    }
+    return ret;
+}
+
+char strlen(char *str) {
+	int res = 0;
+	while(*str++) {
+		res++;
+	}
+	return res;
+}

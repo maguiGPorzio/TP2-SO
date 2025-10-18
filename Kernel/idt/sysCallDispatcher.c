@@ -55,7 +55,6 @@ void * syscalls[] = {
     &sys_exit,               // 27
     &sys_getpid,             // 28
     &sys_yield,              // 29
-    &sys_waitpid             // 30
 };
 
 static uint64_t sys_regs(char * buffer){
@@ -204,8 +203,4 @@ static int64_t sys_getpid(void) {
 
 static void sys_yield(void) {
     proc_yield();
-}
-
-static int64_t sys_waitpid(int pid) {
-    return (int64_t)proc_waitpid(pid);
 }

@@ -49,3 +49,6 @@ core
 core.*
 
 # Puedes eliminar cualquiera de estos patrones si necesitas versionar algún artefacto específico.
+
+# archivos temporales
+temp

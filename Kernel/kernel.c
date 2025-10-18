@@ -64,6 +64,8 @@ int main() {
 	initKernelMemoryManager();
 	init_processes();
 
+	// TODO: crear el proceso de la shell
+
 	((EntryPoint)sampleCodeModuleAddress)();
 	
 	return 0;

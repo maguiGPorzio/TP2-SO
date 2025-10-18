@@ -20,6 +20,8 @@ GLOBAL _exception6Handler
 GLOBAL getPressedKey
 GLOBAL reg_array ; array donde se almacenan los registros cunado se toco ctrl
 
+GLOBAL setup_initial_stack 
+
 EXTERN irqDispatcher
 EXTERN exceptionDispatcher
 EXTERN syscalls
@@ -202,7 +204,7 @@ _irq128Handler:
 	mov [syscall_frame_ptr], rsp
 	mov [syscall_id_tmp], rax
 	pushState
-	cmp rax, 31 ; ------> aca hay que cambiar la syscall
+	cmp rax, 30 ; ------> aca hay que cambiar la syscall
     jge .syscall_end
 	; rax es el indice, 8 el size de un puntero en 64 bits
     call [syscalls + rax * 8] ; llamamos a la syscall
@@ -216,6 +218,25 @@ _irq128Handler:
     popState
     mov rax, [aux]
     iretq
+
+
+; rdi = caller, rsi = pid, rdx = stack_pointer, rcx
+setup_stack_frame:
+	mov r8, rsp        ; 1) Guarda el rsp del llamador (kernel actual)
+	mov r9, rbp        ;    y rbp para restaurarlos al final
+	mov rsp, rdx       ; 2) Cambia a la pila del nuevo proceso (rdx = stack_pointer)
+	mov rbp, rdx
+	push 0x0           ; 3) Empuja SS (placeholder) para el iretq
+	push rdx           ; 4) Empuja RSP que verá el iretq tras popState
+	push 0x202         ; 5) Empuja RFLAGS con IF=1 para habilitar IRQs
+	push 0x8           ; 6) Empuja CS (selector de código)
+	push rdi           ; 7) Empuja RIP = caller
+	mov rdi, rsi       ; 8) Prepara 1er arg para caller: rdi = pid
+	pushState          ; 10) Simula registros salvados por ISR
+	mov rax, rsp       ; 11) Devuelve a C el RSP armado
+	mov rsp, r8        ; 12) Restaura pila original del llamador
+	mov rbp, r9
+	ret                ; 13) Retorna a C con rax = nuevo RSP
 
 ;Zero Division Exception
 _exception0Handler:

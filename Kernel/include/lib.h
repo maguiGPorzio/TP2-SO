@@ -10,4 +10,6 @@ void * memcpy(void * destination, const void * source, uint64_t length);
 // For any trailing bytes (length % 8), the low 8 bits of the pattern are used per byte.
 void * memset64(void * destination, uint64_t pattern, uint64_t length);
 
+char *strncpy(char *dst, const char *src, int n);
+char strlen(char *str);
 #endif
