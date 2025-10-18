@@ -17,7 +17,6 @@ static int64_t sys_spawn(uint64_t entry, int argc, const char **argv, const char
 static void    sys_exit(int status);
 static int64_t sys_getpid(void);
 static void    sys_yield(void);
-static int64_t sys_waitpid(int pid);
 
 void * syscalls[] = {
     // syscalls de arqui

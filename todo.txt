@@ -1,6 +1,6 @@
-limpiar lo que esta funcionando ahora de procesos
+hacer que cree el proceso main
 
-que pueda hacer un context switch sin schedular (non preemptive solo uno corriendo nadie ready)
+implementar lo del run_next_process (non_preemtive)
 
 hacer un scheduler que haga round robin
 

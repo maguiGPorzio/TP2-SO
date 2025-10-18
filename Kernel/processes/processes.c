@@ -1,6 +1,6 @@
 #include <processes.h>
 #include <memoryManager.h>
-#include <libc.h>
+#include <string.h>
 
 // TODO: despues pasar todo lo de scheduling a otro archivo scheduler.c y en lo posible hacerlo adt
 // onda la idea seria que si tiene estado interno sea ADT y sino que sea tipo libreria de funciones 
@@ -28,19 +28,19 @@ int proc_spawn(process_entry_t entry, int argc, const char **argv, const char *n
 	PCB * p = allocMemory(mm, sizeof(PCB));
 
 	if (p == NULL) {
-		return NULL;
+		return -1;
 	}
 
 	p->pid = asign_pid();
 	if (p->pid < 0) {
-		return NULL;
+		return -1;
 	}
 	p->status = PS_READY;
 
 	p->stack_base = allocMemory(mm, PROCESS_STACK_SIZE);
 	if (p->stack_base == NULL) {
 		freeMemory(mm, p);
-		return NULL;
+		return -1;
 	}
 	p->stack_pointer = p->stack_base + PROCESS_STACK_SIZE;
 
@@ -48,8 +48,8 @@ int proc_spawn(process_entry_t entry, int argc, const char **argv, const char *n
 	p->argv = duplicateArgv(argv, argc, mm);
 	if (p->argv == NULL) {
         freeMemory(mm, p->stack_base);
-        my_free(mm, p);
-        return NULL;
+        freeMemory(mm, p);
+        return -1;
     }
 	p->argc = argc;
 
@@ -120,7 +120,6 @@ static char **duplicateArgv(char **argv, int argc, MemoryManagerADT mm) {
 static void run_next_process();
 
 void process_caller(int pid) {
-	// TODO: completar la llamada
 	PCB * p = processes[pid];
 	int res = p->entry(p->argc, p->argv);
 	proc_exit(res);
