@@ -2,6 +2,8 @@
     "files.associations": {
         "videodriver.h": "c",
         "processes.h": "c",
-        "memorymanager.h": "c"
+        "memorymanager.h": "c",
+        "shell.h": "c",
+        "usrlib.h": "c"
     }
 }

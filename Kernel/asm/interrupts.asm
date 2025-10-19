@@ -21,11 +21,13 @@ GLOBAL getPressedKey
 GLOBAL reg_array ; array donde se almacenan los registros cunado se toco ctrl
 
 GLOBAL setup_initial_stack 
+GLOBAL switch_to_rsp_and_iret
 
 EXTERN irqDispatcher
 EXTERN exceptionDispatcher
 EXTERN syscalls
-; EXTERN scheduler_tick_from_syscall
+EXTERN current_kernel_rsp
+EXTERN switch_to_rsp
 EXTERN printRegisters
 EXTERN getStackBase
 EXTERN main
@@ -201,20 +203,24 @@ _irq05Handler:
 
 _irq128Handler:
 	; Guardar puntero al frame de iret de la syscall (RSP al entrar)
-	mov [syscall_frame_ptr], rsp
-	mov [syscall_id_tmp], rax
 	pushState
-	cmp rax, 30 ; ------> aca hay que cambiar la syscall
+	; Exponer el RSP de kernel actual a C para que lo guarde en el PCB
+	mov [current_kernel_rsp], rsp
+	cmp rax, 31 ; ------> aca hay que cambiar la syscall
     jge .syscall_end
 	; rax es el indice, 8 el size de un puntero en 64 bits
     call [syscalls + rax * 8] ; llamamos a la syscall
 
 .syscall_end:
     mov [aux], rax ; preservamos el valor de retorno de la syscall
-	; Llamar al scheduler cooperativo para posible cambio de contexto
-	; mov rdi, [syscall_frame_ptr]
-	; mov rsi, [syscall_id_tmp]
-	; call scheduler_tick_from_syscall
+	; Si desde C solicitaron un cambio de contexto, cambiar RSP antes de restaurar
+	mov rbx, [switch_to_rsp]
+	test rbx, rbx
+	jz .no_switch
+	; limpiar la solicitud y cambiar de pila
+	mov qword [switch_to_rsp], 0
+	mov rsp, rbx
+.no_switch:
     popState
     mov rax, [aux]
     iretq
@@ -237,6 +243,13 @@ setup_initial_stack:
 	mov rsp, r8        ; 12) Restaura pila original del llamador
 	mov rbp, r9
 	ret                ; 13) Retorna a C con rax = nuevo RSP
+
+; Cambia a la pila indicada (rdi) y restaura contexto con popState + iretq
+; Firma C: void switch_to_rsp_and_iret(void *next_rsp)
+switch_to_rsp_and_iret:
+	mov rsp, rdi
+	popState
+	iretq
 
 ;Zero Division Exception
 _exception0Handler:

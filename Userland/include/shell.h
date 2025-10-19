@@ -31,6 +31,7 @@ void process_line(char * line, uint32_t * history_len);
 void incfont();
 void decfont();
 void redraw_history();
+void print_processes();
 
 // comandos
 void help();
@@ -38,7 +39,6 @@ void cls();
 void test_division_zero();
 void test_invalid_opcode();
 void print_saved_registers();
-void play_golf();
 void print_time();
 void print_date();
 void song();

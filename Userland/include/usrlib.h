@@ -55,12 +55,12 @@ extern void sys_free(void * ptr);
 extern MemStatus sys_memstatus(void);
 
 /*-- SYSTEMCALLS DE PROCESOS --*/
-typedef int (*usr_process_entry_t)(int argc, char **argv);
-extern int64_t sys_spawn(usr_process_entry_t entry, int argc, const char **argv, const char *name);
+// typedef int (*usr_process_entry_t)(int argc, char **argv);
+extern int64_t sys_spawn(void * entry, int argc, const char **argv, const char *name);
 extern void    sys_exit(int status);
 extern int64_t sys_getpid(void);
 extern void    sys_yield(void);
-extern int64_t sys_waitpid(int pid);
+extern void sys_print_processes();
 
 /*-- FUNCIONES DE I/O --*/
 uint64_t print_err(char *str);

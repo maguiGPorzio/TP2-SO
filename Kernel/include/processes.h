@@ -46,6 +46,8 @@ void proc_exit(int status);
 int  proc_getpid(void);
 void proc_yield(void);
 
+void proc_print();
+
 
 
 #endif // PROCESSES_H

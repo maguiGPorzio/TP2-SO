@@ -13,7 +13,7 @@
 #define MAX_CHAR 256
 
 // Forward declarations for process syscalls (26..30)
-static int64_t sys_spawn(uint64_t entry, int argc, const char **argv, const char *name);
+static int64_t sys_spawn(void * entry, int argc, const char **argv, const char *name);
 static void    sys_exit(int status);
 static int64_t sys_getpid(void);
 static void    sys_yield(void);
@@ -54,6 +54,7 @@ void * syscalls[] = {
     &sys_exit,               // 27
     &sys_getpid,             // 28
     &sys_yield,              // 29
+    &sys_print_processes     // 30
 };
 
 static uint64_t sys_regs(char * buffer){
@@ -188,7 +189,7 @@ static MemStatus sys_memStatus(void) {
 }
 
 // ===================== Processes syscalls =====================
-static int64_t sys_spawn(uint64_t entry, int argc, const char **argv, const char *name) {
+static int64_t sys_spawn(void * entry, int argc, const char **argv, const char *name) {
     return (int64_t)proc_spawn((process_entry_t)entry, argc, argv, name);
 }
 
@@ -202,4 +203,8 @@ static int64_t sys_getpid(void) {
 
 static void sys_yield(void) {
     proc_yield();
+}
+
+static void sys_print_processes() {
+    proc_print();
 }

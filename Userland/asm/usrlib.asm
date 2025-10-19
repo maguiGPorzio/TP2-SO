@@ -4,7 +4,7 @@ global  sys_screen_size, sys_circle, sys_rectangle, sys_line, sys_draw_string
 global  sys_enable_textmode, sys_disable_textmode, sys_put_pixel, sys_key_status
 global  sys_sleep, sys_clear_input_buffer, sys_ticks
 global  sys_malloc, sys_free, sys_memstatus
-global  sys_spawn, sys_exit, sys_getpid, sys_yield, sys_waitpid
+global  sys_spawn, sys_exit, sys_getpid, sys_yield, sys_print_processes
 global generate_invalid_opcode
 global printf
 global scanf
@@ -140,7 +140,7 @@ sys_yield:
     SYSCALL 29
 
 ; 30 - int64_t sys_waitpid(int pid)
-sys_waitpid:
+sys_print_processes:
     SYSCALL 30
 
 generate_invalid_opcode:

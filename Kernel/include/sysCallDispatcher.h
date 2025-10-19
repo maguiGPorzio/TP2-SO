@@ -8,7 +8,7 @@
 #define STDOUT 1
 #define STDERR 2
 
-#define SYSCALL_COUNT 30 // actualizar también el chequeo en asm/interrupts.asm
+#define SYSCALL_COUNT 31 // actualizar también el chequeo en asm/interrupts.asm
 
 extern void * syscalls[SYSCALL_COUNT];
 
@@ -43,9 +43,10 @@ static void sys_free(void * ptr);
 static MemStatus sys_memStatus(void);
 
 // processes syscalls
-static int64_t sys_spawn(uint64_t entry, int argc, const char **argv, const char *name);
+static int64_t sys_spawn(void * entry, int argc, const char **argv, const char *name);
 static void sys_exit(int status);
 static int64_t sys_getpid(void);
 static void sys_yield(void);
+static void sys_print_processes();
 
 #endif

@@ -26,6 +26,7 @@ static Command commands[] = {
     { "print date", "prints system's date", print_date },
     { "print regs", "prints the last saved register values", print_saved_registers },
     { "print time", "prints system's time", print_time },
+    { "print processes", "prints current processes", print_processes},
     { "spawn a", "runs a process that writes a to stdout", test_spawn_a }, // prueba de procesos: imprime 'a'
     { "song", "plays tetris song", song },
     { "test div0", "causes division by zero exception", test_division_zero }, // prueba de división por cero
@@ -46,6 +47,7 @@ static int get_command_idx(char * line) {
 
     return -1;
 }
+
 
 void process_line(char * line, uint32_t * history_len) {
     clean_history = 0;
@@ -181,6 +183,13 @@ void test_spawn_a() {
         shell_print_err("spawn fallo\n");
         return;
     }
+    printf("\npid: %d\n", pid);
     // Ceder CPU para que el proceso corra (scheduler cooperativo)
     sys_yield();
+    shell_newline();
+}
+
+void print_processes() {
+    sys_print_processes();
+    shell_newline();
 }
