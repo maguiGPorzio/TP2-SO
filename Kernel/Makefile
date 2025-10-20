@@ -56,7 +56,7 @@ $(LOADEROBJECT):
 	$(ASM) $(ASMFLAGS) $(LOADERSRC) -o $(LOADEROBJECT)
 
 clean:
-	rm -rf asm/*.o *.o drivers/*.o idt/*.o memory/*.o *.bin
+	rm -rf asm/*.o *.o drivers/*.o idt/*.o memory/*.o processes/*.o *.bin
 
 .PHONY: all clean
 
