@@ -1,230 +1,451 @@
 #include <processes.h>
 #include <memoryManager.h>
 #include "lib.h"
+#include "scheduler.h"
+#include "interrupts.h"
 
-// TODO: despues pasar todo lo de scheduling a otro archivo scheduler.c y en lo posible hacerlo adt
-// onda la idea seria que si tiene estado interno sea ADT y sino que sea tipo libreria de funciones 
-// processes tiene sentido que sea una libreria de funciones y scheduler un ADT
+// ============================================
+//           VARIABLES GLOBALES
+// ============================================
 
-static PCB * processes[MAX_PROCESSES] = {0};
+static PCB *processes[MAX_PROCESSES] = {0};
 static int current_process = -1;
-// lo manejo como un coso circular non preemptive
 
-extern void * setup_initial_stack(void * caller, int pid, void * stack_pointer);
-extern void   switch_to_rsp_and_iret(void * next_rsp);
+// Shell usa memoria estática (no heap) para evitar leaks
+static PCB shell_pcb;
+static char *shell_argv_static[1] = {NULL};
 
-// Variables compartidas con ASM para solicitar un cambio de contexto
+// Funciones ASM para context switching
+extern void *setup_initial_stack(void *caller, int pid, void *stack_pointer);
+extern void switch_to_rsp_and_iret(void *next_rsp);
+
+// Variables compartidas con ASM para solicitar cambio de contexto
 // ASM escribe current_kernel_rsp al entrar a la syscall (después de pushState)
 // C escribe switch_to_rsp cuando quiere que el handler cambie a otra pila antes de iretq
-void * current_kernel_rsp = 0;
-void * switch_to_rsp = 0;
+void *current_kernel_rsp = 0;
+void *switch_to_rsp = 0;
+extern void *syscall_frame_ptr; // RSP de la shell capturado antes de cambiar a un proceso
 
+// ============================================
+//        DECLARACIONES AUXILIARES
+// ============================================
 
-// auxiliares
-static int asign_pid();
+static int assign_pid(void);
 static char **duplicateArgv(const char **argv, int argc, MemoryManagerADT mm);
-static void run_next_process();
+static void run_next_process(void);
 static void process_caller(int pid);
 static int pick_next_ready_from(int startIdx);
 static void free_process_resources(PCB *p);
+static void cleanup_terminated_processes(void);
 
+// ============================================
+//           INICIALIZACIÓN
+// ============================================
 
-
-void init_processes(); // este tiene que crear el proceso de la shell que va a ser el unico en principio
-
-void init_processes() {
-	// Limpiar tabla y estado
-	for (int i = 0; i < MAX_PROCESSES; i++) {
-		processes[i] = NULL;
-	}
-	current_process = -1;
-
-	MemoryManagerADT mm = getKernelMemoryManager();
-
-	// Crear PCB para la shell (PID 0)
-	PCB *p = allocMemory(mm, sizeof(PCB));
-	if (p == NULL) {
-		return; // sin memoria, no hay mucho más que podamos hacer aquí
-	}
-	p->pid = 0;
-	p->status = PS_RUNNING;
-	p->stack_base = NULL;
-	p->stack_pointer = NULL;
-	p->argc = 0;
-	p->argv = duplicateArgv(NULL, 0, mm); // argv minimal
-	if (p->argv == NULL) {
-		freeMemory(mm, p);
-		return;
-	}
-	strncpy(p->name, "shell", MAX_NAME_LENGTH);
-	processes[p->pid] = p;
-	current_process = p->pid;
-
-	// Ejecutar la shell: entrypoint del módulo de código en 0x400000
-	int (*shell_entry)(int, char**) = (int (*)(int, char**))0x400000;
-	int ret = shell_entry(p->argc, p->argv);
-	(void)ret; // si alguna vez retorna, podríamos hacer proc_exit(ret)
+void init_processes_for_test(void) {
+    // Limpiar tabla de procesos (para tests sin shell)
+    for (int i = 0; i < MAX_PROCESSES; i++) {
+        processes[i] = NULL;
+    }
+    current_process = -1;
+    current_kernel_rsp = 0;
+    switch_to_rsp = 0;
 }
 
-// Lifecycle
-// siempre que spawnea un proceso es el proximo en correr
+void init_processes(void) {
+    // Limpiar tabla de procesos
+    for (int i = 0; i < MAX_PROCESSES; i++) {
+        processes[i] = NULL;
+    }
+    current_process = -1;
+
+    // Usar PCB estático para la shell (NO malloc para evitar leaks)
+    PCB *p = &shell_pcb;
+
+    p->pid = 0;
+    p->status = PS_RUNNING;
+    p->stack_base = NULL;      // Shell usa el stack del kernel
+    p->stack_pointer = NULL;
+    p->argc = 0;
+    p->entry = NULL;
+    p->argv = shell_argv_static;  // Array estático (no heap)
+    p->return_value = 0;
+
+    // Copiar nombre con null-termination garantizada
+    strncpy(p->name, "shell", MAX_NAME_LENGTH - 1);
+    p->name[MAX_NAME_LENGTH - 1] = '\0';
+
+    // Registrar shell en la tabla
+    processes[p->pid] = p;
+    current_process = p->pid;
+
+    // Ejecutar la shell desde el módulo cargado en 0x400000
+    int (*shell_entry)(int, char **) = (int (*)(int, char **))0x400000;
+    int ret = shell_entry(p->argc, p->argv);
+
+    // Si la shell retorna (no debería en uso normal), terminarla
+    proc_exit(ret);
+}
+
+// ============================================
+//         LIFECYCLE DE PROCESOS
+// ============================================
 int proc_spawn(process_entry_t entry, int argc, const char **argv, const char *name) {
-	MemoryManagerADT mm = getKernelMemoryManager();
+    if (entry == NULL || name == NULL) {
+        return -1;
+    }
 
-	PCB * p = allocMemory(mm, sizeof(PCB));
+    // Limpiar procesos terminados ANTES de crear uno nuevo
+    cleanup_terminated_processes();
 
-	if (p == NULL) {
-		return -1;
-	}
+    MemoryManagerADT mm = getKernelMemoryManager();
 
-	p->pid = asign_pid();
-	if (p->pid < 0) {
-		return -1;
-	}
-	p->status = PS_READY;
+    // Asignar PID
+    int pid = assign_pid();
+    if (pid < 0) {
+        return -1;  // No hay slots disponibles
+    }
 
-	p->stack_base = allocMemory(mm, PROCESS_STACK_SIZE);
-	if (p->stack_base == NULL) {
-		freeMemory(mm, p);
-		return -1;
-	}
-	p->stack_pointer = p->stack_base + PROCESS_STACK_SIZE;
+    // Alocar PCB
+    PCB *p = allocMemory(mm, sizeof(PCB));
+    if (p == NULL) {
+        return -1;
+    }
 
-	// no se si hace falta o no duplicar el argv, chequear eso
-	p->entry = entry;
-	p->argv = duplicateArgv(argv, argc, mm);
-	if (p->argv == NULL) {
+    p->pid = pid;
+    p->status = PS_READY;
+    p->entry = entry;
+    p->return_value = 0;
+
+    // Alocar stack para el proceso (4 KB)
+    p->stack_base = allocMemory(mm, PROCESS_STACK_SIZE);
+    if (p->stack_base == NULL) {
+        freeMemory(mm, p);
+        return -1;
+    }
+    p->stack_pointer = (char *)p->stack_base + PROCESS_STACK_SIZE;
+
+    // Duplicar argumentos
+    p->argv = duplicateArgv(argv, argc, mm);
+    if (p->argv == NULL) {
         freeMemory(mm, p->stack_base);
         freeMemory(mm, p);
         return -1;
     }
-	p->argc = argc;
+    p->argc = argc;
 
-	strncpy(p->name, name, MAX_NAME_LENGTH);
+    // Copiar nombre del proceso con null-termination garantizada
+    strncpy(p->name, name, MAX_NAME_LENGTH - 1);
+    p->name[MAX_NAME_LENGTH - 1] = '\0';
 
-	processes[p->pid] = p;
+    // ===== INTEGRACIÓN CON SCHEDULER =====
+    
+    // Inicializar campos de scheduling
+    p->priority = DEFAULT_PRIORITY;          // Prioridad por defecto (5)
+    p->remaining_quantum = DEFAULT_PRIORITY + 1;  // Quantum inicial
+    p->cpu_ticks = 0;                        // Sin ticks de CPU aún
 
-	p->stack_pointer = setup_initial_stack(&process_caller, p->pid, p->stack_pointer);
-	
-	if (current_process >= 0 && processes[current_process] != NULL && processes[current_process]->status == PS_RUNNING) {
-		processes[current_process]->status = PS_READY;
-	}
-	// run_next_process();
-	return p->pid;
+    // Registrar en tabla de procesos
+    processes[pid] = p;
 
+    // Preparar stack inicial para la primera ejecución
+    p->stack_pointer = setup_initial_stack(&process_caller, p->pid, p->stack_pointer);
+
+    // Agregar proceso al scheduler
+    SchedulerADT sched = get_scheduler();
+    if (sched != NULL) {
+        if (scheduler_add_process(p) < 0) {
+            // Error al agregar al scheduler - rollback completo
+            freeMemory(mm, p->argv);
+            freeMemory(mm, p->stack_base);
+            freeMemory(mm, p);
+            processes[pid] = NULL;
+            return -1;
+        }
+    }
+
+    // Ya NO necesitamos marcar el actual como READY manualmente
+    // El scheduler preemptivo se encarga de esto automáticamente
+    
+    return pid;
 }
+
+// void proc_exit(int status) {
+//     if (current_process < 0) {
+//         return;
+//     }
+
+//     PCB *p = processes[current_process];
+//     if (p == NULL) {
+//         return;
+//     }
+
+//     // Guardar valor de retorno
+//     p->return_value = status;
+
+//     // Marcar como terminado
+//     p->status = PS_TERMINATED;
+
+//     // ===== INTEGRACIÓN CON SCHEDULER =====
+    
+//     // Remover del scheduler
+//     SchedulerADT sched = get_scheduler();
+//     if (sched != NULL) {
+//         scheduler_remove_process(p->pid);
+//     }
+
+//     // Forzar cambio de contexto inmediato
+//     scheduler_force_reschedule();
+    
+//     // El timer interrupt hará el context switch
+//     // En un sistema preemptivo, esperamos a la próxima interrupción
+//     // Para forzarlo inmediatamente, hacemos un yield
+//     void *next_rsp = switch_to_rsp;
+//     switch_to_rsp = 0;
+
+//     if (next_rsp != 0) {
+//         switch_to_rsp_and_iret(next_rsp);
+//     }
+
+//     // Si llegamos aquí, loop infinito (no debería pasar)
+//     while (1) {
+//         __asm__ volatile("hlt");
+//     }
+// }
 
 void proc_exit(int status) {
-	(void)status;
-	if (current_process < 0) return;
-	PCB *p = processes[current_process];
-	if (p == NULL) return;
-	// Marcar terminado; NO liberar stack aquí porque estamos ejecutando sobre esa pila
-	p->status = PS_TERMINATED;
-	// Elegir próximo y pedir cambio de contexto inmediato
-	run_next_process();
-	void *next_rsp = switch_to_rsp;
-	switch_to_rsp = 0;
-	if (next_rsp != 0) {
-		// Cambia a la pila del siguiente proceso y hace iretq; no retorna
-		switch_to_rsp_and_iret(next_rsp);
-	}
+    int pid = scheduler_get_current_pid();
+    if (pid < 0) {
+        return;
+    }
+
+    PCB *p = processes[pid];
+    if (p == NULL) {
+        return;
+    }
+
+    // Guardar valor de retorno
+    p->return_value = status;
+
+    // Marcar como terminado
+    p->status = PS_TERMINATED;
+
+    // Remover del scheduler
+    SchedulerADT sched = get_scheduler();
+    if (sched != NULL) {
+        scheduler_remove_process(p->pid);
+    }
+
+    // ===== LLAMAR AL SCHEDULER DIRECTAMENTE =====
+    
+    // Forzar reschedule
+    scheduler_force_reschedule();
+    
+    // Llamar al scheduler con el frame de la shell (capturado por ASM)
+    void *prev_rsp = syscall_frame_ptr ? syscall_frame_ptr : current_kernel_rsp;
+    void *next_rsp = schedule(prev_rsp);
+    
+    // Pedir el cambio de contexto al handler de syscalls (más robusto)
+    switch_to_rsp = next_rsp;
+    if (next_rsp != 0) {
+        __asm__ volatile (
+            "mov $31, %%rax\n\t"
+            "int $0x80\n\t"
+            :
+            :
+            : "rax", "memory"
+        );
+    }
+
+    // Si llegamos aquí, loop infinito
+    while (1) {
+        __asm__ volatile("hlt");
+    }
 }
 
-int  proc_getpid(void) {
-	return current_process;
+int proc_getpid(void) {
+    return scheduler_get_current_pid();
 }
+
+// void proc_yield(void) {
+//     // ===== INTEGRACIÓN CON SCHEDULER =====
+    
+//     // Forzar reschedule
+//     scheduler_force_reschedule();
+    
+//     // Trigger timer interrupt manualmente (o simplemente hacer syscall)
+//     // La forma más simple es dejar que el siguiente timer tick lo maneje
+    
+//     // Alternativa: Forzar context switch inmediato
+//     // (requiere llamar a schedule() desde aquí)
+// }
 
 void proc_yield(void) {
-	// Marcar actual como READY y pasar al siguiente READY (cooperativo)
-	if (current_process >= 0 && processes[current_process] != NULL && processes[current_process]->status == PS_RUNNING) {
-		processes[current_process]->status = PS_READY;
-	}
-	run_next_process();
+    // Limpiar procesos terminados
+    cleanup_terminated_processes();
+    
+    // ===== LLAMAR AL SCHEDULER DIRECTAMENTE =====
+    
+    // Guardar RSP actual
+    void *prev_rsp = current_kernel_rsp;
+    
+    // Llamar al scheduler (retorna nuevo RSP)
+    void *next_rsp = schedule(prev_rsp);
+    
+    // Si cambió de proceso, hacer context switch
+    if (next_rsp != prev_rsp && next_rsp != NULL) {
+        switch_to_rsp = next_rsp;
+    }
 }
 
-void proc_print() {
-	uint32_t color = 0xFFFFFF;
-	for (int i = 0; i < MAX_PROCESSES; i++) {
-		PCB *p = processes[i];
-		if (p == NULL) {
-			continue;
-		}
+void proc_print(void) {
+    uint32_t color = 0xFFFFFF;
 
-		char pid_buf[12];
-		int n = p->pid;
-		int k = 0;
-		if (n == 0) {
-			pid_buf[k++] = '0';
-		} else {
-			char tmp[12];
-			int t = 0;
-			while (n > 0 && t < (int)sizeof(tmp)) {
-				tmp[t++] = (char)('0' + (n % 10));
-				n /= 10;
-			}
-			while (t > 0) {
-				pid_buf[k++] = tmp[--t];
-			}
-		}
-		pid_buf[k] = 0;
+    for (int i = 0; i < MAX_PROCESSES; i++) {
+        PCB *p = processes[i];
+        if (p == NULL) {
+            continue;
+        }
 
-		vdPrint("id: ", color);
-		vdPrint(pid_buf, color);
-		vdPrint(" name: ", color);
-		vdPrint(p->name, color);
-		vdPrint(" state: ", color);
+        // Convertir PID a string
+        char pid_buf[12];
+        int n = p->pid;
+        int k = 0;
 
-		switch (p->status) {
-			case PS_RUNNING:    vdPrint("RUNNING", color);    break;
-			case PS_READY:      vdPrint("READY", color);      break;
-			case PS_TERMINATED: vdPrint("TERMINATED", color); break;
-			default:            vdPrint("UNKNOWN", color);    break;
-		}
-		vdPrint("\n", color);
-	}
+        if (n == 0) {
+            pid_buf[k++] = '0';
+        } else {
+            char tmp[12];
+            int t = 0;
+            while (n > 0 && t < (int)sizeof(tmp)) {
+                tmp[t++] = (char)('0' + (n % 10));
+                n /= 10;
+            }
+            // Invertir dígitos
+            while (t > 0) {
+                pid_buf[k++] = tmp[--t];
+            }
+        }
+        pid_buf[k] = '\0';
+
+        // Imprimir información del proceso
+        vdPrint("PID: ", color);
+        vdPrint(pid_buf, color);
+        vdPrint(" | Name: ", color);
+        vdPrint(p->name, color);
+        vdPrint(" | State: ", color);
+
+        switch (p->status) {
+        case PS_RUNNING:
+            vdPrint("RUNNING", color);
+            break;
+        case PS_READY:
+            vdPrint("READY", color);
+            break;
+        case PS_BLOCKED:
+            vdPrint("BLOCKED", color);
+            break;
+        case PS_TERMINATED:
+            vdPrint("TERMINATED", color);
+            break;
+        default:
+            vdPrint("UNKNOWN", color);
+            break;
+        }
+
+        vdPrint("\n", color);
+    }
 }
 
-// auxiliares
+void cleanup_all_processes(void) {
+    MemoryManagerADT mm = getKernelMemoryManager();
 
-static int asign_pid() {
-	if (current_process == -1) {
-		return 0;
-	}
+    for (int i = 0; i < MAX_PROCESSES; i++) {
+        if (processes[i] != NULL) {
+            // NO liberar shell (es estática)
+            if (processes[i] == &shell_pcb) {
+                processes[i] = NULL;
+                continue;
+            }
 
-	for (int i = 0; i < MAX_PROCESSES; i++) {
-		if (processes[i] == NULL) {
-			return i;
-		}
-	}
+            // Liberar procesos normales
+            if (processes[i]->argv != NULL) {
+                for (int j = 0; j < processes[i]->argc; j++) {
+                    if (processes[i]->argv[j] != NULL) {
+                        freeMemory(mm, processes[i]->argv[j]);
+                    }
+                }
+                freeMemory(mm, processes[i]->argv);
+            }
 
-	for (int i = 0; i < MAX_PROCESSES; i++) {
-		if (processes[i]->status == PS_TERMINATED) {
-			return i;
-		}
-	}
+            if (processes[i]->stack_base != NULL) {
+                freeMemory(mm, processes[i]->stack_base);
+            }
 
-	return -1;
+            freeMemory(mm, processes[i]);
+            processes[i] = NULL;
+        }
+    }
+
+    current_process = -1;
+    current_kernel_rsp = 0;
+    switch_to_rsp = 0;
+}
+
+// ============================================
+//        FUNCIONES AUXILIARES PRIVADAS
+// ============================================
+
+static int assign_pid(void) {
+    // Buscar primer slot NULL (nunca usado o ya limpiado)
+    for (int i = 0; i < MAX_PROCESSES; i++) {
+        if (processes[i] == NULL) {
+            return i;
+        }
+    }
+
+    // No hay slots libres
+    return -1;
 }
 
 static char **duplicateArgv(const char **argv, int argc, MemoryManagerADT mm) {
-    if (argv == NULL || argv[0] == NULL) {
+    // Caso argv vacío o NULL: crear argv minimal con solo NULL
+    if (argv == NULL || argc == 0 || (argc > 0 && argv[0] == NULL)) {
         char **new_argv = allocMemory(mm, sizeof(char *));
-        if (new_argv == NULL)
+        if (new_argv == NULL) {
             return NULL;
+        }
         new_argv[0] = NULL;
         return new_argv;
     }
 
-    char **new_argv = allocMemory(mm,(argc + 1) * sizeof(char *));
-    if (new_argv == NULL)
+    // Alocar array de punteros (argc + 1 para el NULL terminador)
+    char **new_argv = allocMemory(mm, (argc + 1) * sizeof(char *));
+    if (new_argv == NULL) {
         return NULL;
+    }
 
+    // Copiar cada string
     for (int i = 0; i < argc; i++) {
-        int len = strlen(argv[i]) + 1;
+        if (argv[i] == NULL) {
+            new_argv[i] = NULL;
+            continue;
+        }
+
+        size_t len = strlen(argv[i]) + 1;
         new_argv[i] = allocMemory(mm, len);
-        if (new_argv[i] == NULL)
+
+        if (new_argv[i] == NULL) {
+            // Error: liberar todo lo alocado hasta ahora (ROLLBACK)
+            for (int j = 0; j < i; j++) {
+                if (new_argv[j] != NULL) {
+                    freeMemory(mm, new_argv[j]);
+                }
+            }
+            freeMemory(mm, new_argv);
             return NULL;
+        }
+
         memcpy(new_argv[i], argv[i], len);
     }
 
@@ -232,70 +453,81 @@ static char **duplicateArgv(const char **argv, int argc, MemoryManagerADT mm) {
     return new_argv;
 }
 
-static void run_next_process();
+static void process_caller(int pid) {
+    PCB *p = processes[pid];
+    if (p == NULL || p->entry == NULL) {
+        proc_exit(-1);
+        return;
+    }
 
-void process_caller(int pid) {
-	PCB * p = processes[pid];
-	int res = p->entry(p->argc, p->argv);
-	proc_exit(res);
+    current_process = pid; // mantener variable informativa
+
+    // Llamar a la función de entrada del proceso
+    int res = p->entry(p->argc, p->argv);
+
+    // Cuando retorna, terminar el proceso
+    proc_exit(res);
 }
 
-// Devuelve el índice del siguiente proceso READY empezando en startIdx (inclusive),
-// recorriendo circularmente. Retorna -1 si no hay ninguno.
 static int pick_next_ready_from(int startIdx) {
-	if (startIdx < 0) startIdx = 0;
-	for (int k = 0; k < MAX_PROCESSES; k++) {
-		int idx = (startIdx + k) % MAX_PROCESSES;
-		if (processes[idx] != NULL && processes[idx]->status == PS_READY) {
-			return idx;
-		}
-	}
-	return -1;
-}
+    if (startIdx < 0) {
+        startIdx = 0;
+    }
 
-static void run_next_process() {
-	// Elegimos el siguiente READY distinto del actual, con política circular
-	int start = current_process >= 0 ? (current_process + 1) % MAX_PROCESSES : 0;
-	int next = pick_next_ready_from(start);
-	if (next < 0) {
-		// No hay a quién correr; no cambiamos contexto
-		return;
-	}
+    // Buscar siguiente proceso READY de forma circular
+    for (int k = 0; k < MAX_PROCESSES; k++) {
+        int idx = (startIdx + k) % MAX_PROCESSES;
+        if (processes[idx] != NULL && processes[idx]->status == PS_READY) {
+            return idx;
+        }
+    }
 
-	// Guardar el kernel RSP actual en el PCB del proceso actual (si existe y es válido)
-	// Nota: current_kernel_rsp solo es válido cuando venimos de una syscall (ISR)
-	if (current_process >= 0 && processes[current_process] != NULL &&
-		processes[current_process]->status != PS_TERMINATED && current_kernel_rsp != 0) {
-		processes[current_process]->stack_pointer = current_kernel_rsp;
-	}
-
-	// Marcar RUNNING el próximo y fijarlo como actual
-	processes[next]->status = PS_RUNNING;
-	current_process = next;
-
-	// Solicitar al handler de syscalls que cambie de contexto al volver a usuario
-	// La pila del próximo ya está preparada (setup_initial_stack para primera ejecución
-	// o la última pila de kernel salvada para reanudación)
-	switch_to_rsp = processes[next]->stack_pointer;
+    return -1;  // No hay procesos READY
 }
 
 static void free_process_resources(PCB *p) {
-	MemoryManagerADT mm = getKernelMemoryManager();
-	if (p->argv != NULL) {
-		for (int i = 0; i < p->argc; i++) {
-			if (p->argv[i] != NULL) {
-				freeMemory(mm, p->argv[i]);
-			}
-		}
-		freeMemory(mm, p->argv);
-		p->argv = NULL;
-	}
-	if (p->stack_base != NULL) {
-		freeMemory(mm, p->stack_base);
-		p->stack_base = NULL;
-		p->stack_pointer = NULL;
-	}
-	freeMemory(mm, p);
+    if (p == NULL) {
+        return;
+    }
+
+    // NO liberar shell estática
+    if (p == &shell_pcb) {
+        return;
+    }
+
+    MemoryManagerADT mm = getKernelMemoryManager();
+
+    // Liberar argv y sus strings
+    if (p->argv != NULL) {
+        for (int i = 0; i < p->argc; i++) {
+            if (p->argv[i] != NULL) {
+                freeMemory(mm, p->argv[i]);
+            }
+        }
+        freeMemory(mm, p->argv);
+        p->argv = NULL;
+    }
+
+    // Liberar stack
+    if (p->stack_base != NULL) {
+        freeMemory(mm, p->stack_base);
+        p->stack_base = NULL;
+        p->stack_pointer = NULL;
+    }
+
+    // Liberar PCB
+    freeMemory(mm, p);
 }
 
-
+static void cleanup_terminated_processes(void) {
+    int running = scheduler_get_current_pid();
+    for (int i = 0; i < MAX_PROCESSES; i++) {
+        if (i == running) {
+            continue;
+        }
+        if (processes[i] != NULL && processes[i]->status == PS_TERMINATED) {
+            free_process_resources(processes[i]);
+            processes[i] = NULL;
+        }
+    }
+}

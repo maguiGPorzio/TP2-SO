@@ -22,6 +22,7 @@ GLOBAL reg_array ; array donde se almacenan los registros cunado se toco ctrl
 
 GLOBAL setup_initial_stack 
 GLOBAL switch_to_rsp_and_iret
+GLOBAL syscall_frame_ptr
 
 EXTERN irqDispatcher
 EXTERN exceptionDispatcher
@@ -206,17 +207,36 @@ _irq128Handler:
 	pushState
 	; Exponer el RSP de kernel actual a C para que lo guarde en el PCB
 	mov [current_kernel_rsp], rsp
-	cmp rax, 31 ; ------> aca hay que cambiar la syscall
-    jge .syscall_end
+	; Guardar id de syscall para lógica de switch
+	mov [syscall_id_tmp], rax
+	cmp rax, 31
+	ja  .syscall_end       ; > 31: no llamada válida
+	je  .noop_syscall      ; 31: no-op utilizada para finalizar proc_exit
 	; rax es el indice, 8 el size de un puntero en 64 bits
     call [syscalls + rax * 8] ; llamamos a la syscall
+	jmp .post_syscall
+
+.noop_syscall:
+	; No hace nada: sirve para que el handler procese el switch_to_rsp y salga por iretq
+
+.post_syscall:
 
 .syscall_end:
-    mov [aux], rax ; preservamos el valor de retorno de la syscall
+	mov [aux], rax ; preservamos el valor de retorno de la syscall
 	; Si desde C solicitaron un cambio de contexto, cambiar RSP antes de restaurar
 	mov rbx, [switch_to_rsp]
 	test rbx, rbx
 	jz .no_switch
+	; Guardar el RSP del llamador (shell) ANTES de cambiar de pila
+	; pero no si esta es la syscall no-op (31) ni si ya fue capturado
+	mov rax, [syscall_id_tmp]
+	cmp rax, 31
+	je .skip_save_rsp
+	mov rax, [syscall_frame_ptr]
+	test rax, rax
+	jnz .skip_save_rsp
+	mov [syscall_frame_ptr], rsp
+.skip_save_rsp:
 	; limpiar la solicitud y cambiar de pila
 	mov qword [switch_to_rsp], 0
 	mov rsp, rbx

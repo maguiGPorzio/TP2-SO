@@ -10,6 +10,7 @@
 #include "interrupts.h"
 #include "memoryManager.h"
 #include "processes.h"
+#include "scheduler.h"
 
 extern uint8_t text;
 extern uint8_t rodata;
@@ -62,6 +63,17 @@ void * initializeKernelBinary()
 int main() {
 
 	initKernelMemoryManager();
+
+	SchedulerADT sched = init_scheduler();
+	uint32_t white = 0xFFFFFF;
+    if (sched == NULL) {
+        vdPrint("FAILED\n", white);
+        vdPrint("KERNEL PANIC: Failed to initialize scheduler\n", white);
+        while(1) {
+            __asm__ volatile("hlt");
+        }
+    }
+
 	init_processes();
 
 	// TODO: crear el proceso de la shell
