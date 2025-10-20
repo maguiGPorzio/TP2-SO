@@ -64,15 +64,7 @@ int main() {
 
 	initKernelMemoryManager();
 
-	SchedulerADT sched = init_scheduler();
-	uint32_t white = 0xFFFFFF;
-    if (sched == NULL) {
-        vdPrint("FAILED\n", white);
-        vdPrint("KERNEL PANIC: Failed to initialize scheduler\n", white);
-        while(1) {
-            __asm__ volatile("hlt");
-        }
-    }
+	init_scheduler();
 
 	init_processes();
 
