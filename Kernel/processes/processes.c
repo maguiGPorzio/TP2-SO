@@ -11,7 +11,7 @@ static int current_process = -1;
 // lo manejo como un coso circular non preemptive
 
 extern void * setup_initial_stack(void * caller, int pid, void * stack_pointer);
-extern void   switch_to_rsp_and_iret(void * next_rsp);
+extern void switch_to_rsp_and_iret(void * next_rsp);
 
 // Variables compartidas con ASM para solicitar un cambio de contexto
 // ASM escribe current_kernel_rsp al entrar a la syscall (después de pushState)
@@ -32,10 +32,10 @@ static void free_process_resources(PCB *p);
 
 void init_processes(); // este tiene que crear el proceso de la shell que va a ser el unico en principio
 
-void init_processes() {
+void init_processes() { // TODO: limpiar y que use process_spawn
 	// Limpiar tabla y estado
 	for (int i = 0; i < MAX_PROCESSES; i++) {
-		processes[i] = NULL;
+		processes[i] = NULL; // TODO: al pedo
 	}
 	current_process = -1;
 
