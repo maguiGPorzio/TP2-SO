@@ -4,6 +4,14 @@
 #include "lib.h"
 
 // ============================================
+//           CONSTANTES
+// ============================================
+
+#define AGING_INTERVAL 100  // Cada 100 ticks, aplicar aging
+#define PRIORITY_BOOST_AMOUNT 1  // Cuánto subir en aging
+#define PRIORITY_PENALTY_AMOUNT 1  // Cuánto bajar si usa todo el quantum
+
+// ============================================
 //           ESTRUCTURAS PRIVADAS
 // ============================================
 
@@ -31,6 +39,8 @@ extern void *switch_to_rsp;
 
 static PCB *pick_next_process(void);
 static void cleanup_terminated_processes(void);
+static void apply_aging(void);
+static void adjust_priority_dynamic(PCB *process);
 
 // ============================================
 //           INICIALIZACIÓN
@@ -76,7 +86,7 @@ void *schedule(void *prev_rsp) {
 
     cleanup_terminated_processes();
 
-    // 1. Guardar RSP del proceso actual
+    // 1. Guardar RSP del proceso actual y ajustar prioridad
     if (scheduler->current_pid >= 0 && 
         scheduler->processes[scheduler->current_pid] != NULL) {
         
@@ -92,10 +102,22 @@ void *schedule(void *prev_rsp) {
             current->remaining_quantum--;
         }
         
+        // ============================================
+        // AJUSTE DINÁMICO DE PRIORIDAD
+        // ============================================
+        adjust_priority_dynamic(current);
+        
         // Marcar como READY si estaba RUNNING
         if (current->status == PS_RUNNING) {
             current->status = PS_READY;
         }
+    }
+
+    // ============================================
+    // AGING: Prevenir starvation
+    // ============================================
+    if (scheduler->total_cpu_ticks % AGING_INTERVAL == 0) {
+        apply_aging();
     }
 
     // 2. Elegir siguiente proceso
@@ -146,9 +168,7 @@ static PCB *pick_next_process(void) {
     }
 
     // Buscar proceso con mayor prioridad (menor número)
-    PCB *best_candidate = NULL;
     uint8_t highest_priority = MAX_PRIORITY + 1;
-    int best_idx = -1;
 
     // Primera pasada: encontrar la prioridad más alta entre procesos READY
     for (int i = 0; i < MAX_PROCESSES; i++) {
@@ -170,13 +190,100 @@ static PCB *pick_next_process(void) {
         if (p != NULL && 
             p->status == PS_READY && 
             p->priority == highest_priority) {
-            best_candidate = p;
-            best_idx = idx;
-            break;
+            return p;
         }
     }
 
-    return best_candidate;
+    return NULL;
+}
+
+// ============================================
+//    AJUSTE DINÁMICO DE PRIORIDADES
+// ============================================
+
+/**
+ * @brief Ajusta la prioridad de un proceso según su comportamiento
+ * 
+ * Reglas:
+ * - Si usó TODO su quantum → CPU-bound → BAJAR prioridad
+ * - Si se bloqueó antes de terminar → I/O-bound → SUBIR prioridad
+ */
+static void adjust_priority_dynamic(PCB *process) {
+    if (process == NULL) {
+        return;
+    }
+
+    // CASO 1: Usó todo su quantum (CPU-bound)
+    if (process->remaining_quantum == 0) {
+        // Penalizar: bajar prioridad (aumentar número)
+        if (process->priority < MAX_PRIORITY) {
+            process->priority += PRIORITY_PENALTY_AMOUNT;
+            
+            // Debuggin (opcional, comentar en producción)
+            // vdPrint("Process ", 0xFFFFFF);
+            // vdPrint(process->name, 0xFFFFFF);
+            // vdPrint(" priority lowered (CPU-bound)\n", 0xFFFFFF);
+        }
+    }
+    
+    // CASO 2: Se bloqueó antes de terminar quantum (I/O-bound)
+    else if (process->status == PS_BLOCKED && process->remaining_quantum > 0) {
+        // Recompensar: subir prioridad (disminuir número)
+        if (process->priority > MIN_PRIORITY) {
+            process->priority -= PRIORITY_BOOST_AMOUNT;
+            
+            // Debugging (opcional)
+            // vdPrint("Process ", 0xFFFFFF);
+            // vdPrint(process->name, 0xFFFFFF);
+            // vdPrint(" priority raised (I/O-bound)\n", 0xFFFFFF);
+        }
+    }
+    
+    // CASO 3: Hizo yield voluntario (cooperativo)
+    // También lo consideramos "buena conducta"
+    else if (process->remaining_quantum > 0 && process->status == PS_READY) {
+        // Leve recompensa por cooperar
+        if (process->priority > MIN_PRIORITY && 
+            process->remaining_quantum > (process->priority + 1) / 2) {
+            // Solo si cedió con más de la mitad del quantum restante
+            process->priority -= PRIORITY_BOOST_AMOUNT;
+        }
+    }
+}
+
+/**
+ * @brief Aplica aging a todos los procesos READY
+ * 
+ * Previene starvation subiendo gradualmente la prioridad
+ * de procesos que llevan tiempo esperando
+ */
+static void apply_aging(void) {
+    if (scheduler == NULL) {
+        return;
+    }
+
+    for (int i = 0; i < MAX_PROCESSES; i++) {
+        // Saltear proceso actual (ya está ejecutando)
+        if (i == scheduler->current_pid) {
+            continue;
+        }
+
+        PCB *p = scheduler->processes[i];
+        
+        // Solo aplicar aging a procesos READY
+        if (p != NULL && 
+            p->status == PS_READY && 
+            p->priority > MIN_PRIORITY) {
+            
+            // Subir prioridad (rejuvenecer)
+            p->priority -= PRIORITY_BOOST_AMOUNT;
+            
+            // Debugging (opcional)
+            // vdPrint("AGING: Process ", 0xFFFFFF);
+            // vdPrint(p->name, 0xFFFFFF);
+            // vdPrint(" priority boosted\n", 0xFFFFFF);
+        }
+    }
 }
 
 // ============================================
@@ -246,6 +353,7 @@ int scheduler_set_priority(int pid, uint8_t priority) {
         return -1;
     }
 
+    // Establecer prioridad manualmente (override del ajuste dinámico)
     process->priority = priority;
     process->remaining_quantum = priority + 1;
 
