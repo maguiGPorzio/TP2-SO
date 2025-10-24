@@ -16,6 +16,9 @@
 #define INIT_PID           (0)
 #define PROCESS_STACK_SIZE (4096)  // 4 KB
 
+// Macro para validar si un PID está fuera de rango
+#define IS_INVALID_PID(pid) ((pid) < 0 || (pid) >= MAX_PROCESSES)
+
 // ============================================
 //              TIPOS DE DATOS
 // ============================================
@@ -88,6 +91,20 @@ int proc_getpid(void);
  * @brief Cede voluntariamente la CPU al siguiente proceso (cooperativo)
  */
 void proc_yield(void);
+
+/**
+ * @brief Bloquea un proceso específico
+ * @param pid PID del proceso a bloquear, o -1 para bloquear el proceso actual
+ * @return 0 en caso de éxito, -1 en caso de error
+ */
+int proc_block(int pid);
+
+/**
+ * @brief Desbloquea un proceso específico y lo marca como READY
+ * @param pid PID del proceso a desbloquear
+ * @return 0 en caso de éxito, -1 en caso de error
+ */
+int proc_unblock(int pid);
 
 /**
  * @brief Imprime información de todos los procesos

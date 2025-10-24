@@ -298,6 +298,71 @@ void proc_yield(void) {
     }
 }
 
+int proc_block(int pid) {
+    // Si pid es -1, bloquear el proceso actual
+    if (pid == -1) {
+        pid = scheduler_get_current_pid();
+    }
+    
+    // Validar PID usando macro
+    if (IS_INVALID_PID(pid)) {
+        return -1;
+    }
+    
+    PCB *p = processes[pid];
+    if (p == NULL) {
+        return -1;  // Proceso no existe
+    }
+    
+    // No se puede bloquear un proceso ya terminado
+    if (p->status == PS_TERMINATED) {
+        return -1;
+    }
+    
+    // Cambiar estado a BLOCKED
+    p->status = PS_BLOCKED;
+
+    
+    // ---
+    // TODO: ver que hacer con el scheduler. Debe ser algo así: 
+    scheduler_remove_process(p->pid);
+    
+    // Si estamos bloqueando el proceso actual, hacer context switch inmediato 
+    if (pid == scheduler_get_current_pid()) {
+        // Forzar reschedule
+        scheduler_force_reschedule();
+    }
+    // ---
+
+    return 0;  // Éxito
+}
+
+int proc_unblock(int pid) {
+    // Validar PID usando macro
+    if (IS_INVALID_PID(pid)) {
+        return -1;
+    }
+    
+    PCB *p = processes[pid];
+    if (p == NULL) {
+        return -1;  // Proceso no existe
+    }
+    
+    // Cambiar estado a READY
+    p->status = PS_READY;
+
+    // No se puede desbloquear un proceso terminado
+    if (p->status == PS_TERMINATED) {
+        return -1;
+    }
+    
+    // ---
+    // TODO: ver que hacer con el scheduler. Debe ser algo así: 
+    scheduler_add_process(p->pid);
+    //---
+    return 0;  // Éxito
+}
+
 void proc_print(void) {
     uint32_t color = 0xFFFFFF;
 
@@ -531,3 +596,4 @@ static void cleanup_terminated_processes(void) {
         }
     }
 }
+
