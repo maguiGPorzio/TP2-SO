@@ -247,10 +247,9 @@ int scheduler_set_priority(int pid, uint8_t priority) {
         return -1;
     }
 
+    int old_priority = process->priority;
     process->priority = priority;
     process->remaining_quantum = priority + 1;
-
-    return 0;
 
     // Caso 1: Es el proceso actual y bajó su prioridad
     if (pid == scheduler->current_pid && priority > old_priority) {
