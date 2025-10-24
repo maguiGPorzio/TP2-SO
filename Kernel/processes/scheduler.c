@@ -22,8 +22,8 @@ typedef struct SchedulerCDT {
 static SchedulerADT scheduler = NULL;
 
 // Variables compartidas con ASM (para context switching)
-extern void *current_kernel_rsp;
-extern void *switch_to_rsp;
+extern void *current_kernel_rsp; //La dirección del stack pointer (RSP) del proceso que está ejecutando justo ahora.
+extern void *switch_to_rsp; //La dirección del stack pointer del proceso al que queremos cambiar.
 
 // ============================================
 //        DECLARACIONES AUXILIARES
@@ -227,6 +227,7 @@ int scheduler_remove_process(int pid) {
     // Si estábamos ejecutando este proceso, resetear current
     if (scheduler->current_pid == pid) {
         scheduler->current_pid = -1;
+        scheduler_force_reschedule();
     }
 
     return 0;
@@ -248,6 +249,34 @@ int scheduler_set_priority(int pid, uint8_t priority) {
 
     process->priority = priority;
     process->remaining_quantum = priority + 1;
+
+    return 0;
+
+    // Caso 1: Es el proceso actual y bajó su prioridad
+    if (pid == scheduler->current_pid && priority > old_priority) {
+        // Verificar si hay otro con mejor prioridad
+        for (int i = 0; i < MAX_PROCESSES; i++) {
+            PCB *p = scheduler->processes[i];
+            if (p != NULL && 
+                p->status == PS_READY && 
+                p->priority < priority) {
+                scheduler_force_reschedule();
+                break;
+            }
+        }
+    }
+    // Caso 2: No es el actual y subió su prioridad
+    else if (pid != scheduler->current_pid && priority < old_priority) {
+        if (process->status == PS_READY) {
+            int current_pid = scheduler->current_pid;
+            if (current_pid >= 0 && scheduler->processes[current_pid] != NULL) {
+                PCB *current = scheduler->processes[current_pid];
+                if (priority < current->priority) {
+                    scheduler_force_reschedule();
+                }
+            }
+        }
+    }
 
     return 0;
 }
