@@ -1,7 +1,14 @@
 #include "scheduler.h"
-#include "processes.h" 
+#include "process.h" 
 #include <memoryManager.h>
 #include "lib.h"
+
+// Variables compartidas con ASM para solicitar cambio de contexto
+// ASM escribe current_kernel_rsp al entrar a la syscall (después de pushState)
+// C escribe switch_to_rsp cuando quiere que el handler cambie a otra pila antes de iretq
+void *current_kernel_rsp = 0;
+void *switch_to_rsp = 0;
+extern void *syscall_frame_ptr; // RSP de la shell capturado antes de cambiar a un proceso
 
 // ============================================
 //           ESTRUCTURAS PRIVADAS
@@ -80,6 +87,7 @@ SchedulerADT init_scheduler(void) {
 
     return scheduler;
 }
+
 
 SchedulerADT get_scheduler(void) {
     return scheduler;
@@ -261,14 +269,12 @@ static PCB *next_in_queue(ReadyQueue *queue) {
 //        GESTIÓN DE PROCESOS
 // ============================================
 
-int scheduler_add_process(PCB *process) {
-    if (scheduler == NULL || process == NULL) {
+int scheduler_add_process(process_entry_t entry, int argc, const char **argv, const char *name) {
+    if (scheduler == NULL || scheduler->process_count >= MAX_PROCESSES) {
         return -1;
     }
 
-    if (scheduler->process_count >= MAX_PROCESSES) {
-        return -1;
-    }
+    PCB *process=proc_spawn(entry, argc, argv, name);
 
     int pid = process->pid;
     if (pid < 0 || pid >= MAX_PROCESSES) {
@@ -558,4 +564,8 @@ void scheduler_print_queues(void) {
         }
     }
     printf("\n");
+}
+
+void proc_yield(void) {
+    scheduler_force_reschedule();
 }
