@@ -89,7 +89,6 @@ SchedulerADT init_scheduler(void) {
     return scheduler;
 }
 
-
 SchedulerADT get_scheduler(void) {
     return scheduler;
 }
@@ -98,17 +97,10 @@ SchedulerADT get_scheduler(void) {
 //        SCHEDULER PRINCIPAL
 // ============================================
 
-void *schedule(void *prev_rsp) {
+void * schedule(void * prev_rsp) {
     if (scheduler == NULL) {
         return prev_rsp;
     }
-
-    if (scheduler->process_count == 0) {
-        scheduler->force_reschedule = false;
-        return prev_rsp;
-    }
-
-    cleanup_terminated_processes();
 
     // ==========================================
     // 1. Guardar RSP y gestionar proceso actual
@@ -117,17 +109,17 @@ void *schedule(void *prev_rsp) {
         scheduler->processes[scheduler->current_pid] != NULL) {
         
         PCB *current = scheduler->processes[scheduler->current_pid];
-        current->stack_pointer = prev_rsp;
+        current->stack_pointer = prev_rsp; // actualiza el rsp del proceso que estuvo corriendo hasta ahora en su pcb
         
-        current->cpu_ticks++;
+        current->cpu_ticks++; // cuantas veces interrumpimos este proceso que estuvo corrriendo hasta ahora
         scheduler->total_cpu_ticks++;
         
-        if (current->remaining_quantum > 0) {
+        if (current->remaining_quantum > 0) { // si se lo interrumpió antes de que se termine su quantum
             current->remaining_quantum--;
         }
         
-        // ✅ FIX #1: Re-encolar cuando pierde quantum
-        if (current->status == PS_RUNNING) {
+        // FIX #1: Re-encolar cuando pierde quantum
+        if (current->status == PS_RUNNING) { // por si estaba bloqueado o terminado
             current->status = PS_READY;
             ReadyQueue *queue = &scheduler->ready_queues[current->priority];
             enqueue_process(queue, current);
@@ -139,8 +131,9 @@ void *schedule(void *prev_rsp) {
     // ==========================================
     PCB *next = pick_next_process();
     
-    if (next == NULL) {
-        scheduler->force_reschedule = false;
+    //QUE PASA SI EL PROCESO ACTUAL ESTA BLOQUEADO O TERMINADO
+    if (next == NULL) { // no hay proceso ready para correr
+        scheduler->force_reschedule = false; // TODO: chequear esto, por que hace que corra el actual si por ahi esta bloqueado o terminated
         if (scheduler->current_pid >= 0 && 
             scheduler->processes[scheduler->current_pid] != NULL) {
             return scheduler->processes[scheduler->current_pid]->stack_pointer;
@@ -148,7 +141,7 @@ void *schedule(void *prev_rsp) {
         return prev_rsp;
     }
 
-    // ✅ FIX #2: Desencolar proceso elegido
+    // FIX #2: Desencolar proceso elegido
     ReadyQueue *queue = &scheduler->ready_queues[next->priority];
     dequeue_process(queue, next);
 
@@ -172,14 +165,14 @@ static PCB *pick_next_process(void) {
     if (scheduler == NULL || scheduler->process_count == 0) {
         return NULL;
     }
-
+    // MIN_PRIORITY son en realidad las prioridades más altas (0 es la más alta)
     for (int priority = MIN_PRIORITY; priority <= MAX_PRIORITY; priority++) {
         ReadyQueue *queue = &scheduler->ready_queues[priority];
         
         if (queue->count > 0) {
             PCB *candidate = next_in_queue(queue);
             
-            if (candidate != NULL && candidate->status == PS_READY) {
+            if (candidate != NULL && candidate->status == PS_READY) { // TODO: chequear si es necesario chequear esto (no debería ser null y deberia ser ready para estar ahi )
                 return candidate;
             }
         }
@@ -192,17 +185,19 @@ static PCB *pick_next_process(void) {
 //     OPERACIONES DE LISTA CIRCULAR
 // ============================================
 
-// Agregar proceso al final de la cola circular
-static void enqueue_process(ReadyQueue *queue, PCB *process) {
+// Agregar proceso al final de la cola circular 
+static void enqueue_process(ReadyQueue *queue, PCB *process) { // te pasan la cola de tu prioridad
     if (process == NULL) {
         return;
     }
 
     MemoryManagerADT mm = getKernelMemoryManager();
     RQNode *node = allocMemory(mm, sizeof(RQNode));
+
     if (node == NULL) {
         return; // sin memoria: no encola
     }
+    
     node->proc = process;
     if (queue->head == NULL) {
         // Primera inserción: lista circular de 1 elemento
@@ -211,6 +206,7 @@ static void enqueue_process(ReadyQueue *queue, PCB *process) {
         queue->head = node;
         queue->current = node;
     } else {
+        // TODO: leer bien esto 
         // Insertar al final (antes del head)
         RQNode *tail = queue->head->prev;
         
@@ -249,6 +245,7 @@ static void dequeue_process(ReadyQueue *queue, PCB *process) {
         queue->head = NULL;
         queue->current = NULL;
     } else {
+        // TODO: leer detenidamente
         // Desenlazar de la lista circular
         found->prev->next = found->next;
         found->next->prev = found->prev;
@@ -312,8 +309,10 @@ int scheduler_add_process(process_entry_t entry, int argc, const char **argv, co
     scheduler->processes[pid] = process;
     scheduler->process_count++;
 
+    //TODO: asignar prioridad al proceso cuando se crea
     // Inicializar campos relacionados con scheduling
-    process->status = PS_READY;
+    process->priority = DEFAULT_PRIORITY; // Asignar prioridad por defecto
+    process->status = PS_READY; // TODO: chequear si esto ya no lo hace proc_create
     process->cpu_ticks = 0;
     process->remaining_quantum = process->priority + 1;
     if (process->parent_pid < 0) {
@@ -350,7 +349,7 @@ int scheduler_remove_process(int pid) {
     // Si estábamos ejecutando este proceso, forzar reschedule
     if (scheduler->current_pid == pid) {
         scheduler->current_pid = -1;
-        scheduler_force_reschedule();
+        scheduler_force_reschedule(); //TODO: VER ESTO
     }
 
     return 0;
@@ -373,7 +372,7 @@ int scheduler_set_priority(int pid, uint8_t new_priority) {
     uint8_t old_priority = process->priority;
     
     if (old_priority == new_priority) {
-        return 0;  // Sin cambios
+        return 0;  // Sin cambios. Me ahorro modificar listas
     }
 
     // Si el proceso está en READY, moverlo entre colas
@@ -398,7 +397,7 @@ int scheduler_set_priority(int pid, uint8_t new_priority) {
     // Reevaluar si hace falta reschedule
     bool need_reschedule = false;
     
-    // Caso 1: Es el proceso actual y bajó su prioridad
+    // Caso 1: Es el proceso actual y bajó su prioridad -> necesito ver si hay q correr otro
     if (pid == scheduler->current_pid && new_priority > old_priority) {
         // Verificar si hay procesos con mayor prioridad
         for (int p = MIN_PRIORITY; p < new_priority; p++) {
@@ -422,7 +421,7 @@ int scheduler_set_priority(int pid, uint8_t new_priority) {
     }
     
     if (need_reschedule) {
-        scheduler_force_reschedule();
+        scheduler_force_reschedule(); // TODO: fijarme si no cambio directo
     }
 
     return 0;
@@ -454,10 +453,12 @@ int scheduler_get_current_pid(void) {
     return scheduler->current_pid;
 }
 
+// TODO: preguntar si esta bien la idea (porque podria volver a ser elegido)
 void scheduler_yield(void) {
-    scheduler_force_reschedule();
+    scheduler_force_reschedule(); // TODO: no me cierra la idea de force_reschedule y que no se pueda elegir de nuevo al mismo proceso
 }
 
+//TODO: LEERLA porque la hizo claude
 int scheduler_kill_process(int pid) {
     if (scheduler == NULL || pid < 0 || pid >= MAX_PROCESSES) {
         return -1;
@@ -521,7 +522,8 @@ int scheduler_block_process(int pid) {
     return 0;
 }
 
-// Llamar desde proc_unblock() en processes.c
+//Llamar desde proc_unblock() en processes.c
+//NOSE SI CUANDO SE DESBLOQUEA SE TENDRIA QUE FORZAR EL RESCHEDULE PORQUE QUIZAS TENGA MAS PRIORIDAD DE CORRER QUE OTROS
 int scheduler_unblock_process(int pid) {
     if (scheduler == NULL || pid < 0 || pid >= MAX_PROCESSES) {
         return -1;
@@ -617,6 +619,7 @@ PCB *scheduler_get_process(int pid) {
 // ============================================
 //   TERMINACIÓN INMEDIATA DEL PROCESO ACTUAL
 // ============================================
+//todo: M ELA HIZO CLAUDE NO LA LEI
 void scheduler_exit_process(int64_t retValue) {
     if (scheduler == NULL) {
         // No scheduler available; halt CPU

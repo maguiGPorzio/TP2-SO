@@ -16,7 +16,7 @@ static void process_caller(int pid);
 // ============================================
 //         LIFECYCLE DE PROCESOS
 // ============================================
-PCB *proc_create(int pid, process_entry_t entry, int argc, const char **argv,
+PCB* proc_create(int pid, process_entry_t entry, int argc, const char **argv,
                 const char *name) {
 
     if (entry == NULL || name == NULL) {
@@ -38,7 +38,7 @@ PCB *proc_create(int pid, process_entry_t entry, int argc, const char **argv,
     p->parent_pid = scheduler_get_current_pid();
     p->status = PS_READY;
     p->entry = entry;
-    p->return_value = 0;
+    p->return_value = 0; //FIJARSE COMO INCIIALIZARLO
     p->waiting_on = -1;
 
     // ============================
@@ -157,6 +157,7 @@ static char **duplicateArgv(const char **argv, int argc, MemoryManagerADT mm) {
     return new_argv;
 }
 
+//check
 static void process_caller(int pid) {
     PCB *p = scheduler_get_process(pid);
     if (p == NULL || p->entry == NULL) {
