@@ -213,7 +213,7 @@ _irq128Handler:
 	mov [syscall_id_tmp], rax
 	cmp rax, 31
 	je  .noop_syscall      ; 31: no-op utilizada para finalizar proc_exit
-	cmp rax, 32            ; permitir syscalls hasta índice 32
+	cmp rax, 34            ; permitir syscalls hasta índice 34
 	ja  .syscall_end       ; > 32: no llamada válida
 	; rax es el indice, 8 el size de un puntero en 64 bits
 	call [syscalls + rax * 8] ; llamamos a la syscall

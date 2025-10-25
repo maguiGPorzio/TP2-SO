@@ -51,7 +51,9 @@ void * syscalls[] = {
     &sys_kill,               // 29
     &sys_block,              // 30
     0,                       // 31 reservado (no-op en ASM)
-    &sys_unblock             // 32
+    &sys_unblock,            // 32
+    &sys_wait,               // 33
+    &sys_yield               // 34
 };
 
 static uint64_t sys_regs(char * buffer){
@@ -232,5 +234,20 @@ static int64_t sys_block(int pid) {
 // Desbloquea un proceso por PID
 static int64_t sys_unblock(int pid) {
     return (int64_t)scheduler_unblock_process(pid);
+}
+
+// Espera a que el proceso hijo 'pid' termine. Devuelve su código de salida si estaba terminado o 0 si bloqueó.
+static int64_t sys_wait(int pid) {
+    return (int64_t)scheduler_wait(pid);
+}
+
+// Cede la CPU voluntariamente: reencola el proceso actual y fuerza cambio inmediato
+extern void *current_kernel_rsp;
+extern void *switch_to_rsp;
+static void sys_yield(void) {
+    // Marcar intención de replanificar y seleccionar próximo
+    scheduler_yield();
+    void *next_rsp = schedule(current_kernel_rsp);
+    switch_to_rsp = next_rsp; // handler hará el cambio de pila antes de iretq
 }
 

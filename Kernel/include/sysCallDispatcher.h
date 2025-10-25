@@ -8,7 +8,7 @@
 #define STDOUT 1
 #define STDERR 2
 
-#define SYSCALL_COUNT 33 // actualizar también el chequeo en asm/interrupts.asm (31 reservado no-op)
+#define SYSCALL_COUNT 35 // actualizar también el chequeo en asm/interrupts.asm (31 reservado no-op)
 
 extern void * syscalls[SYSCALL_COUNT];
 
@@ -49,5 +49,7 @@ static int64_t sys_getpid(void);
 static int64_t sys_kill(int pid);
 static int64_t sys_block(int pid);
 static int64_t sys_unblock(int pid);
+static int64_t sys_wait(int pid);
+static void    sys_yield(void);
 
 #endif

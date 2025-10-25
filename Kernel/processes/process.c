@@ -35,9 +35,11 @@ PCB *proc_create(int pid, process_entry_t entry, int argc, const char **argv,
     // Inicialización de campos base
     // ============================
     p->pid = pid;
+    p->parent_pid = scheduler_get_current_pid();
     p->status = PS_READY;
     p->entry = entry;
     p->return_value = 0;
+    p->waiting_on = -1;
 
     // ============================
     // Pila del proceso

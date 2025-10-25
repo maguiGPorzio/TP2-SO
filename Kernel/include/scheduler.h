@@ -41,6 +41,7 @@ void scheduler_yield(void);
 int scheduler_kill_process(int pid);
 PCB *scheduler_get_process(int pid);
 void scheduler_exit_process(int64_t retValue);
+int scheduler_wait(int child_pid);
 
 // Bloqueo/desbloqueo (para usar desde processes.c)
 int scheduler_block_process(int pid);

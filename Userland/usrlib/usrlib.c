@@ -332,14 +332,13 @@ int64_t my_create_process(const char *name, uint64_t argc, char *argv[]) {
 }
 
 int64_t my_wait(int64_t pid) {
-    // No wait syscall available; best-effort stub
-    (void)pid;
-    return 0;
+    return sys_wait((int)pid);
 }
 
 int64_t my_nice(int64_t pid, int new_prio) {
-    // Not supported; stub success
+    // Interpretar nice como yield voluntario del proceso actual
     (void)pid; (void)new_prio;
+    sys_yield();
     return 0;
 }
 

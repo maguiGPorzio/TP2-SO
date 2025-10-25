@@ -62,6 +62,7 @@ extern int64_t sys_getpid(void);
 extern int64_t sys_kill(int pid);
 extern int64_t sys_block(int pid);
 extern int64_t sys_unblock(int pid);
+extern int64_t sys_wait(int pid);
 
 /* Wrappers esperados por tests de cátedra (mapean a sys_* o stubs) */
 int64_t my_create_process(const char *name, uint64_t argc, char *argv[]);

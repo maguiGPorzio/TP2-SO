@@ -5,7 +5,7 @@ global  sys_enable_textmode, sys_disable_textmode, sys_put_pixel, sys_key_status
 global  sys_sleep, sys_clear_input_buffer, sys_ticks
 global  sys_malloc, sys_free, sys_memstatus
 ; Process/syscalls (scheduler-backed)
-global  sys_create_process, sys_exit_current, sys_getpid, sys_kill, sys_block, sys_unblock
+global  sys_create_process, sys_exit_current, sys_getpid, sys_kill, sys_block, sys_unblock, sys_wait, sys_yield
 global generate_invalid_opcode
 global printf
 global scanf
@@ -149,6 +149,14 @@ sys_block:
 ; 32 - int64_t sys_unblock(int pid)
 sys_unblock:
     SYSCALL 32
+
+; 33 - int64_t sys_wait(int pid)
+sys_wait:
+    SYSCALL 33
+
+; 34 - void sys_yield(void)
+sys_yield:
+    SYSCALL 34
 
 generate_invalid_opcode:
     ud2         ; Genera excepción de opcode inválido

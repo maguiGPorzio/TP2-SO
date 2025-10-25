@@ -26,6 +26,7 @@ typedef enum {
 typedef struct PCB {
     // Identificación
     int pid;
+    int parent_pid;              // PID del proceso padre (-1 si no tiene)
     char name[MAX_NAME_LENGTH];
     
     // Estado y scheduling
@@ -45,6 +46,7 @@ typedef struct PCB {
     // Estadísticas
     uint64_t cpu_ticks;              // Total de ticks de CPU usados
     int return_value;                // Valor de retorno (para exit)
+    int waiting_on;                  // PID que está esperando (-1 si ninguno)
     
     // ⭐ CRÍTICO: Lista circular (para scheduler) ⭐
     struct PCB *next;                // Siguiente en cola circular
