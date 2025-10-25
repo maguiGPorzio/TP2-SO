@@ -2,24 +2,12 @@
 #include "process.h" 
 #include <memoryManager.h>
 #include "lib.h"
+#include "ready_queue.h"
 
 // ============================================
 //           ESTRUCTURAS PRIVADAS
 // ============================================
 
-// Nodos internos para la cola circular (no modifican el PCB)
-typedef struct RQNode {
-    PCB *proc;
-    struct RQNode *next;
-    struct RQNode *prev;
-} RQNode;
-
-// Cola circular de procesos READY (una por prioridad), basada en nodos internos
-typedef struct ReadyQueue {
-    RQNode *head;          // Primer nodo en la cola
-    RQNode *current;       // Nodo actual en rotación Round Robin
-    int count;             // Cantidad de procesos en esta cola
-} ReadyQueue;
 
 typedef struct SchedulerCDT {
     PCB *processes[MAX_PROCESSES];              // Array para acceso por PID
@@ -48,10 +36,7 @@ extern void switch_to_rsp_and_iret(void *next_rsp);
 static PCB *pick_next_process(void);
 static void cleanup_terminated_processes(void);
 
-// Operaciones de lista circular
-static void enqueue_process(ReadyQueue *queue, PCB *process);
-static void dequeue_process(ReadyQueue *queue, PCB *process);
-static PCB *next_in_queue(ReadyQueue *queue);
+// Lista circular: use the ready_queue API (ready_queue_enqueue/dequeue/next)
 
 // ============================================
 //           INICIALIZACIÓN
@@ -76,9 +61,7 @@ SchedulerADT init_scheduler(void) {
     
     // Inicializar colas de prioridad
     for (int i = 0; i <= MAX_PRIORITY; i++) {
-        scheduler->ready_queues[i].head = NULL;
-        scheduler->ready_queues[i].current = NULL;
-        scheduler->ready_queues[i].count = 0;
+        ready_queue_init(&scheduler->ready_queues[i]);
     }
     
     scheduler->current_pid = -1;
@@ -122,7 +105,7 @@ void * schedule(void * prev_rsp) {
         if (current->status == PS_RUNNING) { // por si estaba bloqueado o terminado
             current->status = PS_READY;
             ReadyQueue *queue = &scheduler->ready_queues[current->priority];
-            enqueue_process(queue, current);
+            ready_queue_enqueue(queue, current);
         }
     }
 
@@ -143,7 +126,7 @@ void * schedule(void * prev_rsp) {
 
     // FIX #2: Desencolar proceso elegido
     ReadyQueue *queue = &scheduler->ready_queues[next->priority];
-    dequeue_process(queue, next);
+    ready_queue_dequeue(queue, next);
 
     // ==========================================
     // 3. Cambiar al nuevo proceso
@@ -170,7 +153,7 @@ static PCB *pick_next_process(void) {
         ReadyQueue *queue = &scheduler->ready_queues[priority];
         
         if (queue->count > 0) {
-            PCB *candidate = next_in_queue(queue);
+            PCB *candidate = ready_queue_next(queue);
             
             if (candidate != NULL && candidate->status == PS_READY) { // TODO: chequear si es necesario chequear esto (no debería ser null y deberia ser ready para estar ahi )
                 return candidate;
@@ -185,100 +168,7 @@ static PCB *pick_next_process(void) {
 //     OPERACIONES DE LISTA CIRCULAR
 // ============================================
 
-// Agregar proceso al final de la cola circular 
-static void enqueue_process(ReadyQueue *queue, PCB *process) { // te pasan la cola de tu prioridad
-    if (process == NULL) {
-        return;
-    }
-
-    MemoryManagerADT mm = getKernelMemoryManager();
-    RQNode *node = allocMemory(mm, sizeof(RQNode));
-
-    if (node == NULL) {
-        return; // sin memoria: no encola
-    }
-    
-    node->proc = process;
-    if (queue->head == NULL) {
-        // Primera inserción: lista circular de 1 elemento
-        node->next = node;
-        node->prev = node;
-        queue->head = node;
-        queue->current = node;
-    } else {
-        // TODO: leer bien esto 
-        // Insertar al final (antes del head)
-        RQNode *tail = queue->head->prev;
-        
-        tail->next = node;
-        node->prev = tail;
-        node->next = queue->head;
-        queue->head->prev = node;
-    }
-    
-    queue->count++;
-}
-
-// Remover proceso de la cola circular
-static void dequeue_process(ReadyQueue *queue, PCB *process) {
-    if (process == NULL || queue->count == 0) {
-        return;
-    }
-    
-    if (queue->count == 0) {
-        return;
-    }
-
-    // Buscar el nodo correspondiente al proceso
-    RQNode *n = queue->head;
-    RQNode *found = NULL;
-    for (int i = 0; i < queue->count; i++) {
-        if (n->proc == process) { found = n; break; }
-        n = n->next;
-    }
-    if (found == NULL) {
-        return; // no estaba en la cola
-    }
-
-    if (queue->count == 1) {
-        // Último elemento
-        queue->head = NULL;
-        queue->current = NULL;
-    } else {
-        // TODO: leer detenidamente
-        // Desenlazar de la lista circular
-        found->prev->next = found->next;
-        found->next->prev = found->prev;
-
-        // Ajustar head si es necesario
-        if (queue->head == found) {
-            queue->head = found->next;
-        }
-        
-        // Ajustar current si es necesario
-        if (queue->current == found) {
-            queue->current = found->next;
-        }
-    }
-
-    // Liberar nodo y actualizar count
-    MemoryManagerADT mm = getKernelMemoryManager();
-    freeMemory(mm, found);
-    queue->count--;
-}
-
-// Obtener siguiente proceso en Round Robin
-static PCB *next_in_queue(ReadyQueue *queue) {
-    if (queue->current == NULL || queue->count == 0) {
-        return NULL;
-    }
-    
-    // Rotar al siguiente en la lista circular y devolver proceso
-    RQNode *result = queue->current;
-    queue->current = queue->current->next;
-    
-    return result->proc;
-}
+// Lista circular (enqueue/dequeue/next) movida a ready_queue.c
 
 // ============================================
 //        GESTIÓN DE PROCESOS
@@ -321,7 +211,7 @@ int scheduler_add_process(process_entry_t entry, int argc, const char **argv, co
     process->waiting_on = -1;
 
     ReadyQueue *queue = &scheduler->ready_queues[process->priority];
-    enqueue_process(queue, process);
+    ready_queue_enqueue(queue, process);
 
     return pid;
 }
@@ -339,7 +229,7 @@ int scheduler_remove_process(int pid) {
     // Remover de la cola de su prioridad (si está en READY)
     if (process->status == PS_READY) {
         ReadyQueue *queue = &scheduler->ready_queues[process->priority];
-        dequeue_process(queue, process);
+        ready_queue_dequeue(queue, process);
     }
 
     // Remover del array
@@ -378,16 +268,16 @@ int scheduler_set_priority(int pid, uint8_t new_priority) {
     // Si el proceso está en READY, moverlo entre colas
     if (process->status == PS_READY) {
         // Remover de cola antigua
-        ReadyQueue *old_queue = &scheduler->ready_queues[old_priority];
-        dequeue_process(old_queue, process);
+    ReadyQueue *old_queue = &scheduler->ready_queues[old_priority];
+    ready_queue_dequeue(old_queue, process);
         
         // Cambiar prioridad
         process->priority = new_priority;
         process->remaining_quantum = new_priority + 1;
         
         // Agregar a cola nueva
-        ReadyQueue *new_queue = &scheduler->ready_queues[new_priority];
-        enqueue_process(new_queue, process);
+    ReadyQueue *new_queue = &scheduler->ready_queues[new_priority];
+    ready_queue_enqueue(new_queue, process);
     } else {
         // Solo cambiar prioridad (no está en ninguna cola)
         process->priority = new_priority;
@@ -475,7 +365,7 @@ int scheduler_kill_process(int pid) {
     // Si estaba en READY, sacarlo de su cola para que no sea elegido
     if (proc->status == PS_READY) {
         ReadyQueue *q = &scheduler->ready_queues[proc->priority];
-        dequeue_process(q, proc);
+        ready_queue_dequeue(q, proc);
     }
 
     // Marcar como TERMINATED (la liberación real la hace cleanup_terminated_processes)
@@ -509,7 +399,7 @@ int scheduler_block_process(int pid) {
     // Remover de cola READY (si está ahí)
     if (process->status == PS_READY || process->status == PS_RUNNING) {
         ReadyQueue *queue = &scheduler->ready_queues[process->priority];
-        dequeue_process(queue, process);
+        ready_queue_dequeue(queue, process);
     }
     
     process->status = PS_BLOCKED;
@@ -538,7 +428,7 @@ int scheduler_unblock_process(int pid) {
     
     // Agregar a cola READY de su prioridad
     ReadyQueue *queue = &scheduler->ready_queues[process->priority];
-    enqueue_process(queue, process);
+    ready_queue_enqueue(queue, process);
     
     return 0;
 }
@@ -566,7 +456,7 @@ static void cleanup_terminated_processes(void) {
             }
             // Remover de cola si estuviera encolado (seguro aunque no esté)
             ReadyQueue *queue = &scheduler->ready_queues[p->priority];
-            dequeue_process(queue, p);
+            ready_queue_dequeue(queue, p);
             
             // Liberar recursos del proceso
             free_process_resources(p);
@@ -582,26 +472,13 @@ void scheduler_destroy(void) {
     }
 
     MemoryManagerADT mm = getKernelMemoryManager();
-    
-    // Limpiar todas las colas liberando nodos
+
+    // Limpiar todas las colas liberando nodos usando ready_queue_destroy
     for (int priority = 0; priority <= MAX_PRIORITY; priority++) {
         ReadyQueue *q = &scheduler->ready_queues[priority];
-        int remaining = q->count;
-        RQNode *start = q->head;
-        RQNode *n = start;
-        while (remaining-- > 0 && n != NULL) {
-            RQNode *next = n->next;
-            freeMemory(mm, n);
-            if (next == start) {
-                break;
-            }
-            n = next;
-        }
-        q->head = NULL;
-        q->current = NULL;
-        q->count = 0;
+        ready_queue_destroy(q);
     }
-    
+
     // No liberamos los PCBs aquí, eso lo hace cleanup_all_processes()
     freeMemory(mm, scheduler);
     scheduler = NULL;
@@ -647,7 +524,7 @@ void scheduler_exit_process(int64_t retValue) {
         // Por seguridad, intentar removerlo de la cola si estuviera encolado (no hace nada si no lo está)
         ReadyQueue *q = &scheduler->ready_queues[proc->priority];
         if (q != NULL) {
-            dequeue_process(q, proc);
+            ready_queue_dequeue(q, proc);
         }
     }
 
