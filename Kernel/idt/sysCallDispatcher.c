@@ -207,8 +207,8 @@ static int64_t sys_create_process(void * entry, int argc, const char **argv, con
     if (pid < 0) {
         return -1;
     }
-    int rc = scheduler_add_process(pid, (process_entry_t)entry, argc, argv, name);
-    return (rc == 0) ? (int64_t)pid : -1;
+    int new_pid = scheduler_add_process((process_entry_t)entry, argc, argv, name);
+    return new_pid;
 }
 
 // Termina el proceso actual con un status

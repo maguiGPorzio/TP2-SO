@@ -323,13 +323,11 @@ float inv_sqrt(float number){
 // Simple wrappers expected by tests; not all are supported by kernel.
 // We implement what we can and provide safe fallbacks.
 
-// NOTE: The cátedra tests call my_create_process with a string name, expecting
-// a process registry. Our kernel API expects a function pointer. Since we don't
-// have a registry, return -1 to signal not supported here.
-int64_t my_create_process(const char *name, uint64_t argc, char *argv[]) {
-    (void)name; (void)argc; (void)argv;
-    return -1;
+// Nuevo: my_create_process con firma igual a scheduler_add_process
+int64_t my_create_process(process_entry_t entry, int argc, const char **argv, const char *name) {
+    return sys_create_process(entry, argc, argv, name);
 }
+
 
 int64_t my_wait(int64_t pid) {
     return sys_wait((int)pid);

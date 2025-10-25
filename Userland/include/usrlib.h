@@ -66,7 +66,7 @@ extern int64_t sys_wait(int pid);
 extern void    sys_yield(void);
 
 /* Wrappers esperados por tests de cátedra (mapean a sys_* o stubs) */
-int64_t my_create_process(const char *name, uint64_t argc, char *argv[]);
+int64_t my_create_process(process_entry_t entry, int argc, const char **argv, const char *name);
 int64_t my_wait(int64_t pid);
 int64_t my_nice(int64_t pid, int new_prio);
 int64_t my_block(int64_t pid);

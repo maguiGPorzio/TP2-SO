@@ -172,7 +172,7 @@ static PCB *pick_next_process(void) {
     if (scheduler == NULL || scheduler->process_count == 0) {
         return NULL;
     }
-    
+
     for (int priority = MIN_PRIORITY; priority <= MAX_PRIORITY; priority++) {
         ReadyQueue *queue = &scheduler->ready_queues[priority];
         
@@ -287,23 +287,28 @@ static PCB *next_in_queue(ReadyQueue *queue) {
 //        GESTIÓN DE PROCESOS
 // ============================================
 
-int scheduler_add_process(int pid, process_entry_t entry, int argc, const char **argv,
-                const char *name) {
+int scheduler_add_process(process_entry_t entry, int argc, const char **argv, const char *name) {
     if (scheduler == NULL || scheduler->process_count >= MAX_PROCESSES) {
         return -1;
     }
 
-    PCB *process=proc_create(pid, entry, argc, argv, name);
-
-    if (pid < 0 || pid >= MAX_PROCESSES) {
+    // Buscar primer PID libre
+    int pid = -1;
+    for (int i = 0; i < MAX_PROCESSES; i++) {
+        if (scheduler->processes[i] == NULL) {
+            pid = i;
+            break;
+        }
+    }
+    if (pid < 0) {
         return -1;
     }
 
-    if (scheduler->processes[pid] != NULL) {
-        return -1;  // Slot ya ocupado
+    PCB *process = proc_create(pid, entry, argc, argv, name);
+    if (process == NULL) {
+        return -1;
     }
 
-    // Agregar al array (para acceso por PID)
     scheduler->processes[pid] = process;
     scheduler->process_count++;
 
@@ -311,19 +316,15 @@ int scheduler_add_process(int pid, process_entry_t entry, int argc, const char *
     process->status = PS_READY;
     process->cpu_ticks = 0;
     process->remaining_quantum = process->priority + 1;
-    // Asegurar campos de relación
     if (process->parent_pid < 0) {
-        process->parent_pid = scheduler->current_pid; // si no fue seteado aún
+        process->parent_pid = scheduler->current_pid;
     }
     process->waiting_on = -1;
-    
-    // Sin punteros en PCB: la cola mantiene sus propios nodos
 
-    // Agregar a la cola de su prioridad
     ReadyQueue *queue = &scheduler->ready_queues[process->priority];
     enqueue_process(queue, process);
 
-    return 0;
+    return pid;
 }
 
 int scheduler_remove_process(int pid) {

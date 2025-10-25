@@ -7,3 +7,5 @@ typedef struct {
     size_t freeMemory;
     size_t allocatedBlocks;
 } MemStatus;
+
+typedef int (*process_entry_t)(int argc, char **argv);
