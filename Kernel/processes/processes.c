@@ -113,6 +113,7 @@ int proc_spawn(process_entry_t entry, int argc, const char **argv, const char *n
     }
 
     p->pid = pid;
+    p->parent_pid = scheduler_get_current_pid();  // PID del proceso actual (el que está creando este hijo)
     p->status = PS_READY;
     p->entry = entry;
     p->return_value = 0;

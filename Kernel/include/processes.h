@@ -34,6 +34,7 @@ typedef int (*process_entry_t)(int argc, char **argv);
 
 typedef struct PCB {
     int pid;
+    int parent_pid;  
     process_status_t status;
     char name[MAX_NAME_LENGTH];
     
