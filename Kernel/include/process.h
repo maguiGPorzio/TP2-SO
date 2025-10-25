@@ -47,11 +47,6 @@ typedef struct PCB {
     uint64_t cpu_ticks;              // Total de ticks de CPU usados
     int return_value;                // Valor de retorno (para exit)
     int waiting_on;                  // PID que está esperando (-1 si ninguno)
-    
-    // ⭐ CRÍTICO: Lista circular (para scheduler) ⭐
-    struct PCB *next;                // Siguiente en cola circular
-    struct PCB *prev;                // Anterior en cola circular
-    
 } PCB;
 
 

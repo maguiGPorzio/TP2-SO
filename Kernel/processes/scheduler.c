@@ -7,11 +7,18 @@
 //           ESTRUCTURAS PRIVADAS
 // ============================================
 
-// Cola circular de procesos READY (una por prioridad)
+// Nodos internos para la cola circular (no modifican el PCB)
+typedef struct RQNode {
+    PCB *proc;
+    struct RQNode *next;
+    struct RQNode *prev;
+} RQNode;
+
+// Cola circular de procesos READY (una por prioridad), basada en nodos internos
 typedef struct ReadyQueue {
-    PCB *head;          // Primer proceso en la cola
-    PCB *current;       // Proceso actual en rotación Round Robin
-    int count;          // Cantidad de procesos en esta cola
+    RQNode *head;          // Primer nodo en la cola
+    RQNode *current;       // Nodo actual en rotación Round Robin
+    int count;             // Cantidad de procesos en esta cola
 } ReadyQueue;
 
 typedef struct SchedulerCDT {
@@ -165,10 +172,7 @@ static PCB *pick_next_process(void) {
     if (scheduler == NULL || scheduler->process_count == 0) {
         return NULL;
     }
-
-    // ✅ FIX #3: Eliminar optimización problemática
-    // Solo buscar en las colas
-
+    
     for (int priority = MIN_PRIORITY; priority <= MAX_PRIORITY; priority++) {
         ReadyQueue *queue = &scheduler->ready_queues[priority];
         
@@ -194,20 +198,26 @@ static void enqueue_process(ReadyQueue *queue, PCB *process) {
         return;
     }
 
+    MemoryManagerADT mm = getKernelMemoryManager();
+    RQNode *node = allocMemory(mm, sizeof(RQNode));
+    if (node == NULL) {
+        return; // sin memoria: no encola
+    }
+    node->proc = process;
     if (queue->head == NULL) {
         // Primera inserción: lista circular de 1 elemento
-        queue->head = process;
-        process->next = process;
-        process->prev = process;
-        queue->current = process;
+        node->next = node;
+        node->prev = node;
+        queue->head = node;
+        queue->current = node;
     } else {
         // Insertar al final (antes del head)
-        PCB *tail = queue->head->prev;
+        RQNode *tail = queue->head->prev;
         
-        tail->next = process;
-        process->prev = tail;
-        process->next = queue->head;
-        queue->head->prev = process;
+        tail->next = node;
+        node->prev = tail;
+        node->next = queue->head;
+        queue->head->prev = node;
     }
     
     queue->count++;
@@ -219,29 +229,44 @@ static void dequeue_process(ReadyQueue *queue, PCB *process) {
         return;
     }
     
+    if (queue->count == 0) {
+        return;
+    }
+
+    // Buscar el nodo correspondiente al proceso
+    RQNode *n = queue->head;
+    RQNode *found = NULL;
+    for (int i = 0; i < queue->count; i++) {
+        if (n->proc == process) { found = n; break; }
+        n = n->next;
+    }
+    if (found == NULL) {
+        return; // no estaba en la cola
+    }
+
     if (queue->count == 1) {
         // Último elemento
         queue->head = NULL;
         queue->current = NULL;
     } else {
         // Desenlazar de la lista circular
-        process->prev->next = process->next;
-        process->next->prev = process->prev;
-        
+        found->prev->next = found->next;
+        found->next->prev = found->prev;
+
         // Ajustar head si es necesario
-        if (queue->head == process) {
-            queue->head = process->next;
+        if (queue->head == found) {
+            queue->head = found->next;
         }
         
         // Ajustar current si es necesario
-        if (queue->current == process) {
-            queue->current = process->next;
+        if (queue->current == found) {
+            queue->current = found->next;
         }
     }
-    
-    // Limpiar punteros del proceso
-    process->next = NULL;
-    process->prev = NULL;
+
+    // Liberar nodo y actualizar count
+    MemoryManagerADT mm = getKernelMemoryManager();
+    freeMemory(mm, found);
     queue->count--;
 }
 
@@ -251,11 +276,11 @@ static PCB *next_in_queue(ReadyQueue *queue) {
         return NULL;
     }
     
-    // Rotar al siguiente en la lista circular
-    PCB *result = queue->current;
+    // Rotar al siguiente en la lista circular y devolver proceso
+    RQNode *result = queue->current;
     queue->current = queue->current->next;
     
-    return result;
+    return result->proc;
 }
 
 // ============================================
@@ -292,9 +317,7 @@ int scheduler_add_process(int pid, process_entry_t entry, int argc, const char *
     }
     process->waiting_on = -1;
     
-    // Inicializar punteros de lista circular
-    process->next = NULL;
-    process->prev = NULL;
+    // Sin punteros en PCB: la cola mantiene sus propios nodos
 
     // Agregar a la cola de su prioridad
     ReadyQueue *queue = &scheduler->ready_queues[process->priority];
@@ -544,11 +567,9 @@ static void cleanup_terminated_processes(void) {
             if (p->parent_pid >= 0) {
                 continue;
             }
-            // Remover de cola si está ahí (no debería, pero por seguridad)
-            if (p->next != NULL || p->prev != NULL) {
-                ReadyQueue *queue = &scheduler->ready_queues[p->priority];
-                dequeue_process(queue, p);
-            }
+            // Remover de cola si estuviera encolado (seguro aunque no esté)
+            ReadyQueue *queue = &scheduler->ready_queues[p->priority];
+            dequeue_process(queue, p);
             
             // Liberar recursos del proceso
             free_process_resources(p);
@@ -565,11 +586,23 @@ void scheduler_destroy(void) {
 
     MemoryManagerADT mm = getKernelMemoryManager();
     
-    // Limpiar todas las colas
+    // Limpiar todas las colas liberando nodos
     for (int priority = 0; priority <= MAX_PRIORITY; priority++) {
-        scheduler->ready_queues[priority].head = NULL;
-        scheduler->ready_queues[priority].current = NULL;
-        scheduler->ready_queues[priority].count = 0;
+        ReadyQueue *q = &scheduler->ready_queues[priority];
+        int remaining = q->count;
+        RQNode *start = q->head;
+        RQNode *n = start;
+        while (remaining-- > 0 && n != NULL) {
+            RQNode *next = n->next;
+            freeMemory(mm, n);
+            if (next == start) {
+                break;
+            }
+            n = next;
+        }
+        q->head = NULL;
+        q->current = NULL;
+        q->count = 0;
     }
     
     // No liberamos los PCBs aquí, eso lo hace cleanup_all_processes()
@@ -613,14 +646,10 @@ void scheduler_exit_process(int64_t retValue) {
                 scheduler_unblock_process(parent->pid);
             }
         }
-        // Por seguridad, si estuviera encolado, removerlo
-        if (proc->next != NULL || proc->prev != NULL) {
-            ReadyQueue *q = &scheduler->ready_queues[proc->priority];
-            // dequeue de su cola
-            if (q != NULL) {
-                // Función estática local declarada arriba
-                dequeue_process(q, proc);
-            }
+        // Por seguridad, intentar removerlo de la cola si estuviera encolado (no hace nada si no lo está)
+        ReadyQueue *q = &scheduler->ready_queues[proc->priority];
+        if (q != NULL) {
+            dequeue_process(q, proc);
         }
     }
 
