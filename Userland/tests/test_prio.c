@@ -1,42 +1,5 @@
 #include "../include/usrlib.h"
-
-
-static uint32_t m_z = 362436069;
-static uint32_t m_w = 521288629;
-
-static uint32_t GetUint() {
-  m_z = 36969 * (m_z & 65535) + (m_z >> 16);
-  m_w = 18000 * (m_w & 65535) + (m_w >> 16);
-  return (m_z << 16) + m_w;
-}
-
-static uint32_t GetUniform(uint32_t max) {
-  uint32_t u = GetUint();
-  return (u + 1.0) * 2.328306435454494e-10 * max;
-}
-
-static int64_t satoi(char *str) {
-  uint64_t i = 0;
-  int64_t res = 0;
-  int8_t sign = 1;
-
-  if (!str)
-    return 0;
-
-  if (str[i] == '-') {
-    i++;
-    sign = -1;
-  }
-
-  for (; str[i] != '\0'; ++i) {
-    if (str[i] < '0' || str[i] > '9')
-      return 0;
-    res = res * 10 + str[i] - '0';
-  }
-
-  return res * sign;
-}
-
+#include "../include/tests.h"
 
 #define TOTAL_PROCESSES 3
 
