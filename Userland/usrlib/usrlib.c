@@ -320,42 +320,6 @@ float inv_sqrt(float number){
     return y;             
 }
 
-// Simple wrappers expected by tests; not all are supported by kernel.
-// We implement what we can and provide safe fallbacks.
-
-// Nuevo: my_create_process con firma igual a scheduler_add_process
-int64_t my_create_process(process_entry_t entry, int argc, const char **argv, const char *name) {
-    return sys_create_process(entry, argc, argv, name);
-}
-
-
-int64_t my_wait(int64_t pid) {
-    return sys_wait((int)pid);
-}
-
-int64_t my_nice(int64_t pid, int new_prio) { //esta mal porque tendria a set_priority
-    // Interpretar nice como yield voluntario del proceso actual
-    (void)pid; (void)new_prio;
-    sys_yield();
-    return 0;
-}
-
-int64_t my_block(int64_t pid) {
-    return sys_block((int)pid);
-}
-
-int64_t my_unblock(int64_t pid) {
-    return sys_unblock((int)pid);
-}
-
-int64_t my_kill(int64_t pid) {
-    return sys_kill((int)pid);
-}
-
-int64_t my_getpid(void) {
-    return sys_getpid();
-}
-
 uint64_t scanf_aux(const char *fmt, uint64_t regPtr[], uint64_t stkPtr[]) {
     uint64_t items_read = 0;
     uint64_t regs_idx = 0;
@@ -429,4 +393,35 @@ uint64_t scanf_aux(const char *fmt, uint64_t regPtr[], uint64_t stkPtr[]) {
             }
     }
     return items_read;
+}
+
+//PROCESOS
+
+// Nuevo: my_create_process con firma igual a scheduler_add_process
+int64_t my_create_process(process_entry_t entry, int argc, const char **argv, const char *name) {
+    return sys_create_process(entry, argc, argv, name);
+}
+
+int64_t my_wait(int64_t pid) {
+    return sys_wait(pid);
+}
+
+int64_t my_nice(int64_t pid, int new_prio) { //check
+    return sys_nice(pid, new_prio);
+}
+
+int64_t my_block(int64_t pid) {
+    return sys_block(pid);
+}
+
+int64_t my_unblock(int64_t pid) {
+    return sys_unblock(pid);
+}
+
+int64_t my_kill(int64_t pid) {
+    return sys_kill(pid);
+}
+
+int64_t my_getpid(void) {
+    return sys_getpid();
 }

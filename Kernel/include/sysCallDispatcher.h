@@ -50,6 +50,6 @@ static int64_t sys_kill(int pid);
 static int64_t sys_block(int pid);
 static int64_t sys_unblock(int pid);
 static int64_t sys_wait(int pid);
-static void    sys_yield(void);
+static int64_t sys_nice(int64_t pid, int new_prio);
 
 #endif

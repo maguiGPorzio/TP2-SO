@@ -5,7 +5,7 @@ global  sys_enable_textmode, sys_disable_textmode, sys_put_pixel, sys_key_status
 global  sys_sleep, sys_clear_input_buffer, sys_ticks
 global  sys_malloc, sys_free, sys_memstatus
 ; Process/syscalls (scheduler-backed)
-global  sys_create_process, sys_exit_current, sys_getpid, sys_kill, sys_block, sys_unblock, sys_wait, sys_yield
+global  sys_create_process, sys_exit_current, sys_getpid, sys_kill, sys_block, sys_unblock, sys_wait, sys_nice
 global generate_invalid_opcode
 global printf
 global scanf
@@ -128,7 +128,7 @@ sys_memstatus:
 sys_create_process:
     SYSCALL 26
 
-; 27 - void sys_exit_current(int status)
+; 27 - void sys_exit_current(int status), NO SE USA POR AHORA
 sys_exit_current:
     SYSCALL 27
 
@@ -154,8 +154,8 @@ sys_unblock:
 sys_wait:
     SYSCALL 33
 
-; 34 - void sys_yield(void)
-sys_yield:
+; 34 - void sys_noice(void)
+sys_nice:
     SYSCALL 34
 
 generate_invalid_opcode:

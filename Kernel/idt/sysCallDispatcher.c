@@ -53,7 +53,7 @@ void * syscalls[] = {
     0,                       // 31 reservado (no-op en ASM)
     &sys_unblock,            // 32
     &sys_wait,               // 33
-    &sys_yield               // 34
+    &sys_nice               // 34
 };
 
 static uint64_t sys_regs(char * buffer){
@@ -188,30 +188,18 @@ static MemStatus sys_memStatus(void) {
 }
 
 // ===================== Processes syscalls =====================
-// Encuentra el primer PID libre consultando al scheduler
-static int find_free_pid(void) {
-    for (int i = 0; i < MAX_PROCESSES; i++) {
-        if (scheduler_get_process(i) == NULL) {
-            return i;
-        }
-    }
-    return -1;
-}
 
 // Crea un proceso: reserva un PID libre y delega en el scheduler
 static int64_t sys_create_process(void * entry, int argc, const char **argv, const char *name) {
     if (entry == NULL || name == NULL) {
         return -1;
     }
-    int pid = find_free_pid();
-    if (pid < 0) {
-        return -1;
-    }
+
     int new_pid = scheduler_add_process((process_entry_t)entry, argc, argv, name);
     return new_pid;
 }
 
-// Termina el proceso actual con un status
+// Termina el proceso actual con un status, POR AHORA NO USAMOS
 static void sys_exit_current(int status) {
     scheduler_exit_process(status);
 }
@@ -241,13 +229,6 @@ static int64_t sys_wait(int pid) {
     return (int64_t)scheduler_wait(pid);
 }
 
-// Cede la CPU voluntariamente: reencola el proceso actual y fuerza cambio inmediato
-extern void *current_kernel_rsp;
-extern void *switch_to_rsp;
-static void sys_yield(void) {
-    // Marcar intención de replanificar y seleccionar próximo
-    scheduler_yield();
-    void *next_rsp = schedule(current_kernel_rsp);
-    switch_to_rsp = next_rsp; // handler hará el cambio de pila antes de iretq
+static int64_t sys_nice(int64_t pid, int new_prio) {
+    return scheduler_set_priority(pid, new_prio);
 }
-
