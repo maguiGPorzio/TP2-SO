@@ -9,7 +9,7 @@
 #include "sound.h"
 #include "interrupts.h"
 #include "memoryManager.h"
-#include "processes.h"
+#include "process.h"
 #include "scheduler.h"
 
 extern uint8_t text;
@@ -65,8 +65,6 @@ int main() {
 	initKernelMemoryManager();
 
 	init_scheduler();
-
-	init_processes();
 
 	// TODO: crear el proceso de la shell
 

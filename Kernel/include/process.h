@@ -1,46 +1,64 @@
-#ifndef PROCESSES_H
-#define PROCESSES_H
+#ifndef PROCESS_H
+#define PROCESS_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
-/* ===== Constantes solo usadas por process.c ===== */
-#define MAX_NAME_LENGTH     32
-#define PROCESS_STACK_SIZE  4096  /* 4 KB */
+#define MAX_PROCESSES 64
+#define MAX_NAME_LENGTH 32
+#define PROCESS_STACK_SIZE (4096 * 2)  // 8KB stack
 
-/* ===== Tipos ===== */
-typedef enum {
-    PS_READY = 0,
-    PS_BLOCKED,
-    PS_RUNNING,
-    PS_TERMINATED
-} process_status_t;
+// ============================================
+//           TIPOS Y ESTRUCTURAS
+// ============================================
 
 typedef int (*process_entry_t)(int argc, char **argv);
 
+// Estados de proceso
+typedef enum {
+    PS_READY = 0,
+    PS_RUNNING,
+    PS_BLOCKED,
+    PS_TERMINATED
+} ProcessStatus;
+
+// Process Control Block
 typedef struct PCB {
+    // Identificación
     int pid;
-    process_status_t status;
     char name[MAX_NAME_LENGTH];
-
-    void *stack_base;
-    void *stack_pointer;
-
+    
+    // Estado y scheduling
+    ProcessStatus status;
+    uint8_t priority;                // 0-9 (0 = mayor prioridad)
+    uint8_t remaining_quantum;       // Ticks restantes en este quantum
+    
+    // Contexto de ejecución
+    void *stack_base;                // Base del stack
+    void *stack_pointer;             // RSP actual (apunta al contexto guardado)
+    
+    // Función de entrada
     process_entry_t entry;
-    char **argv;
     int argc;
-
-    uint8_t  priority;          /* 0-9 (0 = mayor prioridad) */
-    uint8_t  remaining_quantum; /* ticks restantes del turno */
-    uint64_t cpu_ticks;         /* ticks de CPU usados */
-
-    int return_value;
+    char **argv;
+    
+    // Estadísticas
+    uint64_t cpu_ticks;              // Total de ticks de CPU usados
+    int return_value;                // Valor de retorno (para exit)
+    
+    // ⭐ CRÍTICO: Lista circular (para scheduler) ⭐
+    struct PCB *next;                // Siguiente en cola circular
+    struct PCB *prev;                // Anterior en cola circular
+    
 } PCB;
 
-/* ===== API expuesta por process.c ===== */
-PCB *proc_spawn(int pid,
-                process_entry_t entry,
-                int argc,
-                const char **argv,
-                const char *name);
 
-#endif /* PROCESSES_H */
+// ============================================
+//      FUNCIONES INTERNAS (process.c)
+// ============================================
+
+// Creación y limpieza (usadas por scheduler)
+PCB *proc_create(int pid, process_entry_t entry, int argc, const char **argv, const char *name);
+void free_process_resources(PCB *p);
+
+#endif // PROCESS_H

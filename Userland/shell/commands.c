@@ -26,12 +26,12 @@ static Command commands[] = {
     { "print date", "prints system's date", print_date },
     { "print regs", "prints the last saved register values", print_saved_registers },
     { "print time", "prints system's time", print_time },
-    { "print processes", "prints current processes", print_processes},
-    { "spawn a", "runs a process that writes a to stdout", test_spawn_a }, // prueba de procesos: imprime 'a'
     { "song", "plays tetris song", song },
     { "test div0", "causes division by zero exception", test_division_zero }, // prueba de división por cero
     { "test invopcode", "causes invalid opcode exception", test_invalid_opcode }, // prueba de opcode inválido
     { "test mm", "runs a memory manager test", test_mm_command }, // prueba del memory manager
+    { "test prio", "runs priority scheduler test", test_prio_command },
+    { "test processes", "runs processes stress test", test_processes_command },
     {0,0, 0}
 };
 
@@ -173,23 +173,14 @@ void test_mm_command() {
     test_mm(1, args);
 }
 
-// ====== Nuevo comando: spawnea un proceso que imprime 'a' ======
-extern int proc_print_a(int argc, char **argv);
-
-void test_spawn_a() {
-    const char *args[] = { "a" };
-    int64_t pid = sys_spawn(proc_print_a, 1, args, "proc_a");
-    if (pid < 0) {
-        shell_print_err("spawn fallo\n");
-        return;
-    }
-    printf("\npid: %d\n", pid);
-    // Ceder CPU para que el proceso corra (scheduler cooperativo)
-    sys_yield();
-    shell_newline();
+// Ejecuta el test de prioridades con un valor por defecto
+void test_prio_command() {
+    static char * args[] = { "5000000" }; // valor de trabajo por proceso
+    test_prio(1, args);
 }
 
-void print_processes() {
-    sys_print_processes();
-    shell_newline();
+// Ejecuta el test de procesos con un número por defecto de procesos
+void test_processes_command() {
+    static char * args[] = { "5" }; // cantidad de procesos concurrentes
+    test_processes(1, args);
 }

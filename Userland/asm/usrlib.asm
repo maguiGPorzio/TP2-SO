@@ -4,7 +4,8 @@ global  sys_screen_size, sys_circle, sys_rectangle, sys_line, sys_draw_string
 global  sys_enable_textmode, sys_disable_textmode, sys_put_pixel, sys_key_status
 global  sys_sleep, sys_clear_input_buffer, sys_ticks
 global  sys_malloc, sys_free, sys_memstatus
-global  sys_spawn, sys_exit, sys_getpid, sys_yield, sys_print_processes
+; Process/syscalls (scheduler-backed)
+global  sys_create_process, sys_exit_current, sys_getpid, sys_kill, sys_block, sys_unblock
 global generate_invalid_opcode
 global printf
 global scanf
@@ -123,25 +124,31 @@ sys_free:
 sys_memstatus:
     SYSCALL 25
 
-; 26 - int64_t sys_spawn(entry, argc, argv, name)
-sys_spawn:
+; 26 - int64_t sys_create_process(void *entry, int argc, const char **argv, const char *name)
+sys_create_process:
     SYSCALL 26
 
-; 27 - void sys_exit(int status)
-sys_exit:
+; 27 - void sys_exit_current(int status)
+sys_exit_current:
     SYSCALL 27
 
 ; 28 - int64_t sys_getpid(void)
 sys_getpid:
     SYSCALL 28
 
-; 29 - void sys_yield(void)
-sys_yield:
+; 29 - int64_t sys_kill(int pid)
+sys_kill:
     SYSCALL 29
 
-; 30 - int64_t sys_waitpid(int pid)
-sys_print_processes:
+; 30 - int64_t sys_block(int pid)
+sys_block:
     SYSCALL 30
+
+; 31 reservado (no-op) - no exponer wrapper
+
+; 32 - int64_t sys_unblock(int pid)
+sys_unblock:
+    SYSCALL 32
 
 generate_invalid_opcode:
     ud2         ; Genera excepción de opcode inválido

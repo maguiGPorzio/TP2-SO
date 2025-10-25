@@ -3,13 +3,6 @@
 #include <memoryManager.h>
 #include "lib.h"
 
-// Variables compartidas con ASM para solicitar cambio de contexto
-// ASM escribe current_kernel_rsp al entrar a la syscall (después de pushState)
-// C escribe switch_to_rsp cuando quiere que el handler cambie a otra pila antes de iretq
-void *current_kernel_rsp = 0;
-void *switch_to_rsp = 0;
-extern void *syscall_frame_ptr; // RSP de la shell capturado antes de cambiar a un proceso
-
 // ============================================
 //           ESTRUCTURAS PRIVADAS
 // ============================================
@@ -39,6 +32,7 @@ static SchedulerADT scheduler = NULL;
 // Variables compartidas con ASM (para context switching)
 extern void *current_kernel_rsp;
 extern void *switch_to_rsp;
+extern void switch_to_rsp_and_iret(void *next_rsp);
 
 // ============================================
 //        DECLARACIONES AUXILIARES
@@ -98,39 +92,48 @@ SchedulerADT get_scheduler(void) {
 // ============================================
 
 void *schedule(void *prev_rsp) {
-    if (scheduler == NULL || scheduler->process_count == 0) {
+    if (scheduler == NULL) {
+        return prev_rsp;
+    }
+
+    if (scheduler->process_count == 0) {
+        scheduler->force_reschedule = false;
         return prev_rsp;
     }
 
     cleanup_terminated_processes();
 
-    // 1. Guardar RSP del proceso actual
+    // ==========================================
+    // 1. Guardar RSP y gestionar proceso actual
+    // ==========================================
     if (scheduler->current_pid >= 0 && 
         scheduler->processes[scheduler->current_pid] != NULL) {
         
         PCB *current = scheduler->processes[scheduler->current_pid];
         current->stack_pointer = prev_rsp;
         
-        // Incrementar ticks de CPU
         current->cpu_ticks++;
         scheduler->total_cpu_ticks++;
         
-        // Decrementar quantum
         if (current->remaining_quantum > 0) {
             current->remaining_quantum--;
         }
         
-        // Marcar como READY si estaba RUNNING
+        // ✅ FIX #1: Re-encolar cuando pierde quantum
         if (current->status == PS_RUNNING) {
             current->status = PS_READY;
+            ReadyQueue *queue = &scheduler->ready_queues[current->priority];
+            enqueue_process(queue, current);
         }
     }
 
+    // ==========================================
     // 2. Elegir siguiente proceso
+    // ==========================================
     PCB *next = pick_next_process();
     
     if (next == NULL) {
-        // No hay procesos READY, retornar al actual
+        scheduler->force_reschedule = false;
         if (scheduler->current_pid >= 0 && 
             scheduler->processes[scheduler->current_pid] != NULL) {
             return scheduler->processes[scheduler->current_pid]->stack_pointer;
@@ -138,14 +141,16 @@ void *schedule(void *prev_rsp) {
         return prev_rsp;
     }
 
+    // ✅ FIX #2: Desencolar proceso elegido
+    ReadyQueue *queue = &scheduler->ready_queues[next->priority];
+    dequeue_process(queue, next);
+
+    // ==========================================
     // 3. Cambiar al nuevo proceso
+    // ==========================================
     scheduler->current_pid = next->pid;
     next->status = PS_RUNNING;
-    
-    // Resetear quantum basado en prioridad
     next->remaining_quantum = next->priority + 1;
-    
-    // Resetear flag de force_reschedule
     scheduler->force_reschedule = false;
 
     return next->stack_pointer;
@@ -161,25 +166,13 @@ static PCB *pick_next_process(void) {
         return NULL;
     }
 
-    // Si el proceso actual aún tiene quantum Y no se forzó reschedule
-    if (!scheduler->force_reschedule && scheduler->current_pid >= 0) {
-        PCB *current = scheduler->processes[scheduler->current_pid];
-        
-        if (current != NULL && 
-            current->status == PS_READY && 
-            current->remaining_quantum > 0) {
-            return current;
-        }
-    }
+    // ✅ FIX #3: Eliminar optimización problemática
+    // Solo buscar en las colas
 
-    // Buscar proceso con mayor prioridad (menor número)
-    // Recorrer las colas de prioridad de 0 a 9
     for (int priority = MIN_PRIORITY; priority <= MAX_PRIORITY; priority++) {
         ReadyQueue *queue = &scheduler->ready_queues[priority];
         
         if (queue->count > 0) {
-            // Hay procesos en esta cola de prioridad
-            // Round Robin: rotar al siguiente
             PCB *candidate = next_in_queue(queue);
             
             if (candidate != NULL && candidate->status == PS_READY) {
@@ -269,14 +262,14 @@ static PCB *next_in_queue(ReadyQueue *queue) {
 //        GESTIÓN DE PROCESOS
 // ============================================
 
-int scheduler_add_process(process_entry_t entry, int argc, const char **argv, const char *name) {
+int scheduler_add_process(int pid, process_entry_t entry, int argc, const char **argv,
+                const char *name) {
     if (scheduler == NULL || scheduler->process_count >= MAX_PROCESSES) {
         return -1;
     }
 
-    PCB *process=proc_spawn(entry, argc, argv, name);
+    PCB *process=proc_create(pid, entry, argc, argv, name);
 
-    int pid = process->pid;
     if (pid < 0 || pid >= MAX_PROCESSES) {
         return -1;
     }
@@ -438,6 +431,42 @@ void scheduler_get_stats(uint64_t *total_ticks) {
     }
 }
 
+void scheduler_yield(void) {
+    scheduler_force_reschedule();
+}
+
+int scheduler_kill_process(int pid) {
+    if (scheduler == NULL || pid < 0 || pid >= MAX_PROCESSES) {
+        return -1;
+    }
+
+    PCB *proc = scheduler->processes[pid];
+    if (proc == NULL) {
+        return -1;                      // no existe
+    }
+    if (proc->status == PS_TERMINATED) {
+        return 0;                       // ya estaba terminado
+    }
+
+    // Si estaba en READY, sacarlo de su cola para que no sea elegido
+    if (proc->status == PS_READY) {
+        ReadyQueue *q = &scheduler->ready_queues[proc->priority];
+        dequeue_process(q, proc);
+    }
+
+    // Marcar como TERMINATED (la liberación real la hace cleanup_terminated_processes)
+    proc->status = PS_TERMINATED;
+
+    // Si era el proceso actual, forzar replanificación inmediata
+    if (pid == scheduler->current_pid) {
+        scheduler->current_pid = -1;    // ya no hay "actual"
+        scheduler_force_reschedule();
+    }
+
+    return 0;
+}
+
+
 // ============================================
 //   FUNCIONES AUXILIARES PARA BLOQUEO
 // ============================================
@@ -539,33 +568,63 @@ void scheduler_destroy(void) {
     scheduler = NULL;
 }
 
-// ============================================
-//        DEBUG / ESTADÍSTICAS
-// ============================================
-
-void scheduler_print_queues(void) {
-    if (scheduler == NULL) {
-        return;
+// En scheduler.c
+PCB *scheduler_get_process(int pid) {
+    if (scheduler == NULL || pid < 0 || pid >= MAX_PROCESSES) {
+        return NULL;
     }
     
-    printf("=== Ready Queues ===\n");
-    for (int priority = MIN_PRIORITY; priority <= MAX_PRIORITY; priority++) {
-        ReadyQueue *queue = &scheduler->ready_queues[priority];
-        
-        if (queue->count > 0) {
-            printf("Priority %d (%d processes): ", priority, queue->count);
-            
-            PCB *p = queue->head;
-            for (int i = 0; i < queue->count; i++) {
-                printf("%s(PID=%d) ", p->name, p->pid);
-                p = p->next;
-            }
-            printf("\n");
-        }
-    }
-    printf("\n");
+    return scheduler->processes[pid];
 }
 
-void proc_yield(void) {
+// ============================================
+//   TERMINACIÓN INMEDIATA DEL PROCESO ACTUAL
+// ============================================
+void scheduler_exit_process(int64_t retValue) {
+    if (scheduler == NULL) {
+        // No scheduler available; halt CPU
+        while (1) { __asm__ __volatile__("hlt"); }
+    }
+
+    int cur = scheduler->current_pid;
+    if (cur < 0 || cur >= MAX_PROCESSES) {
+        // No current process; nothing sensible to switch to
+        while (1) { __asm__ __volatile__("hlt"); }
+    }
+
+    PCB *proc = scheduler->processes[cur];
+    if (proc != NULL) {
+        proc->return_value = (int)retValue;
+        proc->status = PS_TERMINATED;
+        // Por seguridad, si estuviera encolado, removerlo
+        if (proc->next != NULL || proc->prev != NULL) {
+            ReadyQueue *q = &scheduler->ready_queues[proc->priority];
+            // dequeue de su cola
+            if (q != NULL) {
+                // Función estática local declarada arriba
+                dequeue_process(q, proc);
+            }
+        }
+    }
+
+    // Ya no hay proceso actual activo
+    scheduler->current_pid = -1;
     scheduler_force_reschedule();
+
+    // Capturar el RSP actual como prev para que schedule() seleccione el próximo
+    void *prev_rsp;
+    __asm__ __volatile__("mov %%rsp, %0" : "=r"(prev_rsp));
+
+    void *next_rsp = schedule(prev_rsp);
+
+    // Si no hay siguiente proceso, detener
+    if (next_rsp == NULL || next_rsp == prev_rsp) {
+        while (1) { __asm__ __volatile__("hlt"); }
+    }
+
+    // Cambio de contexto inmediato (no retorna)
+    switch_to_rsp_and_iret(next_rsp);
+
+    // No debería alcanzarse
+    while (1) { __asm__ __volatile__("hlt"); }
 }

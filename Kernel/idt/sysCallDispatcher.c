@@ -7,16 +7,11 @@
 #include "sound.h"
 #include "sysCallDispatcher.h"
 #include "memoryManager.h"
-#include "processes.h"
+#include "process.h"
+#include "scheduler.h"
 
 #define MIN_CHAR 0
 #define MAX_CHAR 256
-
-// Forward declarations for process syscalls (26..30)
-static int64_t sys_spawn(void * entry, int argc, const char **argv, const char *name);
-static void    sys_exit(int status);
-static int64_t sys_getpid(void);
-static void    sys_yield(void);
 
 void * syscalls[] = {
     // syscalls de arqui
@@ -49,12 +44,14 @@ void * syscalls[] = {
     &sys_free,               // 24
     &sys_memStatus,          // 25
 
-    // syscalls de procesos
-    &sys_spawn,              // 26
-    &sys_exit,               // 27
+    // syscalls de procesos (scheduler)
+    &sys_create_process,     // 26
+    &sys_exit_current,       // 27
     &sys_getpid,             // 28
-    &sys_yield,              // 29
-    &sys_print_processes     // 30
+    &sys_kill,               // 29
+    &sys_block,              // 30
+    0,                       // 31 reservado (no-op en ASM)
+    &sys_unblock             // 32
 };
 
 static uint64_t sys_regs(char * buffer){
@@ -189,22 +186,51 @@ static MemStatus sys_memStatus(void) {
 }
 
 // ===================== Processes syscalls =====================
-static int64_t sys_spawn(void * entry, int argc, const char **argv, const char *name) {
-    return (int64_t)proc_spawn((process_entry_t)entry, argc, argv, name);
+// Encuentra el primer PID libre consultando al scheduler
+static int find_free_pid(void) {
+    for (int i = 0; i < MAX_PROCESSES; i++) {
+        if (scheduler_get_process(i) == NULL) {
+            return i;
+        }
+    }
+    return -1;
 }
 
-static void sys_exit(int status) {
-    proc_exit(status);
+// Crea un proceso: reserva un PID libre y delega en el scheduler
+static int64_t sys_create_process(void * entry, int argc, const char **argv, const char *name) {
+    if (entry == NULL || name == NULL) {
+        return -1;
+    }
+    int pid = find_free_pid();
+    if (pid < 0) {
+        return -1;
+    }
+    int rc = scheduler_add_process(pid, (process_entry_t)entry, argc, argv, name);
+    return (rc == 0) ? (int64_t)pid : -1;
 }
 
+// Termina el proceso actual con un status
+static void sys_exit_current(int status) {
+    scheduler_exit_process(status);
+}
+
+// Devuelve el PID del proceso en ejecución
 static int64_t sys_getpid(void) {
-    return (int64_t)proc_getpid();
+    return (int64_t)scheduler_get_current_pid();
 }
 
-static void sys_yield(void) {
-    proc_yield();
+// Mata un proceso por PID
+static int64_t sys_kill(int pid) {
+    return (int64_t)scheduler_kill_process(pid);
 }
 
-static void sys_print_processes() {
-    proc_print();
+// Bloquea un proceso por PID
+static int64_t sys_block(int pid) {
+    return (int64_t)scheduler_block_process(pid);
 }
+
+// Desbloquea un proceso por PID
+static int64_t sys_unblock(int pid) {
+    return (int64_t)scheduler_unblock_process(pid);
+}
+

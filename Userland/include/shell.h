@@ -1,5 +1,8 @@
 #include "usrlib.h"
 #include "test_mm.h"
+// Prototipos de tests disponibles desde la shell
+int64_t test_prio(uint64_t argc, char *argv[]);
+int64_t test_processes(uint64_t argc, char *argv[]);
 
 #define INPUT_MAX 100
 #define HISTORY_MAX 4096 
@@ -31,7 +34,6 @@ void process_line(char * line, uint32_t * history_len);
 void incfont();
 void decfont();
 void redraw_history();
-void print_processes();
 
 // comandos
 void help();
@@ -43,5 +45,6 @@ void print_time();
 void print_date();
 void song();
 void test_mm_command();
-void test_spawn_a();
+void test_prio_command();
+void test_processes_command();
 

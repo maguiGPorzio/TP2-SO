@@ -2,27 +2,23 @@
 #include <stdint.h>
 #include "keyboard.h"
 
-
-#define MAX_IRQ 2
-
-static void int_20();
+static uint64_t int_20(uint64_t rsp);
 static void int_21();
 
-// Array de punteros a función para las interrupciones
-static void (*irq_handlers[])(void) = {
-    int_20,  // IRQ 0
-    int_21   // IRQ 1
-};
-
-void irqDispatcher(uint64_t irq) {
-    if (irq < MAX_IRQ) {
-        irq_handlers[irq]();
+uint64_t irqDispatcher(uint64_t irq, uint64_t rsp) {
+    switch (irq) {
+        case 0:
+            rsp = int_20(rsp);
+            break;
+        case 1:
+            int_21();
+            break;
     }
-    return;
+    return rsp;
 }
 
-void int_20() {
-	timer_handler();
+uint64_t int_20(uint64_t rsp) {
+	return timer_handler(rsp);
 }
 
 void int_21() {

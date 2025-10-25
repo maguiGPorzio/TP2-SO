@@ -3,12 +3,13 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "processes.h"
+#include "process.h"
 
 // ============================================
 //           DEFINICIONES
 // ============================================
 
+#define MAX_PROCESSES 32
 #define MIN_PRIORITY 0
 #define MAX_PRIORITY 9
 #define DEFAULT_PRIORITY 5
@@ -32,10 +33,14 @@ void scheduler_destroy(void);
 void *schedule(void *prev_rsp);
 
 // Gestión de procesos
-int scheduler_add_process(PCB *process);
+int scheduler_add_process(int pid, process_entry_t entry, int argc, const char **argv, const char *name);
 int scheduler_remove_process(int pid);
 int scheduler_set_priority(int pid, uint8_t priority);
 int scheduler_get_priority(int pid);
+void scheduler_yield(void);
+int scheduler_kill_process(int pid);
+PCB *scheduler_get_process(int pid);
+void scheduler_exit_process(int64_t retValue);
 
 // Bloqueo/desbloqueo (para usar desde processes.c)
 int scheduler_block_process(int pid);
@@ -44,9 +49,5 @@ int scheduler_unblock_process(int pid);
 // Control de scheduling
 void scheduler_force_reschedule(void);
 int scheduler_get_current_pid(void);
-
-// Estadísticas
-void scheduler_get_stats(uint64_t *total_ticks);
-void scheduler_print_queues(void);  // Debug
 
 #endif // SCHEDULER_H

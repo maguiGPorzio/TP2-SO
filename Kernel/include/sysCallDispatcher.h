@@ -8,7 +8,7 @@
 #define STDOUT 1
 #define STDERR 2
 
-#define SYSCALL_COUNT 31 // actualizar también el chequeo en asm/interrupts.asm
+#define SYSCALL_COUNT 33 // actualizar también el chequeo en asm/interrupts.asm (31 reservado no-op)
 
 extern void * syscalls[SYSCALL_COUNT];
 
@@ -42,11 +42,12 @@ static void * sys_malloc(size_t size);
 static void sys_free(void * ptr);
 static MemStatus sys_memStatus(void);
 
-// processes syscalls
-static int64_t sys_spawn(void * entry, int argc, const char **argv, const char *name);
-static void sys_exit(int status);
+// processes syscalls (scheduler-based)
+static int64_t sys_create_process(void * entry, int argc, const char **argv, const char *name);
+static void    sys_exit_current(int status);
 static int64_t sys_getpid(void);
-static void sys_yield(void);
-static void sys_print_processes();
+static int64_t sys_kill(int pid);
+static int64_t sys_block(int pid);
+static int64_t sys_unblock(int pid);
 
 #endif

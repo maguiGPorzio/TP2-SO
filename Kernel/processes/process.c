@@ -5,20 +5,18 @@
 #include "interrupts.h"
 
 // Funciones ASM para context switching
-extern void *setup_initial_stack(void *caller, int pid, void *stack_pointer);
-extern void switch_to_rsp_and_iret(void *next_rsp);
+extern void *setup_initial_stack(void *caller, int pid, void *stack_pointer, void *rcx);
 
 // ============================================
 //        DECLARACIONES AUXILIARES
 // ============================================
 static char **duplicateArgv(const char **argv, int argc, MemoryManagerADT mm);
 static void process_caller(int pid);
-static void free_process_resources(PCB *p);
 
 // ============================================
 //         LIFECYCLE DE PROCESOS
 // ============================================
-PCB *proc_spawn(int pid, process_entry_t entry, int argc, const char **argv,
+PCB *proc_create(int pid, process_entry_t entry, int argc, const char **argv,
                 const char *name) {
 
     if (entry == NULL || name == NULL) {
@@ -51,7 +49,9 @@ PCB *proc_spawn(int pid, process_entry_t entry, int argc, const char **argv,
     }
 
     // El stack crece hacia abajo, por lo tanto el puntero inicial está al final del bloque
-    p->stack_pointer = (char *)p->stack_base + PROCESS_STACK_SIZE;
+    p->stack_pointer = setup_initial_stack(&process_caller, p->pid,
+                                        (char *)p->stack_base + PROCESS_STACK_SIZE,
+                                        0 );
 
     // ============================
     // Argumentos (argv / argc)
@@ -75,6 +75,35 @@ PCB *proc_spawn(int pid, process_entry_t entry, int argc, const char **argv,
     p->name[MAX_NAME_LENGTH - 1] = '\0';
 
     return p;
+}
+
+void free_process_resources(PCB * p) {
+    if (p == NULL) {
+        return;
+    }
+
+    MemoryManagerADT mm = getKernelMemoryManager();
+
+    // Liberar argv y sus strings
+    if (p->argv != NULL) {
+        for (int i = 0; i < p->argc; i++) {
+            if (p->argv[i] != NULL) {
+                freeMemory(mm, p->argv[i]);
+            }
+        }
+        freeMemory(mm, p->argv);
+        p->argv = NULL;
+    }
+
+    // Liberar stack
+    if (p->stack_base != NULL) {
+        freeMemory(mm, p->stack_base);
+        p->stack_base = NULL;
+        p->stack_pointer = NULL;
+    }
+
+    // Liberar PCB
+    freeMemory(mm, p);
 }
 
 // ============================================
@@ -127,46 +156,15 @@ static char **duplicateArgv(const char **argv, int argc, MemoryManagerADT mm) {
 }
 
 static void process_caller(int pid) {
-    PCB *p = processes[pid];
+    PCB *p = scheduler_get_process(pid);
     if (p == NULL || p->entry == NULL) {
-        proc_exit(-1);
+        scheduler_exit_process(-1);
         return;
     }
-
-    current_process = pid; // mantener variable informativa
 
     // Llamar a la función de entrada del proceso
     int res = p->entry(p->argc, p->argv);
 
     // Cuando retorna, terminar el proceso
-    proc_exit(res);
-}
-
-static void free_process_resources(PCB * p) {
-    if (p == NULL) {
-        return;
-    }
-
-    MemoryManagerADT mm = getKernelMemoryManager();
-
-    // Liberar argv y sus strings
-    if (p->argv != NULL) {
-        for (int i = 0; i < p->argc; i++) {
-            if (p->argv[i] != NULL) {
-                freeMemory(mm, p->argv[i]);
-            }
-        }
-        freeMemory(mm, p->argv);
-        p->argv = NULL;
-    }
-
-    // Liberar stack
-    if (p->stack_base != NULL) {
-        freeMemory(mm, p->stack_base);
-        p->stack_base = NULL;
-        p->stack_pointer = NULL;
-    }
-
-    // Liberar PCB
-    freeMemory(mm, p);
+    scheduler_exit_process(res);
 }

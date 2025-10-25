@@ -1,5 +1,6 @@
 #include "time.h"
 #include "videoDriver.h"
+#include "scheduler.h"
 
 extern uint8_t getHour();
 extern uint8_t getMinutes();
@@ -10,8 +11,10 @@ uint8_t getYear();
 
 static uint64_t ticks = 0;
 
-void timer_handler() {
+uint64_t timer_handler(uint64_t rsp) {
 	ticks++;
+	rsp = (uint64_t) schedule((void *) rsp);
+	return rsp;
 }
 
 uint64_t ticks_elapsed() {

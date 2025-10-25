@@ -75,7 +75,9 @@ SECTION .text
 	pushState
 
 	mov rdi, %1 ; pasaje de parametro
+	mov rsi, rsp
 	call irqDispatcher
+	mov rsp, rax
 
 	; EOI
 	mov al, 20h
@@ -210,10 +212,11 @@ _irq128Handler:
 	; Guardar id de syscall para lógica de switch
 	mov [syscall_id_tmp], rax
 	cmp rax, 31
-	ja  .syscall_end       ; > 31: no llamada válida
 	je  .noop_syscall      ; 31: no-op utilizada para finalizar proc_exit
+	cmp rax, 32            ; permitir syscalls hasta índice 32
+	ja  .syscall_end       ; > 32: no llamada válida
 	; rax es el indice, 8 el size de un puntero en 64 bits
-    call [syscalls + rax * 8] ; llamamos a la syscall
+	call [syscalls + rax * 8] ; llamamos a la syscall
 	jmp .post_syscall
 
 .noop_syscall:
