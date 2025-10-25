@@ -454,12 +454,6 @@ int scheduler_get_current_pid(void) {
     return scheduler->current_pid;
 }
 
-void scheduler_get_stats(uint64_t *total_ticks) {
-    if (scheduler != NULL && total_ticks != NULL) {
-        *total_ticks = scheduler->total_cpu_ticks;
-    }
-}
-
 void scheduler_yield(void) {
     scheduler_force_reschedule();
 }

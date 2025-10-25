@@ -333,7 +333,7 @@ int64_t my_wait(int64_t pid) {
     return sys_wait((int)pid);
 }
 
-int64_t my_nice(int64_t pid, int new_prio) {
+int64_t my_nice(int64_t pid, int new_prio) { //esta mal porque tendria a set_priority
     // Interpretar nice como yield voluntario del proceso actual
     (void)pid; (void)new_prio;
     sys_yield();
