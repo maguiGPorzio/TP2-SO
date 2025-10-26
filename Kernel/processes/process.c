@@ -38,9 +38,8 @@ PCB* proc_create(int pid, process_entry_t entry, int argc, const char **argv,
     p->parent_pid = scheduler_get_current_pid();
     strncpy(p->name, name, MAX_NAME_LENGTH - 1);
     p->name[MAX_NAME_LENGTH - 1] = '\0';
-    p->status = PS_READY;
     p->entry = entry;
-    p->return_value = 0; //FIJARSE COMO INCIIALIZARLO
+    p->return_value = 0; // TODO: FIJARSE COMO INCIIALIZARLO
     p->waiting_on = -1;
 
     // ============================

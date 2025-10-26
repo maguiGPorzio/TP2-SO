@@ -187,19 +187,15 @@ int scheduler_add_process(process_entry_t entry, int argc, const char **argv, co
         return -1;
     }
 
-    scheduler->processes[pid] = process;
-    scheduler->process_count++;
-
     //TODO: asignar prioridad al proceso cuando se crea
     // Inicializar campos relacionados con scheduling
     process->priority = DEFAULT_PRIORITY; // Asignar prioridad por defecto
     process->status = PS_READY; // TODO: chequear si esto ya no lo hace proc_create
     process->cpu_ticks = 0;
     process->remaining_quantum = process->priority;
-    if (process->parent_pid < 0) {
-        process->parent_pid = scheduler->current_pid;
-    }
-    process->waiting_on = -1;
+
+    scheduler->processes[pid] = process;
+    scheduler->process_count++;
 
     ready_queue_enqueue(&scheduler->ready_queue, process);
 
