@@ -11,11 +11,11 @@
 
 typedef struct SchedulerCDT {
     PCB *processes[MAX_PROCESSES];              // Array para acceso por PID
-    ReadyQueue ready_queues[MAX_PRIORITY + 1];  // Una cola por prioridad (0-9)
+    ReadyQueue ready_queue;                      // Cola de procesos READY (round-robin)
     int current_pid;                             // PID del proceso actual
     uint8_t process_count;                       // Cantidad total de procesos
     uint64_t total_cpu_ticks;                    // Total de ticks de CPU
-    bool force_reschedule;                       // Flag para forzar cambio
+    bool force_reschedule;                       // Flag para forzar cambio de proceso
 } SchedulerCDT;
 
 // ============================================
@@ -59,10 +59,8 @@ SchedulerADT init_scheduler(void) {
         scheduler->processes[i] = NULL;
     }
     
-    // Inicializar colas de prioridad
-    for (int i = 0; i <= MAX_PRIORITY; i++) {
-        ready_queue_init(&scheduler->ready_queues[i]);
-    }
+    // Inicializar cola de procesos READY
+    ready_queue_init(&scheduler->ready_queue);
     
     scheduler->current_pid = -1;
     scheduler->process_count = 0;
@@ -104,8 +102,7 @@ void * schedule(void * prev_rsp) {
         // FIX #1: Re-encolar cuando pierde quantum
         if (current->status == PS_RUNNING) { // por si estaba bloqueado o terminado
             current->status = PS_READY;
-            ReadyQueue *queue = &scheduler->ready_queues[current->priority];
-            ready_queue_enqueue(queue, current);
+            ready_queue_enqueue(&scheduler->ready_queue, current);
         }
     }
 
@@ -125,8 +122,7 @@ void * schedule(void * prev_rsp) {
     }
 
     // FIX #2: Desencolar proceso elegido
-    ReadyQueue *queue = &scheduler->ready_queues[next->priority];
-    ready_queue_dequeue(queue, next);
+    ready_queue_dequeue(&scheduler->ready_queue, next);
 
     // ==========================================
     // 3. Cambiar al nuevo proceso
@@ -148,17 +144,12 @@ static PCB *pick_next_process(void) {
     if (scheduler == NULL || scheduler->process_count == 0) {
         return NULL;
     }
-    // MIN_PRIORITY son en realidad las prioridades más altas (0 es la más alta)
-    for (int priority = MIN_PRIORITY; priority <= MAX_PRIORITY; priority++) {
-        ReadyQueue *queue = &scheduler->ready_queues[priority];
-        
-        if (queue->count > 0) {
-            PCB *candidate = ready_queue_next(queue);
-            
-            if (candidate != NULL && candidate->status == PS_READY) { // TODO: chequear si es necesario chequear esto (no debería ser null y deberia ser ready para estar ahi )
-                return candidate;
-            }
-        }
+    
+    ReadyQueue *queue = &scheduler->ready_queue;
+    if (queue->count == 0) return NULL;
+    PCB *candidate = ready_queue_next(queue);
+    if (candidate != NULL && candidate->status == PS_READY) {
+        return candidate;
     }
 
     return NULL;
@@ -210,8 +201,7 @@ int scheduler_add_process(process_entry_t entry, int argc, const char **argv, co
     }
     process->waiting_on = -1;
 
-    ReadyQueue *queue = &scheduler->ready_queues[process->priority];
-    ready_queue_enqueue(queue, process);
+    ready_queue_enqueue(&scheduler->ready_queue, process);
 
     return pid;
 }
@@ -228,8 +218,7 @@ int scheduler_remove_process(int pid) {
 
     // Remover de la cola de su prioridad (si está en READY)
     if (process->status == PS_READY) {
-        ReadyQueue *queue = &scheduler->ready_queues[process->priority];
-        ready_queue_dequeue(queue, process);
+        ready_queue_dequeue(&scheduler->ready_queue, process);
     }
 
     // Remover del array
@@ -246,87 +235,22 @@ int scheduler_remove_process(int pid) {
 }
 
 int scheduler_set_priority(int pid, uint8_t new_priority) {
-    if (scheduler == NULL || pid < 0 || pid >= MAX_PROCESSES) {
+   if (scheduler == NULL || pid < 0 || pid >= MAX_PROCESSES || 
+        scheduler->processes[pid] == NULL || 
+        new_priority < MIN_PRIORITY || new_priority > MAX_PRIORITY) {
         return -1;
     }
 
-    if (new_priority < MIN_PRIORITY || new_priority > MAX_PRIORITY) {
-        return -1;
-    }
-
-    PCB *process = scheduler->processes[pid];
-    if (process == NULL) {
-        return -1;
-    }
-
-    uint8_t old_priority = process->priority;
-    
-    if (old_priority == new_priority) {
-        return 0;  // Sin cambios. Me ahorro modificar listas
-    }
-
-    // Si el proceso está en READY, moverlo entre colas
-    if (process->status == PS_READY) {
-        // Remover de cola antigua
-    ReadyQueue *old_queue = &scheduler->ready_queues[old_priority];
-    ready_queue_dequeue(old_queue, process);
-        
-        // Cambiar prioridad
-        process->priority = new_priority;
-        process->remaining_quantum = new_priority + 1;
-        
-        // Agregar a cola nueva
-    ReadyQueue *new_queue = &scheduler->ready_queues[new_priority];
-    ready_queue_enqueue(new_queue, process);
-    } else {
-        // Solo cambiar prioridad (no está en ninguna cola)
-        process->priority = new_priority;
-        process->remaining_quantum = new_priority + 1;
-    }
-
-    // Reevaluar si hace falta reschedule
-    bool need_reschedule = false;
-    
-    // Caso 1: Es el proceso actual y bajó su prioridad -> necesito ver si hay q correr otro
-    if (pid == scheduler->current_pid && new_priority > old_priority) {
-        // Verificar si hay procesos con mayor prioridad
-        for (int p = MIN_PRIORITY; p < new_priority; p++) {
-            if (scheduler->ready_queues[p].count > 0) {
-                need_reschedule = true;
-                break;
-            }
-        }
-    }
-    // Caso 2: No es el actual y subió su prioridad
-    else if (pid != scheduler->current_pid && new_priority < old_priority) {
-        if (process->status == PS_READY) {
-            int current_pid = scheduler->current_pid;
-            if (current_pid >= 0 && scheduler->processes[current_pid] != NULL) {
-                PCB *current = scheduler->processes[current_pid];
-                if (new_priority < current->priority) {
-                    need_reschedule = true;
-                }
-            }
-        }
-    }
-    
-    if (need_reschedule) {
-        scheduler_force_reschedule(); // TODO: fijarme si no cambio directo
-    }
-
+    scheduler->processes[pid]->priority = new_priority;
+    scheduler->processes[pid]->remaining_quantum = new_priority;
     return 0;
 }
 
 int scheduler_get_priority(int pid) {
-    if (scheduler == NULL || pid < 0 || pid >= MAX_PROCESSES) {
+    if (scheduler == NULL || pid < 0 || pid >= MAX_PROCESSES || scheduler->processes[pid] == NULL) {
         return -1;
     }
-
     PCB *process = scheduler->processes[pid];
-    if (process == NULL) {
-        return -1;
-    }
-
     return process->priority;
 }
 
@@ -362,10 +286,9 @@ int scheduler_kill_process(int pid) {
         return 0;                       // ya estaba terminado
     }
 
-    // Si estaba en READY, sacarlo de su cola para que no sea elegido
+    // Si estaba en READY, sacarlo de la cola global para que no sea elegido
     if (proc->status == PS_READY) {
-        ReadyQueue *q = &scheduler->ready_queues[proc->priority];
-        ready_queue_dequeue(q, proc);
+        ready_queue_dequeue(&scheduler->ready_queue, proc);
     }
 
     // Marcar como TERMINATED (la liberación real la hace cleanup_terminated_processes)
@@ -398,8 +321,7 @@ int scheduler_block_process(int pid) {
     
     // Remover de cola READY (si está ahí)
     if (process->status == PS_READY || process->status == PS_RUNNING) {
-        ReadyQueue *queue = &scheduler->ready_queues[process->priority];
-        ready_queue_dequeue(queue, process);
+        ready_queue_dequeue(&scheduler->ready_queue, process);
     }
     
     process->status = PS_BLOCKED;
@@ -426,9 +348,8 @@ int scheduler_unblock_process(int pid) {
     
     process->status = PS_READY;
     
-    // Agregar a cola READY de su prioridad
-    ReadyQueue *queue = &scheduler->ready_queues[process->priority];
-    ready_queue_enqueue(queue, process);
+    // Agregar a la cola READY global
+    ready_queue_enqueue(&scheduler->ready_queue, process);
     
     return 0;
 }
@@ -455,8 +376,7 @@ static void cleanup_terminated_processes(void) {
                 continue;
             }
             // Remover de cola si estuviera encolado (seguro aunque no esté)
-            ReadyQueue *queue = &scheduler->ready_queues[p->priority];
-            ready_queue_dequeue(queue, p);
+            ready_queue_dequeue(&scheduler->ready_queue, p);
             
             // Liberar recursos del proceso
             free_process_resources(p);
@@ -473,11 +393,8 @@ void scheduler_destroy(void) {
 
     MemoryManagerADT mm = getKernelMemoryManager();
 
-    // Limpiar todas las colas liberando nodos usando ready_queue_destroy
-    for (int priority = 0; priority <= MAX_PRIORITY; priority++) {
-        ReadyQueue *q = &scheduler->ready_queues[priority];
-        ready_queue_destroy(q);
-    }
+    // Limpiar la cola global liberando nodos
+    ready_queue_destroy(&scheduler->ready_queue);
 
     // No liberamos los PCBs aquí, eso lo hace cleanup_all_processes()
     freeMemory(mm, scheduler);
@@ -522,10 +439,7 @@ void scheduler_exit_process(int64_t retValue) {
             }
         }
         // Por seguridad, intentar removerlo de la cola si estuviera encolado (no hace nada si no lo está)
-        ReadyQueue *q = &scheduler->ready_queues[proc->priority];
-        if (q != NULL) {
-            ready_queue_dequeue(q, proc);
-        }
+        ready_queue_dequeue(&scheduler->ready_queue, proc);
     }
 
     // Ya no hay proceso actual activo

@@ -10,8 +10,8 @@
 // ============================================
 
 #define MAX_PROCESSES 32
-#define MIN_PRIORITY 0
-#define MAX_PRIORITY 9
+#define MIN_PRIORITY 1
+#define MAX_PRIORITY 5
 #define DEFAULT_PRIORITY 5
 
 // ============================================
