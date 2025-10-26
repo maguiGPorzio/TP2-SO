@@ -4,6 +4,8 @@
 #include "lib.h"
 #include "ready_queue.h"
 
+#define SHELL_ADDRESS ((void *) 0x400000)      // TODO: Esto ver si lo movemos a otro archivo (tipo memoryMap.h)
+
 // ============================================
 //           ESTRUCTURAS PRIVADAS
 // ============================================
@@ -38,12 +40,39 @@ static void cleanup_terminated_processes(void);
 
 // Lista circular: use the ready_queue API (ready_queue_enqueue/dequeue/next)
 
+// TITULO
+
+static void cleanup_terminated_orphans(void) {
+    for (int i = 0; i < MAX_PROCESSES; i++) {
+        if (scheduler->processes[i] != NULL && 
+            scheduler->processes[i]->status == PS_TERMINATED && 
+            scheduler->processes[i]->parent_pid == 0) {
+            scheduler_remove_process(i);
+        }
+    }
+}
+
+
+// Proceso init: arranca la shell y se queda limpiando procesos huérfanos terminados y haciendo halt para no consumir CPU (el scheduler lo elige cuando no hay otros procesos para correr)
+static int init(int argc, char **argv) {
+    char **shell_args = { NULL };
+
+    int shell_pid = scheduler_add_process((process_entry_t) SHELL_ADDRESS, 0, shell_args, "shell");
+    scheduler_set_priority(shell_pid, MAX_PRIORITY);
+
+    while (1) {
+        cleanup_terminated_orphans();
+		_hlt();
+	}
+    return 0;
+}
+
 // ============================================
 //           INICIALIZACIÓN
 // ============================================
 
 SchedulerADT init_scheduler(void) {
-    if (scheduler != NULL) {
+    if (scheduler != NULL) { // para no crearlo más de una vez
         return scheduler;
     }
 
@@ -61,6 +90,8 @@ SchedulerADT init_scheduler(void) {
     
     // Inicializar cola de procesos READY
     ready_queue_init(&scheduler->ready_queue);
+
+    scheduler_add_process((process_entry_t) init, 0, NULL, "init");
     
     scheduler->current_pid = -1;
     scheduler->process_count = 0;
@@ -148,6 +179,7 @@ static PCB *pick_next_process(void) {
 //        GESTIÓN DE PROCESOS
 // ============================================
 
+// Agrega el proceso al array de procesos y a la cola READY
 int scheduler_add_process(process_entry_t entry, int argc, const char **argv, const char *name) {
     if (scheduler == NULL || scheduler->process_count >= MAX_PROCESSES) {
         return -1;
@@ -170,10 +202,9 @@ int scheduler_add_process(process_entry_t entry, int argc, const char **argv, co
         return -1;
     }
 
-    //TODO: asignar prioridad al proceso cuando se crea
     // Inicializar campos relacionados con scheduling
     process->priority = DEFAULT_PRIORITY; // Asignar prioridad por defecto
-    process->status = PS_READY; // TODO: chequear si esto ya no lo hace proc_create
+    process->status = PS_READY; 
     process->cpu_ticks = 0;
     process->remaining_quantum = process->priority;
 
