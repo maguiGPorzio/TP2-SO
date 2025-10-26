@@ -15,7 +15,7 @@ typedef struct SchedulerCDT {
     int current_pid;                             // PID del proceso actual
     uint8_t process_count;                       // Cantidad total de procesos
     uint64_t total_cpu_ticks;                    // Total de ticks de CPU
-    bool force_reschedule;                       // Flag para forzar cambio de proceso
+    bool force_reschedule;                       // Flag para forzar cambio de proceso: la próxima vez que se llame a schedule, elegir otro proceso aunqur no se haya acabado el quantum del actual (si se bloquea, termina, se le hizo kill o hace yield)
 } SchedulerCDT;
 
 // ============================================
@@ -79,60 +79,43 @@ SchedulerADT get_scheduler(void) {
 // ============================================
 
 void * schedule(void * prev_rsp) {
-    if (scheduler == NULL) {
+    if (!scheduler) {
         return prev_rsp;
     }
 
-    // ==========================================
-    // 1. Guardar RSP y gestionar proceso actual
-    // ==========================================
-    if (scheduler->current_pid >= 0 && 
-        scheduler->processes[scheduler->current_pid] != NULL) {
-        
-        PCB *current = scheduler->processes[scheduler->current_pid];
+    PCB *current = (scheduler->current_pid >= 0) ? scheduler->processes[scheduler->current_pid] : NULL;
+
+    if (current) {
         current->stack_pointer = prev_rsp; // actualiza el rsp del proceso que estuvo corriendo hasta ahora en su pcb
         
         current->cpu_ticks++; // cuantas veces interrumpimos este proceso que estuvo corrriendo hasta ahora
         scheduler->total_cpu_ticks++;
-        
-        if (current->remaining_quantum > 0) { // si se lo interrumpió antes de que se termine su quantum
+
+        if (current->status == PS_RUNNING && current->remaining_quantum > 0) { // si se lo interrumpió antes de que se termine su quantum y estaba corriendo
             current->remaining_quantum--;
         }
         
-        // FIX #1: Re-encolar cuando pierde quantum
-        if (current->status == PS_RUNNING) { // por si estaba bloqueado o terminado
+        if(current->status == PS_RUNNING && current->remaining_quantum > 0 && !scheduler->force_reschedule){ // si aún tiene quantum y no se forzó reschedule, seguimos corriendo el mismo
+            return prev_rsp;
+        }
+
+        if(current->status == PS_RUNNING){ // si no entró en el if anterior, es porque no tiene que seguir corriendo. Si su status es RUNNING, la razón no fue por haberse bloqueado, terminado o porque se le hizo kill, entonces hay que cambiar su status a READY. En el caso de que se lo hubiera bloqueado, matado o terminado, ya su status se cambió en otras funciones
             current->status = PS_READY;
-            ready_queue_enqueue(&scheduler->ready_queue, current);
         }
     }
-
-    // ==========================================
-    // 2. Elegir siguiente proceso
-    // ==========================================
+    // Si el proceso actual tiene que cambiar:
     PCB *next = pick_next_process();
     
-    //QUE PASA SI EL PROCESO ACTUAL ESTA BLOQUEADO O TERMINADO
-    if (next == NULL) { // no hay proceso ready para correr
-        scheduler->force_reschedule = false; // TODO: chequear esto, por que hace que corra el actual si por ahi esta bloqueado o terminated
-        if (scheduler->current_pid >= 0 && 
-            scheduler->processes[scheduler->current_pid] != NULL) {
-            return scheduler->processes[scheduler->current_pid]->stack_pointer;
-        }
-        return prev_rsp;
-    }
+    if (next) { // si hay un proceso para correr, cambio al nuevo proceso
+        scheduler->current_pid = next->pid;
+        next->status = PS_RUNNING;
+        next->remaining_quantum = next->priority; // reseteo del quantum
+        scheduler->force_reschedule = false;
 
-    // FIX #2: Desencolar proceso elegido
-    ready_queue_dequeue(&scheduler->ready_queue, next);
+        return next->stack_pointer;
+    } 
+    // TODO: Si no hay proceso para correr hacer halt
 
-    // ==========================================
-    // 3. Cambiar al nuevo proceso
-    // ==========================================
-    scheduler->current_pid = next->pid;
-    next->status = PS_RUNNING;
-    next->remaining_quantum = next->priority;
-    scheduler->force_reschedule = false;
-
-    return next->stack_pointer;
 }
 
 // ============================================
@@ -140,19 +123,19 @@ void * schedule(void * prev_rsp) {
 //    (usando Lista Circular - O(10) vs O(N))
 // ============================================
 
+// Devuelve null si no hay proceso listo para correr en la cola
 static PCB *pick_next_process(void) {
     if (scheduler == NULL || scheduler->process_count == 0) {
         return NULL;
     }
     
     ReadyQueue *queue = &scheduler->ready_queue;
-    if (queue->count == 0) return NULL;
-    PCB *candidate = ready_queue_next(queue);
-    if (candidate != NULL && candidate->status == PS_READY) {
-        return candidate;
+    if (queue->count == 0) {
+        return NULL;
     }
+    PCB *candidate = ready_queue_next(queue);
 
-    return NULL;
+    return candidate;
 }
 
 // ============================================
@@ -194,6 +177,7 @@ int scheduler_add_process(process_entry_t entry, int argc, const char **argv, co
     process->cpu_ticks = 0;
     process->remaining_quantum = process->priority;
 
+
     scheduler->processes[pid] = process;
     scheduler->process_count++;
 
@@ -224,7 +208,7 @@ int scheduler_remove_process(int pid) {
     // Si estábamos ejecutando este proceso, forzar reschedule
     if (scheduler->current_pid == pid) {
         scheduler->current_pid = -1;
-        scheduler_force_reschedule(); //TODO: VER ESTO
+        scheduler_force_reschedule(); 
     }
 
     return 0;
@@ -263,9 +247,9 @@ int scheduler_get_current_pid(void) {
     return scheduler->current_pid;
 }
 
-// TODO: preguntar si esta bien la idea (porque podria volver a ser elegido)
+
 void scheduler_yield(void) {
-    scheduler_force_reschedule(); // TODO: no me cierra la idea de force_reschedule y que no se pueda elegir de nuevo al mismo proceso
+    scheduler_force_reschedule(); 
 }
 
 //TODO: LEERLA porque la hizo claude
@@ -282,6 +266,12 @@ int scheduler_kill_process(int pid) {
         return 0;                       // ya estaba terminado
     }
 
+    if(proc->status == PS_RUNNING){
+        scheduler->current_pid = -1;    
+        scheduler_force_reschedule();
+        ready_queue_dequeue(&scheduler->ready_queue, proc);
+    }
+
     // Si estaba en READY, sacarlo de la cola global para que no sea elegido
     if (proc->status == PS_READY) {
         ready_queue_dequeue(&scheduler->ready_queue, proc);
@@ -290,11 +280,7 @@ int scheduler_kill_process(int pid) {
     // Marcar como TERMINATED (la liberación real la hace cleanup_terminated_processes)
     proc->status = PS_TERMINATED;
 
-    // Si era el proceso actual, forzar replanificación inmediata
-    if (pid == scheduler->current_pid) {
-        scheduler->current_pid = -1;    // ya no hay "actual"
-        scheduler_force_reschedule();
-    }
+    // TODO: hacer que sus hijos sean adoptados por init
 
     return 0;
 }
