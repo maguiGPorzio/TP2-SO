@@ -5,6 +5,7 @@
 #include "ready_queue.h"
 
 #define SHELL_ADDRESS ((void *) 0x400000)      // TODO: Esto ver si lo movemos a otro archivo (tipo memoryMap.h)
+#define INIT_PID 0 // PID del proceso init
 
 // ============================================
 //           ESTRUCTURAS PRIVADAS
@@ -40,7 +41,6 @@ static void cleanup_terminated_processes(void);
 
 // Lista circular: use the ready_queue API (ready_queue_enqueue/dequeue/next)
 
-// TITULO
 
 static void cleanup_terminated_orphans(void) {
     for (int i = 0; i < MAX_PROCESSES; i++) {
@@ -52,8 +52,7 @@ static void cleanup_terminated_orphans(void) {
     }
 }
 
-
-// Proceso init: arranca la shell y se queda limpiando procesos huérfanos terminados y haciendo halt para no consumir CPU (el scheduler lo elige cuando no hay otros procesos para correr)
+// Proceso init: arranca la shell y se queda limpiando procesos huérfanos terminados y haciendo halt para no consumir CPU. Se lo elige siempre que no haya otro proceso para correr!!!!
 static int init(int argc, char **argv) {
     char **shell_args = { NULL };
 
@@ -70,6 +69,28 @@ static int init(int argc, char **argv) {
 // ============================================
 //           INICIALIZACIÓN
 // ============================================
+
+// Agrega el proceso al array de procesos y a la cola READY
+static int scheduler_add_init() {
+    if (scheduler == NULL || scheduler->process_count != 0) { // si no es el primer proceso en ser creado está mal
+        return -1;
+    }
+
+    PCB *pcb_init = proc_create(INIT_PID, (process_entry_t) init, 0, NULL, "init");
+    if (pcb_init == NULL) {
+        return -1;
+    }
+
+    pcb_init->priority = MIN_PRIORITY;
+    pcb_init->status = PS_READY; 
+    pcb_init->cpu_ticks = 0;
+    pcb_init->remaining_quantum = pcb_init->priority;
+
+    scheduler->processes[INIT_PID] = pcb_init;
+    scheduler->process_count++;
+
+    return 0;
+}
 
 SchedulerADT init_scheduler(void) {
     if (scheduler != NULL) { // para no crearlo más de una vez
@@ -90,11 +111,15 @@ SchedulerADT init_scheduler(void) {
     
     // Inicializar cola de procesos READY
     ready_queue_init(&scheduler->ready_queue);
+   
+    if(scheduler_add_init() != 0) {
+        freeMemory(mm, scheduler);
+        scheduler = NULL;
+        return NULL;
+    }
 
-    scheduler_add_process((process_entry_t) init, 0, NULL, "init");
-    
-    scheduler->current_pid = -1;
-    scheduler->process_count = 0;
+    scheduler->current_pid = INIT_PID;
+    scheduler->process_count = 1;
     scheduler->total_cpu_ticks = 0;
     scheduler->force_reschedule = false;
 
@@ -137,21 +162,21 @@ void * schedule(void * prev_rsp) {
     // Si el proceso actual tiene que cambiar:
     PCB *next = pick_next_process();
     
-    if (next) { // si hay un proceso para correr, cambio al nuevo proceso
-        scheduler->current_pid = next->pid;
-        next->status = PS_RUNNING;
-        next->remaining_quantum = next->priority; // reseteo del quantum
-        scheduler->force_reschedule = false;
+    // Si no hay otro proceso listo, usar el proceso init como fallback
+    if (!next) {
+        next = scheduler->processes[INIT_PID];
+    }
 
-        return next->stack_pointer;
-    } 
-    // TODO: Si no hay proceso para correr hacer halt
+    scheduler->current_pid = next->pid;
+    next->status = PS_RUNNING;
+    next->remaining_quantum = next->priority; // reseteo del quantum
+    scheduler->force_reschedule = false;
+    return next->stack_pointer;
 
 }
 
 // ============================================
 //    ALGORITMO: ROUND ROBIN CON PRIORIDADES
-//    (usando Lista Circular - O(10) vs O(N))
 // ============================================
 
 // Devuelve null si no hay proceso listo para correr en la cola
