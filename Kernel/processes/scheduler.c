@@ -129,7 +129,7 @@ void * schedule(void * prev_rsp) {
     // ==========================================
     scheduler->current_pid = next->pid;
     next->status = PS_RUNNING;
-    next->remaining_quantum = next->priority + 1;
+    next->remaining_quantum = next->priority;
     scheduler->force_reschedule = false;
 
     return next->stack_pointer;
@@ -195,7 +195,7 @@ int scheduler_add_process(process_entry_t entry, int argc, const char **argv, co
     process->priority = DEFAULT_PRIORITY; // Asignar prioridad por defecto
     process->status = PS_READY; // TODO: chequear si esto ya no lo hace proc_create
     process->cpu_ticks = 0;
-    process->remaining_quantum = process->priority + 1;
+    process->remaining_quantum = process->priority;
     if (process->parent_pid < 0) {
         process->parent_pid = scheduler->current_pid;
     }

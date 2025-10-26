@@ -19,7 +19,7 @@ static void process_caller(int pid);
 PCB* proc_create(int pid, process_entry_t entry, int argc, const char **argv,
                 const char *name) {
 
-    if (entry == NULL || name == NULL) {
+    if (!entry || !name || argc < 0) {
         return NULL;
     }
 
@@ -27,7 +27,7 @@ PCB* proc_create(int pid, process_entry_t entry, int argc, const char **argv,
 
     // Alocar PCB
     PCB *p = allocMemory(mm, sizeof(PCB));
-    if (p == NULL) {
+    if (!p) {
         return NULL;
     }
 
@@ -36,6 +36,8 @@ PCB* proc_create(int pid, process_entry_t entry, int argc, const char **argv,
     // ============================
     p->pid = pid;
     p->parent_pid = scheduler_get_current_pid();
+    strncpy(p->name, name, MAX_NAME_LENGTH - 1);
+    p->name[MAX_NAME_LENGTH - 1] = '\0';
     p->status = PS_READY;
     p->entry = entry;
     p->return_value = 0; //FIJARSE COMO INCIIALIZARLO
