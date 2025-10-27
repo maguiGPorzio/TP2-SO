@@ -9,10 +9,12 @@
 //           DEFINICIONES
 // ============================================
 
-#define MAX_PROCESSES 32
 #define MIN_PRIORITY 1
 #define MAX_PRIORITY 5
 #define DEFAULT_PRIORITY 5
+#define INIT_PID 0 // PID del proceso init
+#define KILLED_RET_VALUE -1
+#define NO_PID -1
 
 // ============================================
 //           TIPOS DE DATOS
@@ -41,7 +43,7 @@ void scheduler_yield(void);
 int scheduler_kill_process(int pid);
 PCB *scheduler_get_process(int pid);
 void scheduler_exit_process(int64_t retValue);
-int scheduler_wait(int child_pid);
+int scheduler_waitpid(int child_pid);
 
 // Bloqueo/desbloqueo (para usar desde processes.c)
 int scheduler_block_process(int pid);

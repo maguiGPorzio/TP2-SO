@@ -8,6 +8,7 @@
 #define MAX_NAME_LENGTH 32
 #define PROCESS_STACK_SIZE (4096 * 2)  // 8KB stack
 
+
 // ============================================
 //           TIPOS Y ESTRUCTURAS
 // ============================================

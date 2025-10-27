@@ -226,7 +226,7 @@ static int64_t sys_unblock(int pid) {
 
 // Espera a que el proceso hijo 'pid' termine. Devuelve su código de salida si estaba terminado o 0 si bloqueó.
 static int64_t sys_wait(int pid) {
-    return (int64_t)scheduler_wait(pid);
+    return (int64_t)scheduler_waitpid(pid);
 }
 
 static int64_t sys_nice(int64_t pid, int new_prio) {

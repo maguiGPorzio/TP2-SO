@@ -3,9 +3,10 @@
 #include <memoryManager.h>
 #include "lib.h"
 #include "ready_queue.h"
+#include "interrupts.h" // lo incluí para usar _hlt()
 
 #define SHELL_ADDRESS ((void *) 0x400000)      // TODO: Esto ver si lo movemos a otro archivo (tipo memoryMap.h)
-#define INIT_PID 0 // PID del proceso init
+
 
 // ============================================
 //           ESTRUCTURAS PRIVADAS
@@ -37,9 +38,7 @@ extern void switch_to_rsp_and_iret(void *next_rsp);
 // ============================================
 
 static PCB *pick_next_process(void);
-static void cleanup_terminated_processes(void);
 static void reparent_children_to_init(int16_t pid);
-static void cleanup_terminated_orphans(void);
 static int init(int argc, char **argv);
 static int scheduler_add_init();
 static PCB *pick_next_process(void);
@@ -49,7 +48,7 @@ static PCB *pick_next_process(void);
 
 // Proceso init: arranca la shell y se queda limpiando procesos huérfanos terminados y haciendo halt para no consumir CPU. Se lo elige siempre que no haya otro proceso para correr!!!!
 static int init(int argc, char **argv) {
-    char **shell_args = { NULL };
+    const char **shell_args = { NULL };
 
     int shell_pid = scheduler_add_process((process_entry_t) SHELL_ADDRESS, 0, shell_args, "shell");
     scheduler_set_priority(shell_pid, MAX_PRIORITY);
@@ -300,36 +299,34 @@ void scheduler_yield(void) {
     scheduler_force_reschedule(); 
 }
 
-//TODO: LEERLA porque la hizo claude
 int scheduler_kill_process(int pid) {
-    if (scheduler == NULL || pid < 0 || pid >= MAX_PROCESSES) {
+    if(!scheduler || pid < 0 || pid >= MAX_PROCESSES) {
         return -1;
     }
+    
+    PCB *killed_process = scheduler->processes[pid];
+    reparent_children_to_init(killed_process->pid);
 
-    PCB *proc = scheduler->processes[pid];
-    if (proc == NULL) {
-        return -1;                      // no existe
+    if(killed_process->parent_pid == INIT_PID) { // si el padre es init, no hace falta mantener su pcb para guardarnos ret_value pues nadie le va a hacer waitpid
+        scheduler_remove_process(killed_process->pid); 
+    } else{ // si el padre no es init, no vamos a eliminarlo porque su padre podria hacerle un wait
+        killed_process->status = PS_TERMINATED;
+        killed_process->return_value = KILLED_RET_VALUE;
+        // Lo sacamos de la cola de procesos ready para que no vuelva a correr PERO NO  del array de procesos (para que el padre pueda acceder a su ret_value)
+        if (killed_process->status == PS_READY || killed_process->status == PS_RUNNING) {
+            ready_queue_dequeue(&scheduler->ready_queue, killed_process);
+        }
+        PCB* parent = scheduler->processes[killed_process->parent_pid];
+
+        // Si el padre estaba bloqueado haciendo waitpid, lo desbloqueamos
+        if (parent->status == PS_BLOCKED && parent->waiting_on == killed_process->pid) {
+            scheduler_unblock_process(parent->pid);
+        }
+    
     }
-    if (proc->status == PS_TERMINATED) {
-        return 0;                       // ya estaba terminado
+    if(pid == scheduler->current_pid){
+        scheduler_yield();
     }
-
-    if(proc->status == PS_RUNNING){
-        scheduler->current_pid = -1;    
-        scheduler_force_reschedule();
-        ready_queue_dequeue(&scheduler->ready_queue, proc);
-    }
-
-    // Si estaba en READY, sacarlo de la cola global para que no sea elegido
-    if (proc->status == PS_READY) {
-        ready_queue_dequeue(&scheduler->ready_queue, proc);
-    }
-
-    // Marcar como TERMINATED (la liberación real la hace cleanup_terminated_processes)
-    proc->status = PS_TERMINATED;
-
-    reparent_children_to_init(proc->pid);
-
     return 0;
 }
 
@@ -417,7 +414,7 @@ void scheduler_exit_process(int64_t ret_value) {
         return;
     }
     
-    PCB * current_process = scheduler->processes[scheduler->current];
+    PCB * current_process = scheduler->processes[scheduler->current_pid];
     reparent_children_to_init(current_process->pid);
 
     if(current_process->parent_pid == INIT_PID) { // si el padre es init, no hace falta mantener su pcb para guardarnos ret_value pues nadie le va a hacer waitpid
@@ -432,7 +429,7 @@ void scheduler_exit_process(int64_t ret_value) {
         PCB* parent = scheduler->processes[current_process->parent_pid];
 
         // Si el padre estaba bloqueado haciendo waitpid, lo desbloqueamos
-        if (parent->status == BLOCKED && parent->waiting_for_pid == currentProcess->pid) {
+        if (parent->status == PS_BLOCKED && parent->waiting_on == current_process->pid) {
             scheduler_unblock_process(parent->pid);
         }
     
@@ -445,19 +442,19 @@ void scheduler_exit_process(int64_t ret_value) {
 int scheduler_waitpid(int child_pid) {
     if (!scheduler || child_pid < 0 || child_pid >= MAX_PROCESSES || 
         scheduler->processes[child_pid] == NULL || 
-        scheduler->processes[child_pid]->parent_pid != scheduler->current) {
+        scheduler->processes[child_pid]->parent_pid != scheduler->current_pid) {
         return -1;
     }
     
     // Si el proceso hijo no termino, bloqueamos el proceso actual hasta que termine
-    if (scheduler->processes[child_pid]->status != TERMINATED) {
-        scheduler->processes[scheduler->current]->waiting_for_pid = child_pid;
-        scheduler_block_process(scheduler->current);
+    if (scheduler->processes[child_pid]->status != PS_TERMINATED) {
+        scheduler->processes[scheduler->current_pid]->waiting_on = child_pid;
+        scheduler_block_process(scheduler->current_pid);
     }
 
     // Llega acá cuando el hijo terminó y lo desbloqueo o si el hijo ya había terminado
     
-    scheduler->processes[scheduler->current]->waiting_for_pid = NO_PID;
+    scheduler->processes[scheduler->current_pid]->waiting_on = NO_PID;
     int64_t ret_value = scheduler->processes[child_pid]->return_value;
     scheduler_remove_process(child_pid);
 
