@@ -42,9 +42,9 @@ static void * sys_malloc(size_t size);
 static void sys_free(void * ptr);
 static MemStatus sys_memStatus(void);
 
-// processes syscalls (scheduler-based)
+// processes syscalls
 static int64_t sys_create_process(void * entry, int argc, const char **argv, const char *name);
-static void    sys_exit_current(int status);
+static void    sys_exit(int status);
 static int64_t sys_getpid(void);
 static int64_t sys_kill(int pid);
 static int64_t sys_block(int pid);

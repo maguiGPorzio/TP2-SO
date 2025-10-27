@@ -129,7 +129,7 @@ sys_create_process:
     SYSCALL 26
 
 ; 27 - void sys_exit_current(int status), NO SE USA POR AHORA
-sys_exit_current:
+sys_exit:
     SYSCALL 27
 
 ; 28 - int64_t sys_getpid(void)
@@ -144,19 +144,17 @@ sys_kill:
 sys_block:
     SYSCALL 30
 
-; 31 reservado (no-op) - no exponer wrapper
-
-; 32 - int64_t sys_unblock(int pid)
+; 31 - int64_t sys_unblock(int pid)
 sys_unblock:
+    SYSCALL 31
+
+; 32 - int64_t sys_wait(int pid)
+sys_wait:
     SYSCALL 32
 
-; 33 - int64_t sys_wait(int pid)
-sys_wait:
-    SYSCALL 33
-
-; 34 - void sys_noice(void)
+; 33 - void sys_nice(void)
 sys_nice:
-    SYSCALL 34
+    SYSCALL 33
 
 generate_invalid_opcode:
     ud2         ; Genera excepción de opcode inválido

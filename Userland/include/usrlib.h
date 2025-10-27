@@ -57,21 +57,13 @@ extern MemStatus sys_memstatus(void);
 /*-- SYSTEMCALLS DE PROCESOS --*/
 // Nuevos syscalls de procesos (kernel indices 26..32)
 extern int64_t sys_create_process(void * entry, int argc, const char **argv, const char *name);
+extern void sys_exit(int status);
 extern int64_t sys_getpid(void);
 extern int64_t sys_kill(int64_t pid);
 extern int64_t sys_block(int64_t pid);
 extern int64_t sys_unblock(int64_t pid);
 extern int64_t sys_wait(int64_t pid);
 extern int64_t sys_nice(int64_t pid, int new_prio);
-
-/* Wrappers esperados por tests de cátedra (mapean a sys_* o stubs) */
-int64_t my_create_process(process_entry_t entry, int argc, const char **argv, const char *name);
-int64_t my_wait(int64_t pid);
-int64_t my_nice(int64_t pid, int new_prio);
-int64_t my_block(int64_t pid);
-int64_t my_unblock(int64_t pid);
-int64_t my_kill(int64_t pid);
-int64_t my_getpid(void);
 
 /*-- FUNCIONES DE I/O --*/
 uint64_t print_err(char *str);

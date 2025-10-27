@@ -44,16 +44,15 @@ void * syscalls[] = {
     &sys_free,               // 24
     &sys_memStatus,          // 25
 
-    // syscalls de procesos (scheduler)
+    // syscalls de procesos
     &sys_create_process,     // 26
-    &sys_exit_current,       // 27
+    &sys_exit,               // 27
     &sys_getpid,             // 28
     &sys_kill,               // 29
     &sys_block,              // 30
-    0,                       // 31 reservado (no-op en ASM)
-    &sys_unblock,            // 32
-    &sys_wait,               // 33
-    &sys_nice               // 34
+    &sys_unblock,            // 31
+    &sys_wait,               // 32
+    &sys_nice                // 33
 };
 
 static uint64_t sys_regs(char * buffer){
@@ -200,7 +199,7 @@ static int64_t sys_create_process(void * entry, int argc, const char **argv, con
 }
 
 // Termina el proceso actual con un status, POR AHORA NO USAMOS
-static void sys_exit_current(int status) {
+static void sys_exit(int status) {
     scheduler_exit_process(status);
 }
 

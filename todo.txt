@@ -1,7 +1,7 @@
-ver que concha pasa que no esta imprimiendo la a
+limpiar las syscalls
 
-implementar lo del run_next_process (non_preemtive)
+ver por que la shell esta imprimiendo 2 prompts
 
-hacer un scheduler que haga round robin
+hacer pruebitas para el scheduler
 
-hacer un scheduler que tenga prioridades
+arreglar la queue

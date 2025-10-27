@@ -394,34 +394,3 @@ uint64_t scanf_aux(const char *fmt, uint64_t regPtr[], uint64_t stkPtr[]) {
     }
     return items_read;
 }
-
-//PROCESOS
-
-// Nuevo: my_create_process con firma igual a scheduler_add_process
-int64_t my_create_process(process_entry_t entry, int argc, const char **argv, const char *name) {
-    return sys_create_process(entry, argc, argv, name);
-}
-
-int64_t my_wait(int64_t pid) {
-    return sys_wait(pid);
-}
-
-int64_t my_nice(int64_t pid, int new_prio) { //check
-    return sys_nice(pid, new_prio);
-}
-
-int64_t my_block(int64_t pid) {
-    return sys_block(pid);
-}
-
-int64_t my_unblock(int64_t pid) {
-    return sys_unblock(pid);
-}
-
-int64_t my_kill(int64_t pid) {
-    return sys_kill(pid);
-}
-
-int64_t my_getpid(void) {
-    return sys_getpid();
-}
