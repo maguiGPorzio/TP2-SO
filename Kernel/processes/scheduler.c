@@ -65,7 +65,7 @@ static int init(int argc, char **argv) {
 
 // Agrega el proceso al array de procesos y a la cola READY
 static int scheduler_add_init() {
-    if (scheduler == NULL || scheduler->process_count != 0) { // si no es el primer proceso en ser creado está mal
+    if (!scheduler || scheduler->process_count++ != 0) { // si no es el primer proceso en ser creado está mal
         return -1;
     }
 
@@ -105,6 +105,10 @@ SchedulerADT init_scheduler(void) {
     // Inicializar cola de procesos READY
     ready_queue_init(&scheduler->ready_queue);
    
+    scheduler->process_count = 0;
+    scheduler->total_cpu_ticks = 0;
+    scheduler->force_reschedule = false;
+
     if(scheduler_add_init() != 0) {
         freeMemory(mm, scheduler);
         scheduler = NULL;
@@ -112,9 +116,6 @@ SchedulerADT init_scheduler(void) {
     }
 
     scheduler->current_pid = INIT_PID;
-    scheduler->process_count = 1;
-    scheduler->total_cpu_ticks = 0;
-    scheduler->force_reschedule = false;
 
     return scheduler;
 }
