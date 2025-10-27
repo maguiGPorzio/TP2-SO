@@ -52,7 +52,9 @@ void * syscalls[] = {
     &sys_block,              // 30
     &sys_unblock,            // 31
     &sys_wait,               // 32
-    &sys_nice                // 33
+    &sys_nice,               // 33
+    &sys_yield,              // 34
+    &sys_print_processes     // 35
 };
 
 static uint64_t sys_regs(char * buffer){
@@ -231,3 +233,14 @@ static int64_t sys_wait(int pid) {
 static int64_t sys_nice(int64_t pid, int new_prio) {
     return scheduler_set_priority(pid, new_prio);
 }
+
+static void sys_yield() {
+    scheduler_yield();
+}
+
+static void sys_print_processes() {
+    scheduler_print_processes();
+}
+
+
+

@@ -1,6 +1,9 @@
-limpiar las syscalls
+
 
 ver por que la shell esta imprimiendo 2 prompts
+
+lo de que init no se pueda matar y este todo el tiempo haciendo 
+lo de limpiar a los huerfanos y que cree otra shell si la mataron
 
 hacer pruebitas para el scheduler
 

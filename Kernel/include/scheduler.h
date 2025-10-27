@@ -52,4 +52,6 @@ int scheduler_unblock_process(int pid);
 void scheduler_force_reschedule(void);
 int scheduler_get_current_pid(void);
 
+void scheduler_print_processes();
+
 #endif // SCHEDULER_H

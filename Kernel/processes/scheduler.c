@@ -4,6 +4,9 @@
 #include "lib.h"
 #include "ready_queue.h"
 #include "interrupts.h" // lo incluí para usar _hlt()
+#include "videoDriver.h"
+
+extern void timer_tick();
 
 #define SHELL_ADDRESS ((void *) 0x400000)      // TODO: Esto ver si lo movemos a otro archivo (tipo memoryMap.h)
 
@@ -287,7 +290,9 @@ int scheduler_get_priority(int pid) {
 void scheduler_force_reschedule(void) {
     if (scheduler) {
         scheduler->force_reschedule = true;
+        timer_tick();
     }
+
 }
 
 int scheduler_get_current_pid(void) {
@@ -391,7 +396,7 @@ static void cleanup_all_processes(void) {
         return;
     }
 
-    MemoryManagerADT mm = get_kernel_memory_manager();
+    // MemoryManagerADT mm = get_kernel_memory_manager();
 
     for (int i = 0; i < MAX_PROCESSES; i++) {
         PCB *p = scheduler->processes[i];
@@ -424,6 +429,29 @@ PCB *scheduler_get_process(int pid) {
     }
     
     return scheduler->processes[pid];
+}
+
+void scheduler_print_processes() {
+    if (!scheduler) {
+        return;
+    }
+
+    uint32_t color = 0xFFFFFF;
+    for (int i = 0; i < MAX_PROCESSES; i++) {
+        PCB * p = scheduler->processes[i];
+        if (p) {
+            vdPrint(p->name, color);
+            vdPrint("   STATUS: ", color);
+            switch (p->status) {
+                case PS_READY:      vdPrint("READY", color);      break;
+                case PS_RUNNING:    vdPrint("RUNNING", color);    break;
+                case PS_BLOCKED: vdPrint("BLOCKED", color); break;
+                case PS_TERMINATED: vdPrint("TERMINATED", color); break;
+                default:            vdPrint("UNKNOWN", color);    break;
+            }
+            vdPrint("\n", color);
+        }
+    }
 }
 
 // ============================================
@@ -500,3 +528,7 @@ static void reparent_children_to_init(int16_t pid) {
 			
 	}
 }
+
+
+
+

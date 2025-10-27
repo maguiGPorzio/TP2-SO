@@ -64,6 +64,8 @@ extern int64_t sys_block(int64_t pid);
 extern int64_t sys_unblock(int64_t pid);
 extern int64_t sys_wait(int64_t pid);
 extern int64_t sys_nice(int64_t pid, int new_prio);
+extern void sys_yield();
+extern void sys_print_processes();
 
 /*-- FUNCIONES DE I/O --*/
 uint64_t print_err(char *str);

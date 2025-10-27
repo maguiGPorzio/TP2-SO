@@ -21,8 +21,8 @@ GLOBAL getPressedKey
 GLOBAL reg_array ; array donde se almacenan los registros cunado se toco ctrl
 
 GLOBAL setup_initial_stack 
-GLOBAL switch_to_rsp_and_iret
-GLOBAL syscall_frame_ptr
+
+GLOBAL timer_tick ; simula un tick del timer
 
 EXTERN irqDispatcher
 EXTERN exceptionDispatcher
@@ -233,12 +233,11 @@ setup_initial_stack:
 	mov rbp, r9
 	ret                ; 13) Retorna a C con rax = nuevo RSP
 
-; Cambia a la pila indicada (rdi) y restaura contexto con popState + iretq
-; Firma C: void switch_to_rsp_and_iret(void *next_rsp)
-switch_to_rsp_and_iret:
-	mov rsp, rdi
-	popState
-	iretq
+
+timer_tick: 
+	int 20h
+	ret
+
 
 ;Zero Division Exception
 _exception0Handler:
