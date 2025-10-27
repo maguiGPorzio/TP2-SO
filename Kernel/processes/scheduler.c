@@ -310,12 +310,12 @@ int scheduler_kill_process(int pid) {
     if(killed_process->parent_pid == INIT_PID) { // si el padre es init, no hace falta mantener su pcb para guardarnos ret_value pues nadie le va a hacer waitpid
         scheduler_remove_process(killed_process->pid); 
     } else{ // si el padre no es init, no vamos a eliminarlo porque su padre podria hacerle un wait
-        killed_process->status = PS_TERMINATED;
-        killed_process->return_value = KILLED_RET_VALUE;
         // Lo sacamos de la cola de procesos ready para que no vuelva a correr PERO NO  del array de procesos (para que el padre pueda acceder a su ret_value)
         if (killed_process->status == PS_READY || killed_process->status == PS_RUNNING) {
             ready_queue_dequeue(&scheduler->ready_queue, killed_process);
         }
+        killed_process->status = PS_TERMINATED; // Le cambio el estado despues de hacer el dequeue o sino no va a entrar en la condición del if
+        killed_process->return_value = KILLED_RET_VALUE;
         PCB* parent = scheduler->processes[killed_process->parent_pid];
 
         // Si el padre estaba bloqueado haciendo waitpid, lo desbloqueamos
@@ -420,12 +420,12 @@ void scheduler_exit_process(int64_t ret_value) {
     if(current_process->parent_pid == INIT_PID) { // si el padre es init, no hace falta mantener su pcb para guardarnos ret_value pues nadie le va a hacer waitpid
         scheduler_remove_process(current_process->pid); 
     } else{ // si el padre no es init, no vamos a eliminarlo porque su padre podria hacerle un wait
-        current_process->status = PS_TERMINATED;
-        current_process->return_value = ret_value;
         // Lo sacamos de la cola de procesos ready para que no vuelva a correr PERO NO  del array de procesos (para que el padre pueda acceder a su ret_value)
         if (current_process->status == PS_READY || current_process->status == PS_RUNNING) {
             ready_queue_dequeue(&scheduler->ready_queue, current_process);
         }
+        current_process->status = PS_TERMINATED; // Le cambio el estado despues de hacer el dequeue o sino no va a entrar en la condición del if
+        current_process->return_value = ret_value;
         PCB* parent = scheduler->processes[current_process->parent_pid];
 
         // Si el padre estaba bloqueado haciendo waitpid, lo desbloqueamos
