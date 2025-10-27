@@ -306,6 +306,9 @@ int scheduler_kill_process(int pid) {
     }
     
     PCB *killed_process = scheduler->processes[pid];
+    if (!killed_process) {
+        return -1;
+    }
     reparent_children_to_init(killed_process->pid);
 
     if(killed_process->parent_pid == INIT_PID) { // si el padre es init, no hace falta mantener su pcb para guardarnos ret_value pues nadie le va a hacer waitpid
