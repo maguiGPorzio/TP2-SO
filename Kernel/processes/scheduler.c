@@ -42,6 +42,7 @@ static void reparent_children_to_init(int16_t pid);
 static int init(int argc, char **argv);
 static int scheduler_add_init();
 static inline bool pid_is_valid(pid_t pid);
+static void cleanup_all_processes(void);
 
 static inline bool pid_is_valid(pid_t pid) {
     return pid >= 0 && pid <= MAX_PID;
@@ -385,6 +386,20 @@ int scheduler_unblock_process(int pid) {
     return 0;
 }
 
+static void cleanup_all_processes(void) {
+    if (!scheduler) {
+        return;
+    }
+
+    MemoryManagerADT mm = getKernelMemoryManager();
+
+    for (int i = 0; i < MAX_PROCESSES; i++) {
+        PCB *p = scheduler->processes[i];
+        if (p) {
+            free_process_resources(p);
+        }
+    }
+}
 
 void scheduler_destroy(void) {
     if (!scheduler) {
@@ -396,7 +411,8 @@ void scheduler_destroy(void) {
     // Limpiar la cola global liberando nodos
     ready_queue_destroy(&scheduler->ready_queue);
 
-    // No liberamos los PCBs aquí, eso lo hace cleanup_all_processes()
+    cleanup_all_processes();
+
     freeMemory(mm, scheduler);
     scheduler = NULL;
 }
