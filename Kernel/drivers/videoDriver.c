@@ -239,7 +239,7 @@ void vdClear() {
     }
     // fill_rectangle(0, 0, VBE_mode_info->width, VBE_mode_info->width, BKG_COLOR);
     uint64_t length = getScreenHeight() * getScreenWidth() * VBE_mode_info->bpp / 8;
-    memset64(VBE_mode_info->framebuffer, 0, length); // hardcodeado que el background color es negro
+    memset64((void *) VBE_mode_info->framebuffer, 0, length); // hardcodeado que el background color es negro
     cursor_x = 0;
     cursor_y = 0;
 }

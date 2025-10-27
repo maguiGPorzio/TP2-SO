@@ -102,7 +102,7 @@ char *strncpy(char *dst, const char *src, int n) {
     return ret;
 }
 
-char strlen(char *str) {
+char strlen(const char *str) {
 	int res = 0;
 	while(*str++) {
 		res++;
