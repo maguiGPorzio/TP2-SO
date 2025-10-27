@@ -108,14 +108,14 @@ SchedulerADT init_scheduler(void) {
     scheduler->process_count = 0;
     scheduler->total_cpu_ticks = 0;
     scheduler->force_reschedule = false;
+    scheduler->current_pid = NO_PID; // NO le pongo INIT_PID porque el que lo tiene que elegir es el schedule la primera vez que se llama. 
+    //Sino, la primera llamada a scheudule va a tratar a init como current y va a pisar su stack_pointer con prev_rsp
 
     if(scheduler_add_init() != 0) {
         freeMemory(mm, scheduler);
         scheduler = NULL;
         return NULL;
     }
-
-    scheduler->current_pid = INIT_PID;
 
     return scheduler;
 }
