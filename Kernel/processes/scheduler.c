@@ -38,19 +38,14 @@ extern void switch_to_rsp_and_iret(void *next_rsp);
 
 static PCB *pick_next_process(void);
 static void cleanup_terminated_processes(void);
+static void reparent_children_to_init(int16_t pid);
+static void cleanup_terminated_orphans(void);
+static int init(int argc, char **argv);
+static int scheduler_add_init();
+static PCB *pick_next_process(void);
 
 // Lista circular: use the ready_queue API (ready_queue_enqueue/dequeue/next)
 
-
-static void cleanup_terminated_orphans(void) {
-    for (int i = 0; i < MAX_PROCESSES; i++) {
-        if (scheduler->processes[i] != NULL && 
-            scheduler->processes[i]->status == PS_TERMINATED && 
-            scheduler->processes[i]->parent_pid == 0) {
-            scheduler_remove_process(i);
-        }
-    }
-}
 
 // Proceso init: arranca la shell y se queda limpiando procesos huérfanos terminados y haciendo halt para no consumir CPU. Se lo elige siempre que no haya otro proceso para correr!!!!
 static int init(int argc, char **argv) {
@@ -60,7 +55,6 @@ static int init(int argc, char **argv) {
     scheduler_set_priority(shell_pid, MAX_PRIORITY);
 
     while (1) {
-        cleanup_terminated_orphans();
 		_hlt();
 	}
     return 0;
@@ -194,11 +188,6 @@ static PCB *pick_next_process(void) {
     return candidate;
 }
 
-// ============================================
-//     OPERACIONES DE LISTA CIRCULAR
-// ============================================
-
-// Lista circular (enqueue/dequeue/next) movida a ready_queue.c
 
 // ============================================
 //        GESTIÓN DE PROCESOS
@@ -243,17 +232,17 @@ int scheduler_add_process(process_entry_t entry, int argc, const char **argv, co
 }
 
 int scheduler_remove_process(int pid) {
-    if (scheduler == NULL || pid < 0 || pid >= MAX_PROCESSES) {
+    if (!scheduler || pid < 0 || pid >= MAX_PROCESSES) {
         return -1;
     }
 
     PCB *process = scheduler->processes[pid];
-    if (process == NULL) {
+    if (!process) {
         return -1;
     }
 
-    // Remover de la cola de su prioridad (si está en READY)
-    if (process->status == PS_READY) {
+    // Remover de la cola de procesos listos para correr
+    if (process->status == PS_READY || process->status == PS_RUNNING) {
         ready_queue_dequeue(&scheduler->ready_queue, process);
     }
 
@@ -266,6 +255,9 @@ int scheduler_remove_process(int pid) {
         scheduler->current_pid = -1;
         scheduler_force_reschedule(); 
     }
+
+    // Liberar recursos del proceso
+    free_process_resources(process);
 
     return 0;
 }
@@ -291,16 +283,16 @@ int scheduler_get_priority(int pid) {
 }
 
 void scheduler_force_reschedule(void) {
-    if (scheduler != NULL) {
+    if (scheduler) {
         scheduler->force_reschedule = true;
     }
 }
 
 int scheduler_get_current_pid(void) {
-    if (scheduler == NULL) {
-        return -1;
+    if (scheduler) {
+        return scheduler->current_pid;
     }
-    return scheduler->current_pid;
+    return -1;
 }
 
 
@@ -336,7 +328,7 @@ int scheduler_kill_process(int pid) {
     // Marcar como TERMINATED (la liberación real la hace cleanup_terminated_processes)
     proc->status = PS_TERMINATED;
 
-    // TODO: hacer que sus hijos sean adoptados por init
+    reparent_children_to_init(proc->pid);
 
     return 0;
 }
@@ -372,8 +364,7 @@ int scheduler_block_process(int pid) {
     return 0;
 }
 
-//Llamar desde proc_unblock() en processes.c
-//NOSE SI CUANDO SE DESBLOQUEA SE TENDRIA QUE FORZAR EL RESCHEDULE PORQUE QUIZAS TENGA MAS PRIORIDAD DE CORRER QUE OTROS
+
 int scheduler_unblock_process(int pid) {
     if (scheduler == NULL || pid < 0 || pid >= MAX_PROCESSES) {
         return -1;
@@ -392,40 +383,9 @@ int scheduler_unblock_process(int pid) {
     return 0;
 }
 
-// ============================================
-//        LIMPIEZA DE PROCESOS
-// ============================================
-
-static void cleanup_terminated_processes(void) {
-    if (scheduler == NULL) {
-        return;
-    }
-
-    for (int i = 0; i < MAX_PROCESSES; i++) {
-        // Saltear proceso actual
-        if (i == scheduler->current_pid) {
-            continue;
-        }
-
-        PCB *p = scheduler->processes[i];
-        if (p != NULL && p->status == PS_TERMINATED) {
-            // Si tiene padre, no lo liberamos aún (zombie) hasta que el padre haga wait()
-            if (p->parent_pid >= 0) {
-                continue;
-            }
-            // Remover de cola si estuviera encolado (seguro aunque no esté)
-            ready_queue_dequeue(&scheduler->ready_queue, p);
-            
-            // Liberar recursos del proceso
-            free_process_resources(p);
-            scheduler->processes[i] = NULL;
-            scheduler->process_count--;
-        }
-    }
-}
 
 void scheduler_destroy(void) {
-    if (scheduler == NULL) {
+    if (!scheduler) {
         return;
     }
 
@@ -441,7 +401,7 @@ void scheduler_destroy(void) {
 
 // En scheduler.c
 PCB *scheduler_get_process(int pid) {
-    if (scheduler == NULL || pid < 0 || pid >= MAX_PROCESSES) {
+    if (!scheduler || pid < 0 || pid >= MAX_PROCESSES) {
         return NULL;
     }
     
@@ -451,90 +411,71 @@ PCB *scheduler_get_process(int pid) {
 // ============================================
 //   TERMINACIÓN INMEDIATA DEL PROCESO ACTUAL
 // ============================================
-//todo: M ELA HIZO CLAUDE NO LA LEI
-void scheduler_exit_process(int64_t retValue) {
-    if (scheduler == NULL) {
-        // No scheduler available; halt CPU
-        while (1) { __asm__ __volatile__("hlt"); }
-    }
 
-    int cur = scheduler->current_pid;
-    if (cur < 0 || cur >= MAX_PROCESSES) {
-        // No current process; nothing sensible to switch to
-        while (1) { __asm__ __volatile__("hlt"); }
+void scheduler_exit_process(int64_t ret_value) {
+    if(!scheduler) {
+        return;
     }
+    
+    PCB * current_process = scheduler->processes[scheduler->current];
+    reparent_children_to_init(current_process->pid);
 
-    PCB *proc = scheduler->processes[cur];
-    if (proc != NULL) {
-        proc->return_value = (int)retValue;
-        proc->status = PS_TERMINATED;
-        // Si el padre está esperando por este hijo, desbloquearlo
-        if (proc->parent_pid >= 0) {
-            PCB *parent = scheduler_get_process(proc->parent_pid);
-            if (parent != NULL && parent->status == PS_BLOCKED && parent->waiting_on == proc->pid) {
-                parent->waiting_on = -1;
-                scheduler_unblock_process(parent->pid);
-            }
+    if(current_process->parent_pid == INIT_PID) { // si el padre es init, no hace falta mantener su pcb para guardarnos ret_value pues nadie le va a hacer waitpid
+        scheduler_remove_process(current_process->pid); 
+    } else{ // si el padre no es init, no vamos a eliminarlo porque su padre podria hacerle un wait
+        current_process->status = PS_TERMINATED;
+        current_process->return_value = ret_value;
+        // Lo sacamos de la cola de procesos ready para que no vuelva a correr PERO NO  del array de procesos (para que el padre pueda acceder a su ret_value)
+        if (current_process->status == PS_READY || current_process->status == PS_RUNNING) {
+            ready_queue_dequeue(&scheduler->ready_queue, current_process);
         }
-        // Por seguridad, intentar removerlo de la cola si estuviera encolado (no hace nada si no lo está)
-        ready_queue_dequeue(&scheduler->ready_queue, proc);
+        PCB* parent = scheduler->processes[current_process->parent_pid];
+
+        // Si el padre estaba bloqueado haciendo waitpid, lo desbloqueamos
+        if (parent->status == BLOCKED && parent->waiting_for_pid == currentProcess->pid) {
+            scheduler_unblock_process(parent->pid);
+        }
+    
     }
-
-    // Ya no hay proceso actual activo
-    scheduler->current_pid = -1;
-    scheduler_force_reschedule();
-
-    // Capturar el RSP actual como prev para que schedule() seleccione el próximo
-    void *prev_rsp;
-    __asm__ __volatile__("mov %%rsp, %0" : "=r"(prev_rsp));
-
-    void *next_rsp = schedule(prev_rsp);
-
-    // Si no hay siguiente proceso, detener
-    if (next_rsp == NULL || next_rsp == prev_rsp) {
-        while (1) { __asm__ __volatile__("hlt"); }
-    }
-
-    // Cambio de contexto inmediato (no retorna)
-    switch_to_rsp_and_iret(next_rsp);
-
-    // No debería alcanzarse
-    while (1) { __asm__ __volatile__("hlt"); }
+    scheduler_yield();
 }
 
+
 // Bloquea al proceso actual hasta que el hijo indicado termine. Devuelve el status del hijo si ya terminó o 0.
-int scheduler_wait(int child_pid) {
-    if (scheduler == NULL || child_pid < 0 || child_pid >= MAX_PROCESSES) {
+int scheduler_waitpid(int child_pid) {
+    if (!scheduler || child_pid < 0 || child_pid >= MAX_PROCESSES || 
+        scheduler->processes[child_pid] == NULL || 
+        scheduler->processes[child_pid]->parent_pid != scheduler->current) {
         return -1;
     }
-    int cur = scheduler->current_pid;
-    if (cur < 0) return -1;
-    PCB *child = scheduler->processes[child_pid];
-    if (child == NULL) return -1;
-    if (child->parent_pid != cur) return -1; // solo se permite esperar hijos directos
-
-    // Si el hijo ya terminó, reaper y devolver status
-    if (child->status == PS_TERMINATED) {
-        int ret = child->return_value;
-        // liberar recursos del hijo
-        free_process_resources(child);
-        scheduler->processes[child_pid] = NULL;
-        scheduler->process_count--;
-        return ret;
+    
+    // Si el proceso hijo no termino, bloqueamos el proceso actual hasta que termine
+    if (scheduler->processes[child_pid]->status != TERMINATED) {
+        scheduler->processes[scheduler->current]->waiting_for_pid = child_pid;
+        scheduler_block_process(scheduler->current);
     }
 
-    // Bloquear al padre y hacer un cambio de contexto inmediato
-    PCB *parent = scheduler->processes[cur];
-    if (parent == NULL) return -1;
-    parent->waiting_on = child_pid;
-    scheduler_block_process(cur);
+    // Llega acá cuando el hijo terminó y lo desbloqueo o si el hijo ya había terminado
+    
+    scheduler->processes[scheduler->current]->waiting_for_pid = NO_PID;
+    int64_t ret_value = scheduler->processes[child_pid]->return_value;
+    scheduler_remove_process(child_pid);
 
-    // Preparar cambio de contexto a otro proceso inmediatamente desde syscall
-    extern void *current_kernel_rsp;
-    extern void *switch_to_rsp;
-    void *next_rsp = schedule(current_kernel_rsp);
-    switch_to_rsp = next_rsp;
+    return ret_value;
+}
 
-    // Valor de retorno cuando vuelva a ejecutarse; tests lo ignoran
-    return 0;
+static void reparent_children_to_init(int16_t pid) {
+	for (int i = 0; i < MAX_PROCESSES; i++) {
+		if (scheduler->processes[i] != NULL &&
+			scheduler->processes[i]->parent_pid == pid) {
+            // Asignar el proceso huérfano al init
+            if(scheduler->processes[i]->status == PS_TERMINATED){
+                // Si el hijo ya estaba terminado, lo removemos directamente
+                scheduler_remove_process(scheduler->processes[i]->pid);
+            } else{
+                scheduler->processes[i]->parent_pid = INIT_PID;
+            }   
+        }
+			
+	}
 }
