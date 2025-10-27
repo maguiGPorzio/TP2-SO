@@ -201,50 +201,18 @@ _irq04Handler:
 _irq05Handler:
 	irqHandlerMaster 5
 
-
+; antes validabamos que el rax sea de una syscall por si habia un 
+; index out of bounds
+; lo saque por ahora 
+; TODO: evaluar si lo queremos volver a poner
 _irq128Handler:
-	; Guardar puntero al frame de iret de la syscall (RSP al entrar)
 	pushState
-	; Exponer el RSP de kernel actual a C para que lo guarde en el PCB
-	mov [current_kernel_rsp], rsp
-	; Guardar id de syscall para lógica de switch
-	mov [syscall_id_tmp], rax
-	cmp rax, 31
-	je  .noop_syscall      ; 31: no-op utilizada para finalizar proc_exit
-	cmp rax, 34            ; permitir syscalls hasta índice 34
-	ja  .syscall_end       ; > 32: no llamada válida
-	; rax es el indice, 8 el size de un puntero en 64 bits
-	call [syscalls + rax * 8] ; llamamos a la syscall
-	jmp .post_syscall
-
-.noop_syscall:
-	; No hace nada: sirve para que el handler procese el switch_to_rsp y salga por iretq
-
-.post_syscall:
-
-.syscall_end:
-	mov [aux], rax ; preservamos el valor de retorno de la syscall
-	; Si desde C solicitaron un cambio de contexto, cambiar RSP antes de restaurar
-	mov rbx, [switch_to_rsp]
-	test rbx, rbx
-	jz .no_switch
-	; Guardar el RSP del llamador (shell) ANTES de cambiar de pila
-	; pero no si esta es la syscall no-op (31) ni si ya fue capturado
-	mov rax, [syscall_id_tmp]
-	cmp rax, 31
-	je .skip_save_rsp
-	mov rax, [syscall_frame_ptr]
-	test rax, rax
-	jnz .skip_save_rsp
-	mov [syscall_frame_ptr], rsp
-.skip_save_rsp:
-	; limpiar la solicitud y cambiar de pila
-	mov qword [switch_to_rsp], 0
-	mov rsp, rbx
-.no_switch:
+    call [syscalls + rax * 8] ; llamamos a la syscall
+    mov [aux], rax ; preservamos el valor de retorno de la syscall
     popState
     mov rax, [aux]
     iretq
+
 
 
 ; rdi = caller, rsi = pid, rdx = stack_pointer, rcx
