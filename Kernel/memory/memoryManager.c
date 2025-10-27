@@ -20,7 +20,7 @@ typedef struct MemBlock {
     struct MemBlock* next;      // Siguiente bloque en la lista
     struct MemBlock* prev;      // Bloque anterior
     bool free;                  // true si está libre, false si está ocupado
-    uint32_t magic;             // Número mágico para verificación.  Al liberar (freeMemory) se verifica que block->magic == MAGIC_NUMBER antes de confiar en el puntero; si alguien pasó una dirección que no proviene del gestor (o fue sobrescrita), la comparación falla y se ignora la operación
+    uint32_t magic;             // Número mágico para verificación.  Al liberar (free_memory) se verifica que block->magic == MAGIC_NUMBER antes de confiar en el puntero; si alguien pasó una dirección que no proviene del gestor (o fue sobrescrita), la comparación falla y se ignora la operación
 } MemBlock;
 
 // Estructura del Memory Manager (CDT)
@@ -28,7 +28,7 @@ struct MemoryManagerCDT {
     void* startAddress;         // Dirección base de la memoria
     size_t totalSize;           // Tamaño total
     MemBlock* firstBlock;       // Primer bloque de la lista
-    size_t allocatedBlocks;     // Contador de bloques allocados
+    size_t allocated_blocks;     // Contador de bloques allocados
     size_t totalAllocated;      // Total de bytes allocados
 };
 
@@ -129,7 +129,7 @@ MemoryManagerADT createMemoryManager(void* startAddress, size_t size) {
     // Inicializar estructura
     memManager->startAddress = startAddress;
     memManager->totalSize = size;
-    memManager->allocatedBlocks = 0;
+    memManager->allocated_blocks = 0;
     memManager->totalAllocated = 0;
     
     // Crear el primer bloque libre después del CDT
@@ -143,7 +143,7 @@ MemoryManagerADT createMemoryManager(void* startAddress, size_t size) {
     return memManager;
 }
 
-void* allocMemory(MemoryManagerADT memManager, size_t size) {
+void* alloc_memory(MemoryManagerADT memManager, size_t size) {
     if (memManager == NULL || size == 0) {
         return NULL;
     }
@@ -163,14 +163,14 @@ void* allocMemory(MemoryManagerADT memManager, size_t size) {
     
     // Marcar como ocupado
     block->free = false;
-    memManager->allocatedBlocks++;
+    memManager->allocated_blocks++;
     memManager->totalAllocated += block->size;
     
     // Retornar puntero después del header (donde arranca el espacio utilizable del bloque)
     return (char*)block + sizeof(MemBlock);
 }
 
-void freeMemory(MemoryManagerADT memManager, void* ptr) {
+void free_memory(MemoryManagerADT memManager, void* ptr) {
     if (memManager == NULL || ptr == NULL) {
         return;
     }
@@ -191,29 +191,29 @@ void freeMemory(MemoryManagerADT memManager, void* ptr) {
     
     // Marcar como libre
     block->free = true;
-    memManager->allocatedBlocks--;
+    memManager->allocated_blocks--;
     memManager->totalAllocated -= block->size;
 
     // Fusionar con bloques adyacentes
     coalesceBlocks(block);
 }
 
-MemStatus getMemStatus(MemoryManagerADT memManager) {
+MemStatus get_mem_status(MemoryManagerADT memManager) {
     MemStatus status = {0};
     
     if (memManager != NULL) {
-        status.totalMemory = memManager->totalSize;
-        status.usedMemory = memManager->totalAllocated;
-        status.freeMemory = status.totalMemory - status.usedMemory - 
+        status.total_memory = memManager->totalSize;
+        status.used_memory = memManager->totalAllocated;
+        status.free_memory = status.total_memory - status.used_memory - 
                            sizeof(struct MemoryManagerCDT) - 
-                           (memManager->allocatedBlocks * sizeof(MemBlock));
-        status.allocatedBlocks = memManager->allocatedBlocks;
+                           (memManager->allocated_blocks * sizeof(MemBlock));
+        status.allocated_blocks = memManager->allocated_blocks;
     }
     
     return status;
 }
 
-void initKernelMemoryManager(void) {
+void init_kernel_memory_manager(void) {
     kernelMemManager = createMemoryManager((void*)HEAP_START_ADDRESS, HEAP_SIZE);
     
     if (kernelMemManager == NULL) {
@@ -229,6 +229,6 @@ void initKernelMemoryManager(void) {
     ncPrint(" MB\n");
 }
 
-MemoryManagerADT getKernelMemoryManager(void) {
+MemoryManagerADT get_kernel_memory_manager(void) {
     return kernelMemManager;
 }

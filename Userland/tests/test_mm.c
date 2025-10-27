@@ -58,7 +58,7 @@ int64_t test_mm(uint64_t argc, char * argv[]){
 
     // Mostrar estado de memoria cada iteración
     MemStatus st = sys_memstatus();
-    printf("[MM] total=%u used=%u free=%u blocks=%u\n", (unsigned)st.totalMemory, (unsigned)st.usedMemory, (unsigned)st.freeMemory, (unsigned)st.allocatedBlocks);
+    printf("[MM] total=%u used=%u free=%u blocks=%u\n", (unsigned)st.total_memory, (unsigned)st.used_memory, (unsigned)st.free_memory, (unsigned)st.allocated_blocks);
   }
 }
 
@@ -141,10 +141,10 @@ int64_t test_mm(uint64_t argc, char * argv[]){
 //   printf("Max memory per iteration: %u bytes\n", (unsigned)max_memory);
 //   printf("Max blocks per iteration: %d\n", MAX_BLOCKS);
 //   printf("\nInitial state:\n");
-//   printf("  Total: %u bytes\n", (unsigned)initial_status.totalMemory);
-//   printf("  Free:  %u bytes\n", (unsigned)initial_status.freeMemory);
-//   printf("  Used:  %u bytes\n", (unsigned)initial_status.usedMemory);
-//   printf("  Blocks: %u\n", (unsigned)initial_status.allocatedBlocks);
+//   printf("  Total: %u bytes\n", (unsigned)initial_status.total_memory);
+//   printf("  Free:  %u bytes\n", (unsigned)initial_status.free_memory);
+//   printf("  Used:  %u bytes\n", (unsigned)initial_status.used_memory);
+//   printf("  Blocks: %u\n", (unsigned)initial_status.allocated_blocks);
 //   printf("========================================\n\n");
 
 //   while (1) {
@@ -196,16 +196,16 @@ int64_t test_mm(uint64_t argc, char * argv[]){
 //     MemStatus st = sys_memstatus();
 
 //     // CRÍTICO: Verificar que toda la memoria fue liberada
-//     if (st.usedMemory != initial_status.usedMemory) {
+//     if (st.used_memory != initial_status.used_memory) {
 //       printf("\n❌ ERROR: MEMORY LEAK DETECTED!\n");
 //       printf("  Iteration: %u\n", iteration);
-//       printf("  Initial used: %u bytes\n", (unsigned)initial_status.usedMemory);
-//       printf("  Current used: %u bytes\n", (unsigned)st.usedMemory);
+//       printf("  Initial used: %u bytes\n", (unsigned)initial_status.used_memory);
+//       printf("  Current used: %u bytes\n", (unsigned)st.used_memory);
 //       printf("  Leaked: %u bytes\n", 
-//              (unsigned)(st.usedMemory - initial_status.usedMemory));
+//              (unsigned)(st.used_memory - initial_status.used_memory));
 //       printf("  Allocated blocks: %u (should be %u)\n", 
-//              (unsigned)st.allocatedBlocks,
-//              (unsigned)initial_status.allocatedBlocks);
+//              (unsigned)st.allocated_blocks,
+//              (unsigned)initial_status.allocated_blocks);
 //       return -1;
 //     }
 
@@ -215,13 +215,13 @@ int64_t test_mm(uint64_t argc, char * argv[]){
 //       printf("Allocated: %3u blocks, %6u bytes | ", rq, total);
 //       printf("Status: ");
       
-//       if (st.usedMemory == initial_status.usedMemory && 
-//           st.allocatedBlocks == initial_status.allocatedBlocks) {
+//       if (st.used_memory == initial_status.used_memory && 
+//           st.allocated_blocks == initial_status.allocated_blocks) {
 //         printf("✓ OK (no leaks)\n");
 //       } else {
 //         printf("⚠ LEAK! used=%u blocks=%u\n", 
-//                (unsigned)st.usedMemory, 
-//                (unsigned)st.allocatedBlocks);
+//                (unsigned)st.used_memory, 
+//                (unsigned)st.allocated_blocks);
 //       }
 //     }
 

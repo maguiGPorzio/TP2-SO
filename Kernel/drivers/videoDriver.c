@@ -135,7 +135,7 @@ static void scrollUp() {
     
     // Limpiar la última línea
     uint64_t last_line_start = VBE_mode_info->height - line_height;
-    fillRectangle(0, last_line_start, VBE_mode_info->width, VBE_mode_info->height, BKG_COLOR);
+    fill_rectangle(0, last_line_start, VBE_mode_info->width, VBE_mode_info->height, BKG_COLOR);
 }
 
 void newLine() {
@@ -145,7 +145,7 @@ void newLine() {
     // Verificar si hay espacio para una línea más sin hacer scroll
     if (cursor_y + step_y < VBE_mode_info->height) { 
         cursor_y += step_y;
-        fillRectangle(cursor_x, cursor_y, VBE_mode_info->width, cursor_y + FONT_HEIGHT*text_size, BKG_COLOR);
+        fill_rectangle(cursor_x, cursor_y, VBE_mode_info->width, cursor_y + FONT_HEIGHT*text_size, BKG_COLOR);
     } else {
         scrollUp();
         cursor_y = VBE_mode_info->height - step_y; // Posicionar cursor en la última línea
@@ -237,7 +237,7 @@ void vdClear() {
     if (!text_mode) {
         return;
     }
-    // fillRectangle(0, 0, VBE_mode_info->width, VBE_mode_info->width, BKG_COLOR);
+    // fill_rectangle(0, 0, VBE_mode_info->width, VBE_mode_info->width, BKG_COLOR);
     uint64_t length = getScreenHeight() * getScreenWidth() * VBE_mode_info->bpp / 8;
     memset64(VBE_mode_info->framebuffer, 0, length); // hardcodeado que el background color es negro
     cursor_x = 0;
@@ -324,7 +324,7 @@ void drawLine(uint64_t x0, uint64_t y0, uint64_t x1, uint64_t y1, uint32_t color
 }
 
 
-void drawRectangle(uint64_t x0, uint64_t y0, uint64_t x1, uint64_t y1, uint32_t color) {
+void draw_rectangle(uint64_t x0, uint64_t y0, uint64_t x1, uint64_t y1, uint32_t color) {
 	// checkeo que (x0, y0) sean esquina superior izquierda
 	int dx = x1-x0;
 	int dy = y1-y0;
@@ -340,7 +340,7 @@ void drawRectangle(uint64_t x0, uint64_t y0, uint64_t x1, uint64_t y1, uint32_t 
 	
 }
 
-void fillRectangle(uint64_t x0, uint64_t y0, uint64_t x1, uint64_t y1, uint32_t color) {
+void fill_rectangle(uint64_t x0, uint64_t y0, uint64_t x1, uint64_t y1, uint32_t color) {
 	// checkeo que (x0, y0) sean esquina superior izquierda
 	int dx = x1-x0;
 	int dy = y1-y0;
@@ -356,7 +356,7 @@ void fillRectangle(uint64_t x0, uint64_t y0, uint64_t x1, uint64_t y1, uint32_t 
 	
 }
 
-void drawCircle(uint64_t x_center, uint64_t y_center, uint64_t radius, uint32_t color) {
+void draw_circle(uint64_t x_center, uint64_t y_center, uint64_t radius, uint32_t color) {
 
     int64_t x = radius;
     int64_t y = 0;
@@ -383,7 +383,7 @@ void drawCircle(uint64_t x_center, uint64_t y_center, uint64_t radius, uint32_t 
     }
 }
 
-void fillCircle(uint64_t x_center, uint64_t y_center, uint64_t radius, uint32_t color) {
+void fill_circle(uint64_t x_center, uint64_t y_center, uint64_t radius, uint32_t color) {
     uint64_t x0 = (x_center >= radius) ? x_center - radius : 0;
     uint64_t y0 = (y_center >= radius) ? y_center - radius : 0;
     uint64_t x1 = x_center + radius;

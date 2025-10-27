@@ -14,9 +14,6 @@ typedef int pid_t;
 #define MIN_PRIORITY 1
 #define MAX_PRIORITY 5
 #define DEFAULT_PRIORITY 5
-#define INIT_PID 0 // PID del proceso init
-#define KILLED_RET_VALUE -1
-#define NO_PID -1
 
 // ============================================
 //           TIPOS DE DATOS

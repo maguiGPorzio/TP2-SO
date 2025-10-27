@@ -23,10 +23,10 @@ PCB* proc_create(int pid, process_entry_t entry, int argc, const char **argv,
         return NULL;
     }
 
-    MemoryManagerADT mm = getKernelMemoryManager();
+    MemoryManagerADT mm = get_kernel_memory_manager();
 
     // Alocar PCB
-    PCB *p = allocMemory(mm, sizeof(PCB));
+    PCB *p = alloc_memory(mm, sizeof(PCB));
     if (!p) {
         return NULL;
     }
@@ -40,21 +40,19 @@ PCB* proc_create(int pid, process_entry_t entry, int argc, const char **argv,
     p->name[MAX_NAME_LENGTH - 1] = '\0';
     p->entry = entry;
     p->return_value = 0; // TODO: FIJARSE COMO INCIIALIZARLO
-    p->waiting_on = -1;
+    p->waiting_on = NO_PID;
 
     // ============================
     // Pila del proceso
     // ============================
-    p->stack_base = allocMemory(mm, PROCESS_STACK_SIZE);
+    p->stack_base = alloc_memory(mm, PROCESS_STACK_SIZE);
     if (p->stack_base == NULL) {
-        freeMemory(mm, p);
+        free_memory(mm, p);
         return NULL;
     }
 
     // El stack crece hacia abajo, por lo tanto el puntero inicial está al final del bloque
-    p->stack_pointer = setup_initial_stack(&process_caller, p->pid,
-                                        (char *)p->stack_base + PROCESS_STACK_SIZE,
-                                        0 );
+    p->stack_pointer = setup_initial_stack(&process_caller, p->pid, (char *)p->stack_base + PROCESS_STACK_SIZE, 0 );
 
     // ============================
     // Argumentos (argv / argc)
@@ -63,19 +61,13 @@ PCB* proc_create(int pid, process_entry_t entry, int argc, const char **argv,
     if (argc > 0 && argv != NULL) {
         p->argv = duplicateArgv(argv, argc, mm);
         if (p->argv == NULL) {
-            freeMemory(mm, p->stack_base);
-            freeMemory(mm, p);
+            free_memory(mm, p->stack_base);
+            free_memory(mm, p);
             return NULL;
         }
     } else {
         p->argv = NULL;
     }
-
-    // ============================
-    // Nombre del proceso
-    // ============================
-    strncpy(p->name, name, MAX_NAME_LENGTH - 1);
-    p->name[MAX_NAME_LENGTH - 1] = '\0';
 
     return p;
 }
@@ -85,28 +77,28 @@ void free_process_resources(PCB * p) {
         return;
     }
 
-    MemoryManagerADT mm = getKernelMemoryManager();
+    MemoryManagerADT mm = get_kernel_memory_manager();
 
     // Liberar argv y sus strings
     if (p->argv != NULL) {
         for (int i = 0; i < p->argc; i++) {
             if (p->argv[i] != NULL) {
-                freeMemory(mm, p->argv[i]);
+                free_memory(mm, p->argv[i]);
             }
         }
-        freeMemory(mm, p->argv);
+        free_memory(mm, p->argv);
         p->argv = NULL;
     }
 
     // Liberar stack
     if (p->stack_base != NULL) {
-        freeMemory(mm, p->stack_base);
+        free_memory(mm, p->stack_base);
         p->stack_base = NULL;
         p->stack_pointer = NULL;
     }
 
     // Liberar PCB
-    freeMemory(mm, p);
+    free_memory(mm, p);
 }
 
 // ============================================
@@ -116,7 +108,7 @@ void free_process_resources(PCB * p) {
 static char **duplicateArgv(const char **argv, int argc, MemoryManagerADT mm) {
     // Caso argv vacío o NULL: crear argv minimal con solo NULL
     if (argv == NULL || argc == 0 || (argc > 0 && argv[0] == NULL)) {
-        char **new_argv = allocMemory(mm, sizeof(char *));
+        char **new_argv = alloc_memory(mm, sizeof(char *));
         if (new_argv == NULL) {
             return NULL;
         }
@@ -125,7 +117,7 @@ static char **duplicateArgv(const char **argv, int argc, MemoryManagerADT mm) {
     }
 
     // Alocar array de punteros (argc + 1 para el NULL terminador)
-    char **new_argv = allocMemory(mm, (argc + 1) * sizeof(char *));
+    char **new_argv = alloc_memory(mm, (argc + 1) * sizeof(char *));
     if (new_argv == NULL) {
         return NULL;
     }
@@ -138,16 +130,16 @@ static char **duplicateArgv(const char **argv, int argc, MemoryManagerADT mm) {
         }
 
         size_t len = strlen(argv[i]) + 1;
-        new_argv[i] = allocMemory(mm, len);
+        new_argv[i] = alloc_memory(mm, len);
 
         if (new_argv[i] == NULL) {
             // Error: liberar todo lo alocado hasta ahora (ROLLBACK)
             for (int j = 0; j < i; j++) {
                 if (new_argv[j] != NULL) {
-                    freeMemory(mm, new_argv[j]);
+                    free_memory(mm, new_argv[j]);
                 }
             }
-            freeMemory(mm, new_argv);
+            free_memory(mm, new_argv);
             return NULL;
         }
 

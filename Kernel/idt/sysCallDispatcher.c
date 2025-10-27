@@ -113,18 +113,18 @@ static void sys_screensize(uint32_t * width, uint32_t * height){
 // info: [x_center, y_center, radius]
 static void sys_circle(uint64_t fill, uint64_t * info, uint32_t color) {
     if (fill) {
-        fillCircle(info[0], info[1], info[2], color);
+        fill_circle(info[0], info[1], info[2], color);
     } else {
-        drawCircle(info[0], info[1], info[2], color);
+        draw_circle(info[0], info[1], info[2], color);
     }
 }
 
 // info: [x0, y0, x1, y1]
 static void sys_rectangle(uint64_t fill, uint64_t * info, uint32_t color) {
     if (fill) {
-        fillRectangle(info[0], info[1], info[2], info[3], color);
+        fill_rectangle(info[0], info[1], info[2], info[3], color);
     } else {
-        drawRectangle(info[0], info[1], info[2], info[3], color);
+        draw_rectangle(info[0], info[1], info[2], info[3], color);
     }
 }
 
@@ -159,7 +159,7 @@ static void sys_putpixel(uint32_t hexColor, uint64_t x, uint64_t y) {
 }
 
 static uint64_t sys_key_status(char c) {
-    return isPressedKey(c);
+    return is_pressed_key(c);
 }
 
 static void sys_sleep(uint64_t miliseconds) {
@@ -176,15 +176,15 @@ static uint64_t sys_ticks() {
 
 // Memory management syscalls
 static void * sys_malloc(size_t size) {
-    return allocMemory(getKernelMemoryManager(), size);
+    return alloc_memory(get_kernel_memory_manager(), size);
 }
 
 static void sys_free(void * ptr) {
-    freeMemory(getKernelMemoryManager(), ptr);
+    free_memory(get_kernel_memory_manager(), ptr);
 }
 
 static MemStatus sys_memStatus(void) {
-    return getMemStatus(getKernelMemoryManager());
+    return get_mem_status(get_kernel_memory_manager());
 }
 
 // ===================== Processes syscalls =====================

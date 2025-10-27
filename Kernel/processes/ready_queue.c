@@ -20,8 +20,8 @@ void ready_queue_init(ReadyQueue *queue) {
 void ready_queue_enqueue(ReadyQueue *queue, PCB *process) {
     if (queue == NULL || process == NULL) return;
 
-    MemoryManagerADT mm = getKernelMemoryManager();
-    RQNode *node = allocMemory(mm, sizeof(RQNode));
+    MemoryManagerADT mm = get_kernel_memory_manager();
+    RQNode *node = alloc_memory(mm, sizeof(RQNode));
     if (node == NULL) return; // sin memoria
 
     node->proc = process;
@@ -72,8 +72,8 @@ void ready_queue_dequeue(ReadyQueue *queue, PCB *process) {
     }
 
     // Liberar el nodo
-    MemoryManagerADT mm = getKernelMemoryManager();
-    freeMemory(mm, found);
+    MemoryManagerADT mm = get_kernel_memory_manager();
+    free_memory(mm, found);
     queue->count--;
 }
 
@@ -87,14 +87,14 @@ PCB *ready_queue_next(ReadyQueue *queue) {
 
 void ready_queue_destroy(ReadyQueue *queue) {
     if (queue == NULL) return;
-    MemoryManagerADT mm = getKernelMemoryManager();
+    MemoryManagerADT mm = get_kernel_memory_manager();
 
     int remaining = queue->count;
     RQNode *start = queue->head;
     RQNode *n = start;
     while (remaining-- > 0 && n != NULL) {
         RQNode *next = n->next;
-        freeMemory(mm, n);
+        free_memory(mm, n);
         if (next == start) break;
         n = next;
     }

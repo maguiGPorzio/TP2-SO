@@ -4,7 +4,7 @@
 #include "videoDriver.h"
 
 static int shift = 0 ;
-static int capsLock = 0;
+static int caps_lock = 0;
 static int copied_registers=0;
 
 uint16_t buffer_start = 0; // índice del buffer del próximo carácter a leer 
@@ -83,7 +83,7 @@ void handlePressedKey() {
         storeSnapshot();
         return; 
     } else if (scancode == CAPS_LOCK) {
-        capsLock = (capsLock+1)%2;
+        caps_lock = (caps_lock+1)%2;
     } else if (scancode == 0){
         return;
     }else if (scancode > BREAKCODE_OFFSET){ // se soltó una tecla o es un caracter no imprimible
@@ -100,7 +100,7 @@ void handlePressedKey() {
         int isLetter = (raw >= 'a' && raw <= 'z');  
 
         if (isLetter) {
-            index = shift ^ capsLock;
+            index = shift ^ caps_lock;
             pressedKeys[raw-'a'] = 1;
         } else {
             index = shift;                      
@@ -120,7 +120,7 @@ void writeStringToBuffer(const char *str) {
     }
 }
 
-uint8_t isPressedKey(char c) {
+uint8_t is_pressed_key(char c) {
     if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) { 
         c = (c >= 'A' && c <= 'Z') ? c - 'A' + 'a' : c; // Convertir a minúscula si es mayúscula
         return pressedKeys[c-'a']; // Devuelve 1 si la tecla está presionada, 0 si no

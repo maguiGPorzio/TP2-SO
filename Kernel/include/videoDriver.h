@@ -28,10 +28,10 @@ void drawString(const char * str, uint64_t x, uint64_t y, uint32_t color, uint64
 // dibuja una linea desde x0,y0 hasta x1,y1
 void drawLine(uint64_t x0, uint64_t y0, uint64_t x1, uint64_t y1, uint32_t color);
 // x0,y0 esquina superior izquierda. x1,y1 esquina inferior derecha
-void drawRectangle(uint64_t x0, uint64_t y0, uint64_t x1, uint64_t y1, uint32_t color);
-void fillRectangle(uint64_t x0, uint64_t y0, uint64_t x1, uint64_t y1, uint32_t color);
-void drawCircle(uint64_t x_center, uint64_t y_center, uint64_t radius, uint32_t color);
-void fillCircle(uint64_t x_center, uint64_t y_center, uint64_t radius, uint32_t color);
+void draw_rectangle(uint64_t x0, uint64_t y0, uint64_t x1, uint64_t y1, uint32_t color);
+void fill_rectangle(uint64_t x0, uint64_t y0, uint64_t x1, uint64_t y1, uint32_t color);
+void draw_circle(uint64_t x_center, uint64_t y_center, uint64_t radius, uint32_t color);
+void fill_circle(uint64_t x_center, uint64_t y_center, uint64_t radius, uint32_t color);
 
 
 #endif // _VIDEO_DRIVER_H_

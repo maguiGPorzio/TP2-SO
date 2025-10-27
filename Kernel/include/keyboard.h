@@ -27,7 +27,7 @@ void handlePressedKey();
 void storeSnapshot();
 uint64_t copyRegisters(char * copy);
 uint32_t uint64ToRegisterFormat(uint64_t value, char *dest);
-uint8_t isPressedKey(char c);
+uint8_t is_pressed_key(char c);
 void writeStringToBuffer(const char *str);
 
 #endif

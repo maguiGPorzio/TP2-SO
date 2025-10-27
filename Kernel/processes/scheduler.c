@@ -92,8 +92,8 @@ SchedulerADT init_scheduler(void) {
         return scheduler;
     }
 
-    MemoryManagerADT mm = getKernelMemoryManager();
-    scheduler = allocMemory(mm, sizeof(SchedulerCDT));
+    MemoryManagerADT mm = get_kernel_memory_manager();
+    scheduler = alloc_memory(mm, sizeof(SchedulerCDT));
     
     if (scheduler == NULL) {
         return NULL;
@@ -114,7 +114,7 @@ SchedulerADT init_scheduler(void) {
     //Sino, la primera llamada a scheudule va a tratar a init como current y va a pisar su stack_pointer con prev_rsp
 
     if(scheduler_add_init() != 0) {
-        freeMemory(mm, scheduler);
+        free_memory(mm, scheduler);
         scheduler = NULL;
         return NULL;
     }
@@ -391,7 +391,7 @@ static void cleanup_all_processes(void) {
         return;
     }
 
-    MemoryManagerADT mm = getKernelMemoryManager();
+    MemoryManagerADT mm = get_kernel_memory_manager();
 
     for (int i = 0; i < MAX_PROCESSES; i++) {
         PCB *p = scheduler->processes[i];
@@ -406,14 +406,14 @@ void scheduler_destroy(void) {
         return;
     }
 
-    MemoryManagerADT mm = getKernelMemoryManager();
+    MemoryManagerADT mm = get_kernel_memory_manager();
 
     // Limpiar la cola global liberando nodos
     ready_queue_destroy(&scheduler->ready_queue);
 
     cleanup_all_processes();
 
-    freeMemory(mm, scheduler);
+    free_memory(mm, scheduler);
     scheduler = NULL;
 }
 

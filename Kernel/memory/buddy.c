@@ -20,7 +20,7 @@ struct MemoryManagerCDT {
     void* baseAddress;                    // Dirección base de la memoria
     size_t totalSize;                     // Tamaño total
     BuddyNode* freeLists[NUM_ORDERS];    // Array de listas libres por orden
-    size_t allocatedBlocks;               // Bloques allocados
+    size_t allocated_blocks;               // Bloques allocados
     size_t totalAllocated;                // Bytes totales allocados
 };
 
@@ -182,7 +182,7 @@ MemoryManagerADT createMemoryManager(void* startAddress, size_t size) {
     MemoryManagerADT memManager = (MemoryManagerADT)startAddress;
     memManager->baseAddress = (char*)startAddress + sizeof(struct MemoryManagerCDT);
     memManager->totalSize = size - sizeof(struct MemoryManagerCDT);
-    memManager->allocatedBlocks = 0;
+    memManager->allocated_blocks = 0;
     memManager->totalAllocated = 0;
     
     // Inicializar listas libres
@@ -216,7 +216,7 @@ MemoryManagerADT createMemoryManager(void* startAddress, size_t size) {
     return memManager;
 }
 
-void* allocMemory(MemoryManagerADT memManager, size_t size) {
+void* alloc_memory(MemoryManagerADT memManager, size_t size) {
     if (memManager == NULL || size == 0) {
         return NULL;
     }
@@ -245,14 +245,14 @@ void* allocMemory(MemoryManagerADT memManager, size_t size) {
     block->free = false;
     block->order = order;
     
-    memManager->allocatedBlocks++;
+    memManager->allocated_blocks++;
     memManager->totalAllocated += orderToSize(order) - sizeof(BuddyNode);
     
     // Retornar puntero después del header
     return (char*)block + sizeof(BuddyNode);
 }
 
-void freeMemory(MemoryManagerADT memManager, void* ptr) {
+void free_memory(MemoryManagerADT memManager, void* ptr) {
     if (memManager == NULL || ptr == NULL) {
         return;
     }
@@ -266,7 +266,7 @@ void freeMemory(MemoryManagerADT memManager, void* ptr) {
     
     // Marcar como libre
     block->free = true;
-    memManager->allocatedBlocks--;
+    memManager->allocated_blocks--;
     memManager->totalAllocated -= orderToSize(block->order) - sizeof(BuddyNode);
     
     // Agregar a la lista libre
@@ -276,14 +276,14 @@ void freeMemory(MemoryManagerADT memManager, void* ptr) {
     coalesce(memManager, block);
 }
 
-MemStatus getMemStatus(MemoryManagerADT memManager) {
+MemStatus get_mem_status(MemoryManagerADT memManager) {
     MemStatus status = {0};
     
     if (memManager != NULL) {
-        status.totalMemory = memManager->totalSize;
-        status.usedMemory = memManager->totalAllocated;
-        status.freeMemory = status.totalMemory - status.usedMemory;
-        status.allocatedBlocks = memManager->allocatedBlocks;
+        status.total_memory = memManager->totalSize;
+        status.used_memory = memManager->totalAllocated;
+        status.free_memory = status.total_memory - status.used_memory;
+        status.allocated_blocks = memManager->allocated_blocks;
     }
     
     return status;
@@ -307,7 +307,7 @@ void printMemState(MemoryManagerADT memManager) {
     ncPrint("Allocated: ");
     ncPrintDec(memManager->totalAllocated / 1024);
     ncPrint(" KB in ");
-    ncPrintDec(memManager->allocatedBlocks);
+    ncPrintDec(memManager->allocated_blocks);
     ncPrint(" blocks\n");
     
     // Mostrar listas libres por orden
@@ -336,7 +336,7 @@ void printMemState(MemoryManagerADT memManager) {
     ncPrint("==========================\n");
 }
 
-void initKernelMemoryManager(void) {
+void init_kernel_memory_manager(void) {
     kernelMemManager = createMemoryManager((void*)HEAP_START_ADDRESS, HEAP_SIZE);
     
     if (kernelMemManager == NULL) {
@@ -365,7 +365,7 @@ void initKernelMemoryManager(void) {
     ncPrint(")\n");
 }
 
-MemoryManagerADT getKernelMemoryManager(void) {
+MemoryManagerADT get_kernel_memory_manager(void) {
     return kernelMemManager;
 }
 
@@ -374,13 +374,13 @@ MemoryManagerADT getKernelMemoryManager(void) {
 // ============================================
 
 void* sys_malloc(size_t size) {
-    return allocMemory(kernelMemManager, size);
+    return alloc_memory(kernelMemManager, size);
 }
 
 void sys_free(void* ptr) {
-    freeMemory(kernelMemManager, ptr);
+    free_memory(kernelMemManager, ptr);
 }
 
 MemStatus sys_memStatus(void) {
-    return getMemStatus(kernelMemManager);
+    return get_mem_status(kernelMemManager);
 }

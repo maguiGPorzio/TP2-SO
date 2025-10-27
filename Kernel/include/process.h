@@ -8,6 +8,9 @@
 #define MAX_NAME_LENGTH 32
 #define PROCESS_STACK_SIZE (4096 * 2)  // 8KB stack
 #define MAX_PID (MAX_PROCESSES - 1)
+#define INIT_PID 0 // PID del proceso init
+#define KILLED_RET_VALUE -1
+#define NO_PID -1
 
 // ============================================
 //           TIPOS Y ESTRUCTURAS

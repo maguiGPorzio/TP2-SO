@@ -62,7 +62,7 @@ void * initializeKernelBinary()
 
 int main() {
 
-	initKernelMemoryManager();
+	init_kernel_memory_manager();
 
 	init_scheduler();
 
