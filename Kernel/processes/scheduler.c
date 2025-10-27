@@ -15,7 +15,7 @@
 
 typedef struct SchedulerCDT {
     PCB *processes[MAX_PROCESSES];              // Array para acceso por PID
-    ReadyQueue ready_queue;                      // Cola de procesos READY (round-robin)
+    ReadyQueue ready_queue;                      // Lista circular de procesos READY (round-robin)
     int current_pid;                             // PID del proceso actual
     uint8_t process_count;                       // Cantidad total de procesos
     uint64_t total_cpu_ticks;                    // Total de ticks de CPU
@@ -41,12 +41,13 @@ static PCB *pick_next_process(void);
 static void reparent_children_to_init(int16_t pid);
 static int init(int argc, char **argv);
 static int scheduler_add_init();
-static PCB *pick_next_process(void);
+static inline bool pid_is_valid(pid_t pid);
 
-// Lista circular: use the ready_queue API (ready_queue_enqueue/dequeue/next)
+static inline bool pid_is_valid(pid_t pid) {
+    return pid >= 0 && pid <= MAX_PID;
+}
 
-
-// Proceso init: arranca la shell y se queda limpiando procesos huérfanos terminados y haciendo halt para no consumir CPU. Se lo elige siempre que no haya otro proceso para correr!!!!
+// Proceso init: arranca la shell y se queda haciendo halt para no consumir CPU. Se lo elige siempre que no haya otro proceso para correr!!!!
 static int init(int argc, char **argv) {
     const char **shell_args = { NULL };
 
@@ -133,7 +134,7 @@ void * schedule(void * prev_rsp) {
         return prev_rsp;
     }
 
-    PCB *current = (scheduler->current_pid >= 0) ? scheduler->processes[scheduler->current_pid] : NULL;
+    PCB *current = (pid_is_valid(scheduler->current_pid)) ? scheduler->processes[scheduler->current_pid] : NULL;
 
     if (current) {
         current->stack_pointer = prev_rsp; // actualiza el rsp del proceso que estuvo corriendo hasta ahora en su pcb
@@ -207,7 +208,7 @@ int scheduler_add_process(process_entry_t entry, int argc, const char **argv, co
             break;
         }
     }
-    if (pid < 0) {
+    if (!pid_is_valid(pid)) {
         return -1;
     }
 
@@ -232,7 +233,7 @@ int scheduler_add_process(process_entry_t entry, int argc, const char **argv, co
 }
 
 int scheduler_remove_process(int pid) {
-    if (!scheduler || pid < 0 || pid >= MAX_PROCESSES) {
+    if (!scheduler || !pid_is_valid(pid)) {
         return -1;
     }
 
@@ -263,7 +264,7 @@ int scheduler_remove_process(int pid) {
 }
 
 int scheduler_set_priority(int pid, uint8_t new_priority) {
-   if (scheduler == NULL || pid < 0 || pid >= MAX_PROCESSES || 
+   if (scheduler == NULL || !pid_is_valid(pid) || 
         scheduler->processes[pid] == NULL || 
         new_priority < MIN_PRIORITY || new_priority > MAX_PRIORITY) {
         return -1;
@@ -275,7 +276,7 @@ int scheduler_set_priority(int pid, uint8_t new_priority) {
 }
 
 int scheduler_get_priority(int pid) {
-    if (scheduler == NULL || pid < 0 || pid >= MAX_PROCESSES || scheduler->processes[pid] == NULL) {
+    if (scheduler == NULL || !pid_is_valid(pid) || scheduler->processes[pid] == NULL) {
         return -1;
     }
     PCB *process = scheduler->processes[pid];
@@ -301,7 +302,7 @@ void scheduler_yield(void) {
 }
 
 int scheduler_kill_process(int pid) {
-    if(!scheduler || pid < 0 || pid >= MAX_PROCESSES) {
+    if(!scheduler || !pid_is_valid(pid)) {
         return -1;
     }
     
@@ -341,7 +342,7 @@ int scheduler_kill_process(int pid) {
 
 // Llamar desde proc_block() en processes.c
 int scheduler_block_process(int pid) {
-    if (scheduler == NULL || pid < 0 || pid >= MAX_PROCESSES) {
+    if (!scheduler || !pid_is_valid(pid)) {
         return -1;
     }
     
@@ -367,12 +368,12 @@ int scheduler_block_process(int pid) {
 
 
 int scheduler_unblock_process(int pid) {
-    if (scheduler == NULL || pid < 0 || pid >= MAX_PROCESSES) {
+    if (!scheduler || !pid_is_valid(pid)) {
         return -1;
     }
     
     PCB *process = scheduler->processes[pid];
-    if (process == NULL || process->status != PS_BLOCKED) {
+    if (!process || process->status != PS_BLOCKED) {
         return -1;
     }
     
@@ -402,7 +403,7 @@ void scheduler_destroy(void) {
 
 // En scheduler.c
 PCB *scheduler_get_process(int pid) {
-    if (!scheduler || pid < 0 || pid >= MAX_PROCESSES) {
+    if (!scheduler || !pid_is_valid(pid)) {
         return NULL;
     }
     
@@ -444,7 +445,7 @@ void scheduler_exit_process(int64_t ret_value) {
 
 // Bloquea al proceso actual hasta que el hijo indicado termine. Devuelve el status del hijo si ya terminó o 0.
 int scheduler_waitpid(int child_pid) {
-    if (!scheduler || child_pid < 0 || child_pid >= MAX_PROCESSES || 
+    if (!scheduler || !pid_is_valid(child_pid) || 
         scheduler->processes[child_pid] == NULL || 
         scheduler->processes[child_pid]->parent_pid != scheduler->current_pid) {
         return -1;
@@ -459,13 +460,16 @@ int scheduler_waitpid(int child_pid) {
     // Llega acá cuando el hijo terminó y lo desbloqueo o si el hijo ya había terminado
     
     scheduler->processes[scheduler->current_pid]->waiting_on = NO_PID;
-    int64_t ret_value = scheduler->processes[child_pid]->return_value;
+    int ret_value = scheduler->processes[child_pid]->return_value;
     scheduler_remove_process(child_pid);
 
     return ret_value;
 }
 
 static void reparent_children_to_init(int16_t pid) {
+    if(!scheduler || !pid_is_valid(pid)) {
+        return;
+    }
 	for (int i = 0; i < MAX_PROCESSES; i++) {
 		if (scheduler->processes[i] != NULL &&
 			scheduler->processes[i]->parent_pid == pid) {
