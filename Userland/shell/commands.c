@@ -20,21 +20,18 @@
 
 // COMANDOS
 static Command commands[] = {
-    { "clear", "clears the screen",    &cls      },
-    { "help", "provides commands information",     &help     },
+    { "clear", "clears the screen",    &cls },
+    { "help", "provides commands information", &help     },
+    { "song", "plays tetris song", &song },
     { "print date", "prints system's date", &print_date },
     { "print regs", "prints the last saved register values", &print_saved_registers },
     { "print time", "prints system's time", &print_time },
-    { "song", "plays tetris song", &song },
-    { "print processes", "prints current processes", &print_processes},
-    { "spawn a", "runs a process that writes a to stdout", &test_spawn_a },
-    { "test div0", "causes division by zero exception", &test_division_zero }, // prueba de división por cero
-    { "test invopcode", "causes invalid opcode exception", &test_invalid_opcode }, // prueba de opcode inválido
-    { "test mm", "runs a memory manager test", &test_mm_command }, // prueba del memory manager
+    { "print processes", "prints current processes", &print_processes },
+    { "test div0", "causes division by zero exception", &test_division_zero }, 
+    { "test invopcode", "causes invalid opcode exception", &test_invalid_opcode }, 
+    { "test mm", "runs a memory manager test", &test_mm_command }, 
     { "test processes", "runs processes test", &test_processes_command },
-    { "test priority", "runs a priority test", &test_priority_command},
-    { "kill a", "kills process with pid=2", &kill_a},
-    
+    { "test priority", "runs a priority test", &test_priority_command },
     {0 ,0, 0} // marca de fin
 };
 
@@ -168,6 +165,7 @@ void song() {
     sys_beep(880, 500);
     sys_beep(880, 500);
     sys_clear_input_buffer();
+    shell_newline();
 }
 
 // Llama al test de memory manager con un límite predeterminado
@@ -182,31 +180,18 @@ void test_processes_command() {
 }
 
 void test_priority_command() {
+    putchar('\b'); // borro el cursor
     const char * args[] = {"600000000"}; // tiene que ser un numero grande para que es note la dif
     int pid = sys_create_process(&test_prio, 1, args, "test_prio");
     sys_wait(pid);
     shell_newline();
 }
 
-extern int proc_print_a(int argc, char **argv);
-
-void test_spawn_a() {
-    const char *args[] = { "a" };
-    int64_t pid = sys_create_process(proc_print_a, 1, args, "proc_a");
-    if (pid < 0) {
-        shell_print_err("spawn fallo\n");
-        return;
-    }
-    printf("\npid: %d\n", pid);
-    shell_newline();
-}
 
 void print_processes() {
+    putchar('\b'); // borro el cursor
     sys_print_processes();
     shell_newline();
 }
 
-void kill_a() {
-    sys_kill(2);
-}
 
