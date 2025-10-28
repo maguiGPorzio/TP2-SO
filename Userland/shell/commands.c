@@ -32,6 +32,7 @@ static Command commands[] = {
     { "test invopcode", "causes invalid opcode exception", &test_invalid_opcode }, // prueba de opcode inválido
     { "test mm", "runs a memory manager test", &test_mm_command }, // prueba del memory manager
     { "test processes", "runs processes test", &test_processes_command },
+    { "test priority", "runs a priority test", &test_priority_command},
     { "kill a", "kills process with pid=2", &kill_a},
     
     {0 ,0, 0} // marca de fin
@@ -178,6 +179,13 @@ void test_mm_command() {
 void test_processes_command() {
     const char * args[] = {"4"};
     sys_create_process(&test_processes, 1, args, "test_processes");
+}
+
+void test_priority_command() {
+    const char * args[] = {"600000000"}; // tiene que ser un numero grande para que es note la dif
+    int pid = sys_create_process(&test_prio, 1, args, "test_prio");
+    sys_wait(pid);
+    shell_newline();
 }
 
 extern int proc_print_a(int argc, char **argv);
