@@ -168,6 +168,7 @@ void song() {
     sys_beep(880, 500);
     sys_beep(880, 500);
     sys_clear_input_buffer();
+    shell_newline();
 }
 
 // Llama al test de memory manager con un límite predeterminado

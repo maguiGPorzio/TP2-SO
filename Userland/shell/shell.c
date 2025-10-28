@@ -13,6 +13,7 @@ int main(void) {
         shell_print_string(PROMPT);
         read_line(input, INPUT_MAX-1);
         shell_newline();
+        putchar('\b'); // borro el cursor
         process_line(input, &history_len);
     }
 }
