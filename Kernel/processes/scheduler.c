@@ -70,7 +70,7 @@ static int init(int argc, char **argv) {
 
 // Agrega el proceso al array de procesos y a la cola READY
 static int scheduler_add_init() {
-    if (!scheduler || scheduler->process_count++ != 0) { // si no es el primer proceso en ser creado está mal
+    if (!scheduler || scheduler->process_count != 0) { // si no es el primer proceso en ser creado está mal
         return -1;
     }
 
@@ -86,6 +86,8 @@ static int scheduler_add_init() {
 
     scheduler->processes[INIT_PID] = pcb_init;
     scheduler->process_count++;
+
+    timer_tick();
 
     return 0;
 }

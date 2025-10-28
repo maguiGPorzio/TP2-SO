@@ -68,7 +68,7 @@ int main() {
 
 	// TODO: crear el proceso de la shell
 
-	((EntryPoint)sampleCodeModuleAddress)();
+	//((EntryPoint)sampleCodeModuleAddress)();
 	
 	return 0;
 }
