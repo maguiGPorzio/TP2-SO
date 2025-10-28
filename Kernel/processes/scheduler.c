@@ -31,11 +31,6 @@ typedef struct SchedulerCDT {
 
 static SchedulerADT scheduler = NULL;
 
-// Variables compartidas con ASM (para context switching)
-extern void *current_kernel_rsp;
-extern void *switch_to_rsp;
-extern void switch_to_rsp_and_iret(void *next_rsp);
-
 // ============================================
 //        DECLARACIONES AUXILIARES
 // ============================================
