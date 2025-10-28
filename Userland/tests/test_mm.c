@@ -1,6 +1,6 @@
 //TEST CATEDRA
 #include "../include/test_mm.h" // para sys_* y MemStatus
-#include "../include/tests.h"
+#include "../include/test_util.h"
 
 #define MAX_BLOCKS 128
 

@@ -28,7 +28,7 @@ $(MODULE): $(OBJECTS) $(OBJECTS_SHELL) $(OBJECTS_USRLIB) $(OBJECTS_GOLF) $(OBJEC
 	$(LD) $(LDFLAGS) -T sampleCodeModule.ld -o $(MODULE) $(OBJECTS) $(OBJECTS_SHELL) $(OBJECTS_USRLIB) $(OBJECTS_GOLF) $(OBJECTS_TESTS) $(OBJECTS_ASM)
 
 %.o: %.c
-	$(GCC) $(GCCFLAGS) -I. -Ishell -Iusrlib -Igolf -Itests -c $< -o $@
+	$(GCC) $(GCCFLAGS) -I. -Iinclude -Ishell -Iusrlib -Igolf -Itests -c $< -o $@
 
 %.o: %.asm
 	$(ASM) $(ASMFLAGS) $< -o $@

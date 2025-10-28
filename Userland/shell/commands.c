@@ -20,18 +20,20 @@
 
 // COMANDOS
 static Command commands[] = {
-    { "clear", "clears the screen",    cls      },
-    { "help", "provides commands information",     help     },
-    { "print date", "prints system's date", print_date },
-    { "print regs", "prints the last saved register values", print_saved_registers },
-    { "print time", "prints system's time", print_time },
-    { "song", "plays tetris song", song },
-    { "print processes", "prints current processes", print_processes},
-    { "spawn a", "runs a process that writes a to stdout", test_spawn_a },
-    { "test div0", "causes division by zero exception", test_division_zero }, // prueba de división por cero
-    { "test invopcode", "causes invalid opcode exception", test_invalid_opcode }, // prueba de opcode inválido
-    { "test mm", "runs a memory manager test", test_mm_command }, // prueba del memory manager
-    { "kill a", "kills process with pid=2", kill_a},
+    { "clear", "clears the screen",    &cls      },
+    { "help", "provides commands information",     &help     },
+    { "print date", "prints system's date", &print_date },
+    { "print regs", "prints the last saved register values", &print_saved_registers },
+    { "print time", "prints system's time", &print_time },
+    { "song", "plays tetris song", &song },
+    { "print processes", "prints current processes", &print_processes},
+    { "spawn a", "runs a process that writes a to stdout", &test_spawn_a },
+    { "test div0", "causes division by zero exception", &test_division_zero }, // prueba de división por cero
+    { "test invopcode", "causes invalid opcode exception", &test_invalid_opcode }, // prueba de opcode inválido
+    { "test mm", "runs a memory manager test", &test_mm_command }, // prueba del memory manager
+    { "test processes", "runs processes test", &test_processes_command },
+    { "kill a", "kills process with pid=2", &kill_a},
+    
     {0 ,0, 0} // marca de fin
 };
 
@@ -173,6 +175,11 @@ void test_mm_command() {
     test_mm(1, args);
 }
 
+void test_processes_command() {
+    const char * args[] = {"4"};
+    sys_create_process(&test_processes, 1, args, "test_processes");
+}
+
 extern int proc_print_a(int argc, char **argv);
 
 void test_spawn_a() {
@@ -183,8 +190,6 @@ void test_spawn_a() {
         return;
     }
     printf("\npid: %d\n", pid);
-    // Ceder CPU para que el proceso corra (scheduler cooperativo)
-    // sys_yield();
     shell_newline();
 }
 
@@ -196,3 +201,4 @@ void print_processes() {
 void kill_a() {
     sys_kill(2);
 }
+
