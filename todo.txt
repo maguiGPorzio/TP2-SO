@@ -8,7 +8,7 @@ que el print processes lo haga con el pid (tengo que poner un num2str en kernel)
 
 refactor del scheduler y la queue (libreria y adt)
 
-ver por que la shell arranca gaga (doble cursor y mayuscula) y por que tmb a veces imprime el cursor cuando no va
+ver por que la shell arranca gaga (mayuscula) y por que tmb a veces imprime el cursor cuando no va
 
 lo de que init no se pueda matar y este todo el tiempo haciendo 
 lo de limpiar a los huerfanos y que cree otra shell si la mataron
