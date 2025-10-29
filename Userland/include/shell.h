@@ -1,5 +1,7 @@
 #include "usrlib.h"
 #include "test_mm.h"
+#include "test_sync.h"
+
 // Prototipos de tests disponibles desde la shell
 int64_t test_prio(uint64_t argc, char *argv[]);
 int64_t test_processes(uint64_t argc, char *argv[]);
@@ -48,4 +50,5 @@ void test_mm_command();
 void test_processes_command();
 void test_priority_command();
 void print_processes();
+void test_sync_command();
 

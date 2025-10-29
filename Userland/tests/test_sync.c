@@ -1,20 +1,15 @@
-
-#include "../include/usrlib.h"
-#include "test_util.h"
-
-#define SEM_ID "sem"
-#define TOTAL_PAIR_PROCESSES 2
+#include "test_sync.h"
 
 int64_t global; // shared memory
 
-void slowInc(int64_t *p, int64_t inc) {
+static void slowInc(int64_t *p, int64_t inc) {
   uint64_t aux = *p;
   sys_yield(); // This makes the race condition highly probable
   aux += inc;
   *p = aux;
 }
 
-uint64_t my_process_inc(uint64_t argc, char *argv[]) {
+static uint64_t my_process_inc(uint64_t argc, char *argv[]) {
   uint64_t n;
   int8_t inc;
   int8_t use_sem;

@@ -32,6 +32,7 @@ static Command commands[] = {
     { "test mm", "runs a memory manager test", &test_mm_command }, 
     { "test processes", "runs processes test", &test_processes_command },
     { "test priority", "runs a priority test", &test_priority_command },
+    { "test sync", "runs a synchronization test", &test_sync_command },
     {0 ,0, 0} // marca de fin
 };
 
@@ -191,6 +192,14 @@ void test_priority_command() {
 void print_processes() {
     putchar('\b'); // borro el cursor
     sys_print_processes();
+    shell_newline();
+}
+
+void test_sync_command() {
+    putchar('\b'); // borro el cursor
+    const char *args[] = {"1000", "1", NULL};
+    int pid = sys_create_process(&test_sync, 2, args, "test_sync");
+    sys_wait(pid);
     shell_newline();
 }
 
