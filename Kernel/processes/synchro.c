@@ -3,6 +3,7 @@
 #include "memoryManager.h"
 #include "lib.h"
 #include "process.h"
+#include "videoDriver.h"
 
 // ============================================
 //           ESTRUCTURAS INTERNAS
@@ -50,17 +51,6 @@ static int add_to_queue(semaphore_t *sem, uint32_t pid);
 static semaphore_t *get_sem_by_name(const char *name);
 static int get_idx_by_name(const char *name);
 static int remove_process_from_queue(semaphore_t *sem, uint32_t pid);
-
-// Spinlock simple CHECK
-static inline void acquire_lock(int *lock) {
-    while (!__sync_bool_compare_and_swap(lock, 1, 0)) {
-        // Busy wait
-    }
-}
-
-static inline void release_lock(int *lock) {
-    *lock = 1;
-}
 
 static int pid_present_in_semaphore(semaphore_t *sem, uint32_t pid) {
     return sem->owner_pids[pid];
@@ -127,6 +117,7 @@ int64_t sem_open(char *name, int initial_value) {
     
     // Inicializar
     sem->value = initial_value;
+    sem->total_value = initial_value;
     strncpy(sem->name, name, MAX_SEM_NAME_LENGTH - 1);
     sem->name[MAX_SEM_NAME_LENGTH - 1] = '\0';
     sem->queue.read_index = 0;
@@ -134,6 +125,9 @@ int64_t sem_open(char *name, int initial_value) {
     sem->queue.size = 0;
     sem->lock = 1;  // Spinlock desbloqueado
     sem->ref_count = 1;
+    for (int i=0 ; i<MAX_PROCESSES ; i++) {
+        sem->owner_pids[i] = 0;
+    }
     sem->owner_pids[scheduler_get_current_pid()] = 1;
     
     sem_manager->semaphores[id] = sem;

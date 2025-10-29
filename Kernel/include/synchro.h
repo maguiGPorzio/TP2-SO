@@ -6,6 +6,11 @@
 #define MAX_SEMAPHORES 256
 #define MAX_SEM_NAME_LENGTH 64
 
+typedef int lock_t;
+
+extern void acquire_lock(lock_t *lock);
+extern void release_lock(lock_t *lock);
+
 //Inicializa el sistema de semáforos al arrancar el kernel.
 void init_semaphore_manager(void);
 // Crea o abre un semáforo con un nombre dado.
