@@ -9,6 +9,7 @@
 #include "memoryManager.h"
 #include "process.h"
 #include "scheduler.h"
+#include "synchro.h"
 
 #define MIN_CHAR 0
 #define MAX_CHAR 256
@@ -54,7 +55,13 @@ void * syscalls[] = {
     &sys_wait,               // 32
     &sys_nice,               // 33
     &sys_yield,              // 34
-    &sys_print_processes     // 35
+    &sys_print_processes,    // 35
+
+    // syscalls de semaforos 
+    &sys_sem_open,           // 36
+    &sys_sem_close,          // 37
+    &sys_sem_wait,           // 38
+    &sys_sem_post            // 39
 };
 
 static uint64_t sys_regs(char * buffer){
@@ -240,6 +247,20 @@ static void sys_yield() {
 
 static void sys_print_processes() {
     scheduler_print_processes();
+}
+
+// SEMAFORO
+static int64_t sys_sem_open(const char *name, int value) {
+    return (int64_t)sem_open(name, value);
+}
+static void sys_sem_close(int sem_id) {
+    sem_close(sem_id);
+}
+static void sys_sem_wait(int sem_id) {
+    sem_wait(sem_id);
+}
+static void sys_sem_post(int sem_id) {
+    sem_post(sem_id);
 }
 
 
