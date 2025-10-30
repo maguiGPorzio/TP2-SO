@@ -1,20 +1,62 @@
------- PROCESOS
+-- MEMORY MANAGER
 
-limpiar los comandos que puse (rodri) de mas para probar
+refactor de memory manager a una libreria
 
-comando para kill (va a haber que hacer un atoi o usar el de test_util)
+que el mem status no use size_t, usar los tipos de stdint
 
-que el print processes lo haga con el pid (tengo que poner un num2str en kernel)
 
-refactor del scheduler y la queue (libreria y adt)
+-- PROCESOS
 
-ver por que la shell arranca gaga (doble prompt y mayuscula) 
+refactor del scheduler a una libreria
 
-lo de que init no se pueda matar y este todo el tiempo haciendo 
-lo de limpiar a los huerfanos y que cree otra shell si la mataron
-creo que tambien habria que hacer un proceso idle
 
-que la shell no haga espera activa
+que init no se pueda matar, que limpie los recursos de los huerfanos
+
+tener un proceso idle
+
+implementar la nueva queue
+
+la syscall de ps
 
 hacer lo de los processos en foreground / background
+
+-- SYNCRO
+
+resolver los warnings en la medida de lo posible
+
+agregar implementacion con la nueva queue
+
+no se que mas, magui es la CTO
+
+
+-- PIPES
+
+que existan los pipes
+
+que el read sea bloqueante
+
+unificar los nombres de las syscalls
+
+
+
+
+-- shell
+
+implementar todos los programas
+
+ponerle chiches si se llega como flechita para arriba
+
+va a haber que hacer una syscall para poder imprimir en modo texto con colores mas alla de stdin o stdout
+
+
+
+
+
+
+
+
+
+
+
+
 
