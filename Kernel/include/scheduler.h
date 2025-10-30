@@ -16,18 +16,11 @@ typedef int pid_t;
 #define DEFAULT_PRIORITY 5
 
 // ============================================
-//           TIPOS DE DATOS
-// ============================================
-
-typedef struct SchedulerCDT *SchedulerADT;
-
-// ============================================
 //           FUNCIONES PÚBLICAS
 // ============================================
 
 // Inicialización
-SchedulerADT init_scheduler(void);
-SchedulerADT get_scheduler(void);
+int init_scheduler(void);
 void scheduler_destroy(void);
 
 // Función principal del scheduler (llamada por timer interrupt)
