@@ -9,6 +9,7 @@
 #include "memoryManager.h"
 #include "process.h"
 #include "scheduler.h"
+#include "synchro.h"
 
 #define MIN_CHAR 0
 #define MAX_CHAR 256
@@ -44,16 +45,23 @@ void * syscalls[] = {
     &sys_free,               // 24
     &sys_memStatus,          // 25
 
-    // syscalls de procesos (scheduler)
+    // syscalls de procesos
     &sys_create_process,     // 26
-    &sys_exit_current,       // 27
+    &sys_exit,               // 27
     &sys_getpid,             // 28
     &sys_kill,               // 29
     &sys_block,              // 30
-    0,                       // 31 reservado (no-op en ASM)
-    &sys_unblock,            // 32
-    &sys_wait,               // 33
-    &sys_nice               // 34
+    &sys_unblock,            // 31
+    &sys_wait,               // 32
+    &sys_nice,               // 33
+    &sys_yield,              // 34
+    &sys_print_processes,    // 35
+
+    // syscalls de semaforos 
+    &sys_sem_open,           // 36
+    &sys_sem_close,          // 37
+    &sys_sem_wait,           // 38
+    &sys_sem_post            // 39
 };
 
 static uint64_t sys_regs(char * buffer){
@@ -200,7 +208,7 @@ static int64_t sys_create_process(void * entry, int argc, const char **argv, con
 }
 
 // Termina el proceso actual con un status, POR AHORA NO USAMOS
-static void sys_exit_current(int status) {
+static void sys_exit(int status) {
     scheduler_exit_process(status);
 }
 
@@ -232,3 +240,28 @@ static int64_t sys_wait(int pid) {
 static int64_t sys_nice(int64_t pid, int new_prio) {
     return scheduler_set_priority(pid, new_prio);
 }
+
+static void sys_yield() {
+    scheduler_yield();
+}
+
+static void sys_print_processes() {
+    scheduler_print_processes();
+}
+
+// SEMAFORO
+static int64_t sys_sem_open(const char *name, int value) {
+    return (int64_t)sem_open(name, value);
+}
+static void sys_sem_close(int sem_id) {
+    sem_close(sem_id);
+}
+static void sys_sem_wait(int sem_id) {
+    sem_wait(sem_id);
+}
+static void sys_sem_post(int sem_id) {
+    sem_post(sem_id);
+}
+
+
+

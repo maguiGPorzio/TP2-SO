@@ -4,6 +4,9 @@
         "processes.h": "c",
         "memorymanager.h": "c",
         "shell.h": "c",
-        "usrlib.h": "c"
+        "usrlib.h": "c",
+        "test_mm.h": "c",
+        "stdint.h": "c",
+        "test_util.h": "c"
     }
 }

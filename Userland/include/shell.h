@@ -1,12 +1,14 @@
 #include "usrlib.h"
 #include "test_mm.h"
+#include "test_sync.h"
+
 // Prototipos de tests disponibles desde la shell
 int64_t test_prio(uint64_t argc, char *argv[]);
 int64_t test_processes(uint64_t argc, char *argv[]);
 
 #define INPUT_MAX 100
 #define HISTORY_MAX 4096 
-#define PROMPT "> "
+#define PROMPT "$> "
 #define CURSOR '_'
 #define ERROR_MSG "Use command \'help\' to see available commands\n"
 #define HELP_MSG "* To change font size press + or -\n* Available commands:\n"
@@ -45,6 +47,8 @@ void print_time();
 void print_date();
 void song();
 void test_mm_command();
-void test_prio_command();
 void test_processes_command();
+void test_priority_command();
+void print_processes();
+void test_sync_command();
 

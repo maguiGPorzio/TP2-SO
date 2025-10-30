@@ -11,5 +11,7 @@ void * memcpy(void * destination, const void * source, uint64_t length);
 void * memset64(void * destination, uint64_t pattern, uint64_t length);
 
 char *strncpy(char *dst, const char *src, int n);
-char strlen(char *str);
+char strlen(const char *str);
+int strcmp(const char *s1, const char *s2);
+
 #endif

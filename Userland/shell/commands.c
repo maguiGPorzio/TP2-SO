@@ -1,6 +1,5 @@
 #include "../include/shell.h"
 
-
 #define E5 659
 #define B4 494
 #define C5 523
@@ -21,18 +20,20 @@
 
 // COMANDOS
 static Command commands[] = {
-    { "clear", "clears the screen",    cls      },
-    { "help", "provides commands information",     help     },
-    { "print date", "prints system's date", print_date },
-    { "print regs", "prints the last saved register values", print_saved_registers },
-    { "print time", "prints system's time", print_time },
-    { "song", "plays tetris song", song },
-    { "test div0", "causes division by zero exception", test_division_zero }, // prueba de división por cero
-    { "test invopcode", "causes invalid opcode exception", test_invalid_opcode }, // prueba de opcode inválido
-    { "test mm", "runs a memory manager test", test_mm_command }, // prueba del memory manager
-    { "test prio", "runs priority scheduler test", test_prio_command },
-    { "test processes", "runs processes stress test", test_processes_command },
-    {0,0, 0}
+    { "clear", "clears the screen",    &cls },
+    { "help", "provides commands information", &help     },
+    { "song", "plays tetris song", &song },
+    { "print date", "prints system's date", &print_date },
+    { "print regs", "prints the last saved register values", &print_saved_registers },
+    { "print time", "prints system's time", &print_time },
+    { "print processes", "prints current processes", &print_processes },
+    { "test div0", "causes division by zero exception", &test_division_zero }, 
+    { "test invopcode", "causes invalid opcode exception", &test_invalid_opcode }, 
+    { "test mm", "runs a memory manager test", &test_mm_command }, 
+    { "test processes", "runs processes test", &test_processes_command },
+    { "test priority", "runs a priority test", &test_priority_command },
+    { "test sync", "runs a synchronization test", &test_sync_command },
+    {0 ,0, 0} // marca de fin
 };
 
 static int clean_history;
@@ -165,6 +166,7 @@ void song() {
     sys_beep(880, 500);
     sys_beep(880, 500);
     sys_clear_input_buffer();
+    shell_newline();
 }
 
 // Llama al test de memory manager con un límite predeterminado
@@ -173,14 +175,32 @@ void test_mm_command() {
     test_mm(1, args);
 }
 
-// Ejecuta el test de prioridades con un valor por defecto
-void test_prio_command() {
-    static char * args[] = { "5000000" }; // valor de trabajo por proceso
-    test_prio(1, args);
+void test_processes_command() {
+    const char * args[] = {"4"};
+    sys_create_process(&test_processes, 1, args, "test_processes");
 }
 
-// Ejecuta el test de procesos con un número por defecto de procesos
-void test_processes_command() {
-    static char * args[] = { "5" }; // cantidad de procesos concurrentes
-    test_processes(1, args);
+void test_priority_command() {
+    putchar('\b'); // borro el cursor
+    const char * args[] = {"600000000"}; // tiene que ser un numero grande para que es note la dif
+    int pid = sys_create_process(&test_prio, 1, args, "test_prio");
+    sys_wait(pid);
+    shell_newline();
 }
+
+
+void print_processes() {
+    putchar('\b'); // borro el cursor
+    sys_print_processes();
+    shell_newline();
+}
+
+void test_sync_command() {
+    putchar('\b'); // borro el cursor
+    const char *args[] = {"1000", "1", NULL};
+    int pid = sys_create_process(&test_sync, 2, args, "test_sync");
+    sys_wait(pid);
+    shell_newline();
+}
+
+

@@ -5,7 +5,8 @@ global  sys_enable_textmode, sys_disable_textmode, sys_put_pixel, sys_key_status
 global  sys_sleep, sys_clear_input_buffer, sys_ticks
 global  sys_malloc, sys_free, sys_memstatus
 ; Process/syscalls (scheduler-backed)
-global  sys_create_process, sys_exit_current, sys_getpid, sys_kill, sys_block, sys_unblock, sys_wait, sys_nice
+global  sys_create_process, sys_exit_current, sys_getpid, sys_kill, sys_block, sys_unblock, sys_wait, sys_nice, sys_print_processes, sys_yield
+global sys_sem_open,sys_sem_close,sys_sem_wait,sys_sem_post
 global generate_invalid_opcode
 global printf
 global scanf
@@ -129,7 +130,7 @@ sys_create_process:
     SYSCALL 26
 
 ; 27 - void sys_exit_current(int status), NO SE USA POR AHORA
-sys_exit_current:
+sys_exit:
     SYSCALL 27
 
 ; 28 - int64_t sys_getpid(void)
@@ -144,19 +145,41 @@ sys_kill:
 sys_block:
     SYSCALL 30
 
-; 31 reservado (no-op) - no exponer wrapper
-
-; 32 - int64_t sys_unblock(int pid)
+; 31 - int64_t sys_unblock(int pid)
 sys_unblock:
+    SYSCALL 31
+
+; 32 - int64_t sys_wait(int pid)
+sys_wait:
     SYSCALL 32
 
-; 33 - int64_t sys_wait(int pid)
-sys_wait:
+; 33 - void sys_nice(void)
+sys_nice:
     SYSCALL 33
 
-; 34 - void sys_noice(void)
-sys_nice:
+; 34 - void sys_yield()
+sys_yield:
     SYSCALL 34
+
+; 35 - void sys_print_processes()
+sys_print_processes:
+    SYSCALL 35
+
+; 36 - int64_t sys_sem_open(const char *name, int value);
+sys_sem_open:
+    SYSCALL 36
+
+; 37 - void sys_sem_close(int sem_id);
+sys_sem_close:
+    SYSCALL 37
+
+; 38 - void sys_sem_wait(int sem_id);
+sys_sem_wait:
+    SYSCALL 38
+
+; 39 - void sys_sem_post(int sem_id);
+sys_sem_post:
+    SYSCALL 39
 
 generate_invalid_opcode:
     ud2         ; Genera excepción de opcode inválido
