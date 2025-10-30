@@ -8,6 +8,7 @@
         "test_mm.h": "c",
         "stdint.h": "c",
         "test_util.h": "c",
-        "commontypes.h": "c"
+        "commontypes.h": "c",
+        "queue.h": "c"
     }
 }
