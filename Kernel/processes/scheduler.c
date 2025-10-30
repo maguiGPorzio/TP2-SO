@@ -305,7 +305,7 @@ void scheduler_yield(void) {
 }
 
 int scheduler_kill_process(int pid) {
-    if(!scheduler || !pid_is_valid(pid)) {
+    if(!scheduler || !pid_is_valid(pid) || pid == INIT_PID) {
         return -1;
     }
     
