@@ -35,7 +35,7 @@ int q_add(queue_t q, int value) {
     new_node->value = value;
     new_node->next = NULL;
 
-    if (q_is_empty(q)) { 
+    if (q->first == NULL) { 
         q->first = new_node;
         q->last = new_node;
         return 1;
@@ -56,7 +56,7 @@ int q_poll(queue_t q) {
     node_t * to_free = q->first;
     q->first = to_free->next;
     free_memory(mm, to_free);
-    if (q_is_empty(q)) {
+    if (q->first == NULL) {
         q->last = NULL;
     }
 
