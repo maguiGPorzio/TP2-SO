@@ -140,7 +140,7 @@ void * schedule(void * prev_rsp) {
     if (current) {
         current->stack_pointer = prev_rsp; // actualiza el rsp del proceso que estuvo corriendo hasta ahora en su pcb
         
-        current->cpu_ticks++; // cuantas veces interrumpimos este proceso que estuvo corrriendo hasta ahora
+        current->cpu_ticks++; // cuantas veces interrumpimos este proceso que estuvo corriendo hasta ahora
         scheduler->total_cpu_ticks++;
 
         if (current->status == PS_RUNNING && current->remaining_quantum > 0) { // si se lo interrumpió antes de que se termine su quantum y estaba corriendo
@@ -153,7 +153,7 @@ void * schedule(void * prev_rsp) {
 
         if(current->status == PS_RUNNING){ // si no entró en el if anterior, es porque no tiene que seguir corriendo. Si su status es RUNNING, la razón no fue por haberse bloqueado, terminado o porque se le hizo kill, entonces hay que cambiar su status a READY. En el caso de que se lo hubiera bloqueado, matado o terminado, ya su status se cambió en otras funciones
             current->status = PS_READY;
-        }
+        } // 
     }
     // Si el proceso actual tiene que cambiar:
     PCB *next = pick_next_process();
@@ -317,7 +317,7 @@ int scheduler_kill_process(int pid) {
         scheduler_remove_process(killed_process->pid); 
     } else{ // si el padre no es init, no vamos a eliminarlo porque su padre podria hacerle un wait
         // Lo sacamos de la cola de procesos ready para que no vuelva a correr PERO NO  del array de procesos (para que el padre pueda acceder a su ret_value)
-        if (killed_process->status == PS_READY || killed_process->status == PS_RUNNING) {
+        if (killed_process->status == PS_READY || killed_process->status == PS_RUNNING) { // TODO: si al final el runninig no lo guardamos en la cola, sacar esta condición
             ready_queue_dequeue(&scheduler->ready_queue, killed_process);
         }
         killed_process->status = PS_TERMINATED; // Le cambio el estado despues de hacer el dequeue o sino no va a entrar en la condición del if
@@ -330,7 +330,7 @@ int scheduler_kill_process(int pid) {
         }
     
     }
-    if(pid == scheduler->current_pid){
+    if(pid == scheduler->current_pid){ // TODO: ver si un proceso se suicida a si mismo con kill, sino sacarlo 
         scheduler_yield();
     }
     return 0;

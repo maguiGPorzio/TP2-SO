@@ -1,7 +1,3 @@
-ver que concha pasa que no esta imprimiendo la a
+ver si sacar de la cola el proceso running
 
-implementar lo del run_next_process (non_preemtive)
-
-hacer un scheduler que haga round robin
-
-hacer un scheduler que tenga prioridades
+que la shell no haga espera activa
