@@ -5,7 +5,8 @@ global  sys_enable_textmode, sys_disable_textmode, sys_put_pixel, sys_key_status
 global  sys_sleep, sys_clear_input_buffer, sys_ticks
 global  sys_malloc, sys_free, sys_memstatus
 ; Process/syscalls (scheduler-backed)
-global  sys_create_process, sys_exit_current, sys_getpid, sys_kill, sys_block, sys_unblock, sys_wait, sys_nice, sys_print_processes
+global  sys_create_process, sys_exit_current, sys_getpid, sys_kill, sys_block, sys_unblock, sys_wait, sys_nice, sys_print_processes, sys_yield
+global sys_sem_open,sys_sem_close,sys_sem_wait,sys_sem_post
 global generate_invalid_opcode
 global printf
 global scanf
@@ -156,13 +157,29 @@ sys_wait:
 sys_nice:
     SYSCALL 33
 
-; 35 - void sys_yield()
+; 34 - void sys_yield()
 sys_yield:
     SYSCALL 34
 
 ; 35 - void sys_print_processes()
 sys_print_processes:
     SYSCALL 35
+
+; 36 - int64_t sys_sem_open(const char *name, int value);
+sys_sem_open:
+    SYSCALL 36
+
+; 37 - void sys_sem_close(int sem_id);
+sys_sem_close:
+    SYSCALL 37
+
+; 38 - void sys_sem_wait(int sem_id);
+sys_sem_wait:
+    SYSCALL 38
+
+; 39 - void sys_sem_post(int sem_id);
+sys_sem_post:
+    SYSCALL 39
 
 generate_invalid_opcode:
     ud2         ; Genera excepción de opcode inválido

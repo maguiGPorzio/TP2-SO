@@ -11,6 +11,9 @@
 #include "memoryManager.h"
 #include "process.h"
 #include "scheduler.h"
+#include "synchro.h"
+
+extern void timer_tick();
 
 extern uint8_t text;
 extern uint8_t rodata;
@@ -66,9 +69,12 @@ int main() {
 
 	init_scheduler();
 
+	init_semaphore_manager();
 	// TODO: crear el proceso de la shell
 
 	//((EntryPoint)sampleCodeModuleAddress)();
+
+	timer_tick();
 	
 	return 0;
 }

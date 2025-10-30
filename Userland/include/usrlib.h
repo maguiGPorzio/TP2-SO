@@ -67,6 +67,12 @@ extern int64_t sys_nice(int64_t pid, int new_prio);
 extern void sys_yield();
 extern void sys_print_processes();
 
+/*-- SYSTEMCALLS DE SEMAFOROS --*/
+extern int64_t sys_sem_open(const char *name, int value);
+extern void sys_sem_close(int sem_id);
+extern void sys_sem_wait(int sem_id);
+extern void sys_sem_post(int sem_id);
+
 /*-- FUNCIONES DE I/O --*/
 uint64_t print_err(char *str);
 uint64_t print_string(char *str);

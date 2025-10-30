@@ -6,7 +6,7 @@
 #include "interrupts.h" // lo incluí para usar _hlt()
 #include "videoDriver.h"
 
-extern void timer_tick();
+//extern void timer_tick();
 
 #define SHELL_ADDRESS ((void *) 0x400000)      // TODO: Esto ver si lo movemos a otro archivo (tipo memoryMap.h)
 
@@ -82,7 +82,7 @@ static int scheduler_add_init() {
     scheduler->processes[INIT_PID] = pcb_init;
     scheduler->process_count++;
 
-    timer_tick();
+    //timer_tick();
 
     return 0;
 }
