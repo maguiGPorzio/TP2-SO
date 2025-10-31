@@ -177,13 +177,13 @@ void test_mm_command() {
 
 void test_processes_command() {
     const char * args[] = {"4"};
-    sys_create_process(&test_processes, 1, args, "test_processes");
+    sys_create_process(&test_processes, 1, args, "test_processes", NULL);
 }
 
 void test_priority_command() {
     putchar('\b'); // borro el cursor
     const char * args[] = {"600000000"}; // tiene que ser un numero grande para que es note la dif
-    int pid = sys_create_process(&test_prio, 1, args, "test_prio");
+    int pid = sys_create_process(&test_prio, 1, args, "test_prio", NULL);
     sys_wait(pid);
     shell_newline();
 }
@@ -198,7 +198,7 @@ void print_processes() {
 void test_sync_command() {
     putchar('\b'); // borro el cursor
     const char *args[] = {"1000", "1", NULL};
-    int pid = sys_create_process(&test_sync, 2, args, "test_sync");
+    int pid = sys_create_process(&test_sync, 2, args, "test_sync", NULL);
     sys_wait(pid);
     shell_newline();
 }

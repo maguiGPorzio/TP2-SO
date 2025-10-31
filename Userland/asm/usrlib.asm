@@ -7,6 +7,7 @@ global  sys_malloc, sys_free, sys_memstatus
 ; Process/syscalls (scheduler-backed)
 global  sys_create_process, sys_exit_current, sys_getpid, sys_kill, sys_block, sys_unblock, sys_wait, sys_nice, sys_print_processes, sys_yield
 global sys_sem_open,sys_sem_close,sys_sem_wait,sys_sem_post
+global sys_create_pipe, sys_destroy_pipe
 global generate_invalid_opcode
 global printf
 global scanf
@@ -180,6 +181,14 @@ sys_sem_wait:
 ; 39 - void sys_sem_post(int sem_id);
 sys_sem_post:
     SYSCALL 39
+
+; 40 - int sys_create_pipe(int fds[2])
+sys_create_pipe:
+    SYSCALL 40
+
+; 41 - void sys_destroy_pipe(int fd)
+sys_destroy_pipe:
+    SYSCALL 41
 
 generate_invalid_opcode:
     ud2         ; Genera excepción de opcode inválido

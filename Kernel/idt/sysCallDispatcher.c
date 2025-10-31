@@ -10,6 +10,7 @@
 #include "process.h"
 #include "scheduler.h"
 #include "synchro.h"
+#include "pipes.h"
 
 #define MIN_CHAR 0
 #define MAX_CHAR 256
@@ -61,7 +62,11 @@ void * syscalls[] = {
     &sys_sem_open,           // 36
     &sys_sem_close,          // 37
     &sys_sem_wait,           // 38
-    &sys_sem_post            // 39
+    &sys_sem_post,           // 39
+
+    // syscalls de pipes
+    &sys_create_pipe,        // 40
+    &sys_destroy_pipe        // 41
 };
 
 static uint64_t sys_regs(char * buffer){
@@ -198,12 +203,12 @@ static MemStatus sys_memStatus(void) {
 // ===================== Processes syscalls =====================
 
 // Crea un proceso: reserva un PID libre y delega en el scheduler
-static int64_t sys_create_process(void * entry, int argc, const char **argv, const char *name) {
+static int64_t sys_create_process(void * entry, int argc, const char **argv, const char *name, int fds[2]) {
     if (entry == NULL || name == NULL) {
         return -1;
     }
 
-    int new_pid = scheduler_add_process((process_entry_t)entry, argc, argv, name);
+    int new_pid = scheduler_add_process((process_entry_t)entry, argc, argv, name, fds);
     return new_pid;
 }
 
@@ -261,6 +266,15 @@ static void sys_sem_wait(int sem_id) {
 }
 static void sys_sem_post(int sem_id) {
     sem_post(sem_id);
+}
+
+
+static int sys_create_pipe(int fds[2]) {
+   return create_pipe(fds);
+}
+
+static void sys_destroy_pipe(int fd) {
+    destroy_pipe(fd);
 }
 
 

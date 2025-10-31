@@ -150,4 +150,6 @@ int strcat(char *dest, const char *src) {
 	while (*src) {
 		dest[i++] = *src++;
 	}
+	
+	return i;
 }

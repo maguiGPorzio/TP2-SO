@@ -42,7 +42,7 @@ static inline bool pid_is_valid(pid_t pid) {
 static int init(int argc, char **argv) {
     const char **shell_args = { NULL };
 
-    int shell_pid = scheduler_add_process((process_entry_t) SHELL_ADDRESS, 0, shell_args, "shell");
+    int shell_pid = scheduler_add_process((process_entry_t) SHELL_ADDRESS, 0, shell_args, "shell", NULL);
     scheduler_set_priority(shell_pid, MAX_PRIORITY);
 
     while (1) {
@@ -61,7 +61,7 @@ static int scheduler_add_init() {
         return -1;
     }
 
-    PCB *pcb_init = proc_create(INIT_PID, (process_entry_t) init, 0, NULL, "init");
+    PCB *pcb_init = proc_create(INIT_PID, (process_entry_t) init, 0, NULL, "init", NULL);
     if (pcb_init == NULL) {
         return -1;
     }
@@ -200,7 +200,7 @@ static PCB *pick_next_process(void) {
 // ============================================
 
 // Agrega el proceso al array de procesos y a la cola READY
-int scheduler_add_process(process_entry_t entry, int argc, const char **argv, const char *name) {
+int scheduler_add_process(process_entry_t entry, int argc, const char **argv, const char *name, int fds[2]) {
     if (!scheduler_initialized || process_count >= MAX_PROCESSES) {
         return -1;
     }
@@ -217,7 +217,7 @@ int scheduler_add_process(process_entry_t entry, int argc, const char **argv, co
         return -1;
     }
 
-    PCB *process = proc_create(pid, entry, argc, argv, name);
+    PCB *process = proc_create(pid, entry, argc, argv, name, fds);
     if (process == NULL) {
         return -1;
     }

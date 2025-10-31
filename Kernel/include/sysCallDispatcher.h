@@ -5,9 +5,6 @@
 #include <stddef.h>
 #include "memoryManager.h"
 
-#define STDOUT 1
-#define STDERR 2
-
 // pueden recibir hasta 3 argumentos
 static uint64_t sys_write(uint64_t fd, const char * buf, uint64_t count);
 static uint64_t sys_read(char * buf, uint64_t count);
@@ -39,7 +36,7 @@ static void sys_free(void * ptr);
 static MemStatus sys_memStatus(void);
 
 // processes syscalls
-static int64_t sys_create_process(void * entry, int argc, const char **argv, const char *name);
+static int64_t sys_create_process(void * entry, int argc, const char **argv, const char *name, int fds[2]);
 static void    sys_exit(int status);
 static int64_t sys_getpid(void);
 static int64_t sys_kill(int pid);
@@ -55,5 +52,9 @@ static int64_t sys_sem_open(const char *name, int value);
 static void sys_sem_close(int sem_id);
 static void sys_sem_wait(int sem_id);
 static void sys_sem_post(int sem_id);
+
+// pipes syscalls
+static int sys_create_pipe(int fds[2]);
+static void sys_destroy_pipe(int fd);
 
 #endif

@@ -1,6 +1,6 @@
 
 #include <stdint.h>
-#include <stdbool.h>
+
 #include "memoryManager.h"
 
 #define PIPE_BUFFER_SIZE 1024
@@ -17,7 +17,8 @@ enum {
 
 
 // deja en fd[0] el read_fd y en fd[1] el write_fd
-bool create_pipe(int fds[2]);
+// devuelve el id del pipe, -1 si no lo creo
+int create_pipe(int fds[2]);
 
 // devuelve cuantos bytes leyo, -1 si falla
 int read_pipe(int fd, char * buf, int count);

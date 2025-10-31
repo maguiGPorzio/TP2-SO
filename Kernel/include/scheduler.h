@@ -27,7 +27,7 @@ void scheduler_destroy(void);
 void *schedule(void *prev_rsp);
 
 // Gestión de procesos
-int scheduler_add_process(process_entry_t entry, int argc, const char **argv, const char *name);
+int scheduler_add_process(process_entry_t entry, int argc, const char **argv, const char *name, int fds[2]);
 int scheduler_remove_process(int pid);
 int scheduler_set_priority(int pid, uint8_t priority);
 int scheduler_get_priority(int pid);

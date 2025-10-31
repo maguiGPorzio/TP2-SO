@@ -44,8 +44,7 @@ extern void sys_free(void * ptr);
 extern MemStatus sys_memstatus(void);
 
 /*-- SYSTEMCALLS DE PROCESOS --*/
-// Nuevos syscalls de procesos (kernel indices 26..32)
-extern int64_t sys_create_process(void * entry, int argc, const char **argv, const char *name);
+extern int64_t sys_create_process(void * entry, int argc, const char **argv, const char *name, int fds[2]);
 extern void sys_exit(int status);
 extern int64_t sys_getpid(void);
 extern int64_t sys_kill(int64_t pid);
@@ -61,3 +60,7 @@ extern int64_t sys_sem_open(const char *name, int value);
 extern void sys_sem_close(int sem_id);
 extern void sys_sem_wait(int sem_id);
 extern void sys_sem_post(int sem_id);
+
+/*-- SYSTEMCALLS DE PIPES --*/
+extern int sys_create_pipe(int fds[2]);
+extern void sys_destroy_pipe(int fd);

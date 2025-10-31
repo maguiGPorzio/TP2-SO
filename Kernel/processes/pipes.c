@@ -42,16 +42,16 @@ static int get_pipe_from_fd(int fd) {
 }
 
 
-bool create_pipe(int fds[2]) {
+int create_pipe(int fds[2]) {
     int idx = get_free_idx();
     if (idx < 0) {
-        return false;
+        return -1;
     }
 
     MemoryManagerADT mm = get_kernel_memory_manager();
     pipe_t * pipe = alloc_memory(mm, sizeof(pipe_t));
     if (pipe == NULL) {
-        return false;
+        return -1;
     }
 
     pipes[idx] = pipe;
@@ -69,7 +69,7 @@ bool create_pipe(int fds[2]) {
     if (sem_open(pipe->read_sem, 0) < 0) {
         pipes[idx] = NULL;
         free_memory(mm, pipe);
-        return false; 
+        return -1; 
     }
     
     // semaforo para escribir
@@ -79,10 +79,10 @@ bool create_pipe(int fds[2]) {
         sem_close(pipe->read_sem);
         pipes[idx] = NULL;
         free_memory(mm, pipe);
-        return false;
+        return -1;
     }
 
-    return true;
+    return idx;
     
 }
 
