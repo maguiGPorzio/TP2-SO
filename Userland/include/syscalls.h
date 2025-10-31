@@ -10,11 +10,18 @@ typedef struct {
 
 typedef int (*process_entry_t)(int argc, char **argv);
 
+enum {
+    STDIN = 0,
+    STDOUT,
+    STDERR,
+    FIRS_FREE_FD
+};
+
 /*-- SYSTEMCALLS DE ARQUI --*/
 extern uint64_t sys_regs(char *buf);
 extern void     sys_time(uint8_t *buf);     
 extern void     sys_date(uint8_t *buf);
-extern uint64_t sys_read(char *buf,  uint64_t count);
+extern uint64_t sys_read(int fd, char *buf,  uint64_t count);
 extern uint64_t sys_write(uint64_t fd, const char *buf, uint64_t count);
 extern void     sys_increase_fontsize();
 extern void     sys_decrease_fontsize();

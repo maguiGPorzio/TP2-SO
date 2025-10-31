@@ -4,9 +4,6 @@
 #include <stdint.h>
 #include "syscalls.h"
 
-// File descriptors
-#define STDOUT  1
-#define STDERR  2
 
 #define REGSBUF_SIZE 800
 

@@ -30,14 +30,14 @@ uint64_t putchar(char c) {
 
 char getchar(){
     char c;
-    while (sys_read(&c, 1) == 0)
+    while (sys_read(STDIN, &c, 1) == 0)
         ;
     return c;
 }
 
 char getchar_nonblock() {
     char c = 0;
-    sys_read(&c, 1);
+    sys_read(STDIN, &c, 1);
     return c;
 }
 

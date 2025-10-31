@@ -69,26 +69,53 @@ void * syscalls[] = {
     &sys_destroy_pipe        // 41
 };
 
-static uint64_t sys_regs(char * buffer){
+static uint64_t sys_regs(char * buffer) {
     return copyRegisters(buffer);
 }
 
 // devuelve cuantos chars escribió
 static uint64_t sys_write(uint64_t fd, const char * buffer, uint64_t count) {
-    if (fd != STDOUT && fd != STDERR) {
-        return 0;
+
+    if (fd == STDOUT) { // que es para este tipo stdout?
+        int pid = scheduler_get_current_pid();
+        PCB * p = scheduler_get_process(pid);
+        fd = p->write_fd;
     }
-    uint32_t color = fd == STDERR ? 0xff0000 : 0xffffff;
-    for (int i = 0; i < count; i++) {
-        vdPutChar(buffer[i], color);
+
+    if (fd == STDIN) { // no se puede escribir en STDIN
+        return -1;
     }
-    
-    return count;
+    if (fd == STDOUT || fd == STDERR) {
+        uint32_t color = fd == STDERR ? 0xff0000 : 0xffffff;
+        for (int i = 0; i < count; i++) {
+            vdPutChar(buffer[i], color);
+        }
+
+        return count;
+    }
+
+    // es un pipe
+    return write_pipe(fd, buffer, count);
 }
 
 // leo hasta count
-static uint64_t sys_read(char * buffer, uint64_t count) {
-    return read_keyboard_buffer(buffer, count);
+static uint64_t sys_read(int fd, char * buffer, uint64_t count) {
+    if (fd == STDIN) { // que es para este tipo stdin?
+        int pid = scheduler_get_current_pid();
+        PCB * p = scheduler_get_process(pid);
+        fd = p->read_fd;
+    }
+    if (fd == STDOUT || fd == STDERR) { // no puede leer de ahi
+        return -1;
+    }
+
+    if (fd == STDIN) {
+        return read_keyboard_buffer(buffer, count);
+    }
+
+    // es un pipe
+    return read_pipe(fd, buffer, count);
+
 }
 
 static void sys_date(uint8_t * buffer){

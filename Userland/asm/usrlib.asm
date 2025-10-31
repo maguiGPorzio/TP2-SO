@@ -34,7 +34,7 @@ sys_time:
 sys_date:
 	SYSCALL 2
 
-; 3 – uint64_t read(char* buf, uint64_t count);
+; 3 – uint64_t read(int fd, char* buf, uint64_t count);
 sys_read:
 	SYSCALL 3
 		
