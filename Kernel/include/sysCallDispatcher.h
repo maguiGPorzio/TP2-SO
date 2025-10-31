@@ -8,10 +8,6 @@
 #define STDOUT 1
 #define STDERR 2
 
-#define SYSCALL_COUNT 40 // <-- ACTUALIZAR CUANDO SE AGREGA UNA SYSCALL
-
-extern void * syscalls[SYSCALL_COUNT];
-
 // pueden recibir hasta 3 argumentos
 static uint64_t sys_write(uint64_t fd, const char * buf, uint64_t count);
 static uint64_t sys_read(char * buf, uint64_t count);
