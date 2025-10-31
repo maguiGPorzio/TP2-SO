@@ -13,6 +13,9 @@ la syscall de ps
 
 hacer lo de los processos en foreground / background
 
+
+
+
 -- SYNCRO
 
 resolver los warnings en la medida de lo posible
@@ -24,6 +27,9 @@ que cree semaforos para STDIN (el teclado) para que el read del teclado sea bloq
 no se que mas, magui es la CTO
 
 
+
+
+
 -- PIPES
 
 que existan los pipes
@@ -33,6 +39,7 @@ que el read sea bloqueante
 refactor de procesos para que laburen con los pipes
 
 testear 'con un cat hola | red' creando los procesos en userland
+
 
 
 
@@ -48,6 +55,9 @@ ponerle flechita para arriba guardando el ultimo comando
 
 modularizar los .c de la usrlib, incluso agregando las funciones que usan los tests ahi
 
+
+
+
 -- ESTILO
 
 no usar size_t. Usar los tipos definidos en stdint
@@ -55,7 +65,6 @@ no usar size_t. Usar los tipos definidos en stdint
 que el mm sea una libreria, no un adt (conlleva un lindo refactor a como se llama)
 
 unificar criterio de los booleanos (int? uint8? stdbool?)
-
 
 
 
