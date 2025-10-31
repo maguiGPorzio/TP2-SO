@@ -2,7 +2,7 @@
 
 refactor de memory manager a una libreria
 
-que el mem status no use size_t, usar los tipos de stdint
+que en lugar de usar size_t usemos los definidos en stdint
 
 
 -- PROCESOS
@@ -33,23 +33,39 @@ no se que mas, magui es la CTO
 
 que existan los pipes
 
-que el read sea bloqueante
+que el read sea bloqueante (creo que los semaforos mismos tendrian que crear uno para el teclado)
 
 unificar los nombres de las syscalls
 
 
 
 
--- shell
+-- APLICACIONES DE USUARIO
 
-implementar todos los programas
+rework de la shell para llamar programas pasandole argumentos
 
-ponerle chiches si se llega como flechita para arriba
+programas de usuario en carpeta user_programs
 
-va a haber que hacer una syscall para poder imprimir en modo texto con colores mas alla de stdin o stdout
+no tener memoria de lo que se escribio en la shell (agrandar o achicar la letra hace clear)
+
+ponerle flechita para arriba guardando el ultimo comando
+
+modularizar los .c de la usrlib, incluso agregando las funciones que usan los tests ahi
 
 
+-- NON ESSENTIALS
 
+hacer una syscall para que imprima el logo de ramOS en modo texto y ponerlo cuando arranca la shell
+
+iterar sobre el videodriver y las syscalls (agregarle alguno de una matriz)
+
+agregar que se pueda cambiar el color de fondo del modo texto y de la stdin / out
+
+quizas agregar colores no? tipo file descriptors que sean colores para el videodriver no es mala.
+
+hacer qeu corra el jueguito (con delta time)
+
+hacer que corra el doom
 
 
 
