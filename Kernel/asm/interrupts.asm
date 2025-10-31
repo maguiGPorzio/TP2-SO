@@ -185,6 +185,9 @@ _irq01Handler:
 .continue:
 	irqHandlerMaster 1
 
+
+
+
 ;Cascade pic never called
 _irq02Handler:
 	irqHandlerMaster 2

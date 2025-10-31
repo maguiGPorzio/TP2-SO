@@ -19,9 +19,12 @@ enum {
 // deja en fd[0] el read_fd y en fd[1] el write_fd
 bool create_pipe(int fds[2]);
 
-int write_pipe(int fd, char * buf, int count);
-
+// devuelve cuantos bytes leyo, -1 si falla
 int read_pipe(int fd, char * buf, int count);
 
-void destroy_pipe(int fd);
+// devuelve cuantos bytes escribio, -1 si falla
+int write_pipe(int fd, char * buf, int count);
+
+// libera los recursos del pipe
+void destroy_pipe(int fd); 
 
