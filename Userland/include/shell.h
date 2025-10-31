@@ -51,4 +51,7 @@ void test_processes_command();
 void test_priority_command();
 void print_processes();
 void test_sync_command();
+void test_pipes_command();
+void cat_runner();
+void red_runner();
 

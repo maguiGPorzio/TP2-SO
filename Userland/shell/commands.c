@@ -1,4 +1,5 @@
 #include "../include/shell.h"
+#include "programs.h"
 
 #define E5 659
 #define B4 494
@@ -33,6 +34,9 @@ static Command commands[] = {
     { "test processes", "runs processes test", &test_processes_command },
     { "test priority", "runs a priority test", &test_priority_command },
     { "test sync", "runs a synchronization test", &test_sync_command },
+    { "test pipes", "runs cat hola | red", &test_pipes_command },
+    { "cat", "runs cat hola manola", &cat_runner},
+    { "red", "prints every input red until EOF", &red_runner},
     {0 ,0, 0} // marca de fin
 };
 
@@ -199,6 +203,46 @@ void test_sync_command() {
     putchar('\b'); // borro el cursor
     const char *args[] = {"1000", "1", NULL};
     int pid = sys_create_process(&test_sync, 2, args, "test_sync", NULL);
+    sys_wait(pid);
+    shell_newline();
+}
+
+void test_pipes_command() {
+    putchar('\b'); // borro el cursor
+    int fds_pipe[2];
+    int pipe_id = sys_create_pipe(fds_pipe);
+    if (pipe_id == -1) {
+        print_err("failed to create pipe");
+        shell_newline();
+        return;
+    }
+    int fds_cat[2];
+    fds_cat[0] = STDIN;
+    fds_cat[1] = fds_pipe[1];
+
+    int fds_red[2];
+    fds_red[0] = fds_pipe[0];
+    fds_red[1] = STDOUT;
+
+    const char * args[] = {"hola", NULL};
+    int pid_cat = sys_create_process(&cat_main, 1, args, "cat", fds_cat);
+    int pid_red = sys_create_process(&red_main, 1, args, "red", fds_red);
+
+    shell_newline();
+}
+
+void cat_runner() {
+    putchar('\b'); // borro el cursor
+    const char *args[] = {"hola ", "manola", NULL};
+    int pid = sys_create_process(&cat_main, 2, args, "cat", NULL);
+    sys_wait(pid);
+    shell_newline();
+}
+
+void red_runner() {
+    putchar('\b'); // borro el cursor
+    const char *args[] = {"hola ", "manola", NULL};
+    int pid = sys_create_process(&red_main, 2, args, "red", NULL);
     sys_wait(pid);
     shell_newline();
 }

@@ -17,6 +17,8 @@ enum {
     FIRS_FREE_FD
 };
 
+#define EOF -1
+
 /*-- SYSTEMCALLS DE ARQUI --*/
 extern uint64_t sys_regs(char *buf);
 extern void     sys_time(uint8_t *buf);     

@@ -105,6 +105,8 @@ int read_pipe(int fd, char * buf, int count) {
         sem_post(pipe->write_sem);
     }
 
+    return count;
+
 }
 
 int write_pipe(int fd, char * buf, int count) {
