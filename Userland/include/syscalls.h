@@ -66,9 +66,9 @@ extern void sys_print_processes();
 
 /*-- SYSTEMCALLS DE SEMAFOROS --*/
 extern int64_t sys_sem_open(const char *name, int value);
-extern void sys_sem_close(int sem_id);
-extern void sys_sem_wait(int sem_id);
-extern void sys_sem_post(int sem_id);
+extern void sys_sem_close(const char *name);
+extern void sys_sem_wait(const char *name);
+extern void sys_sem_post(const char *name);
 
 /*-- SYSTEMCALLS DE PIPES --*/
 extern int sys_create_pipe(int fds[2]);

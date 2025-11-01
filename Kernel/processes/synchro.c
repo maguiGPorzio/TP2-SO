@@ -179,26 +179,34 @@ int64_t sem_wait(char *name) {
     }
     
     acquire_lock(&sem->lock);
-    
+
+    // Caso rápido: hay recurso disponible
     if (sem->value > 0) {
         sem->value--;
         release_lock(&sem->lock);
         return 0;
     }
-    
-    // No hay recursos disponibles, bloquear proceso
+
+    // No hay recursos disponibles, encolarse para esperar
     int pid = scheduler_get_current_pid();
-    
     if (add_to_queue(sem, pid) == -1) {
         release_lock(&sem->lock);
         return -1;
     }
-    
+
+    // Re-chequeo anti-race: si en el medio un post incrementó el valor
+    // (porque todavía no estábamos bloqueados), consumir el token y evitar bloquear.
+    if (sem->value > 0) {
+        sem->value--;                       // consumimos el recurso disponible
+        remove_process_from_queue(sem, pid);
+        release_lock(&sem->lock);
+        return 0;
+    }
+
     release_lock(&sem->lock);
-    
-    // Bloquear el proceso (esto fuerza un reschedule O DEBERIA)
+
+    // Bloquear el proceso; será despertado por un post que haga unblock
     scheduler_block_process(pid);
-    
     return 0;
 }
 
@@ -213,20 +221,33 @@ int64_t sem_post(char *name) {
     }
     
     acquire_lock(&sem->lock);
-    
+
     if (sem->queue.size > 0) {
-        // Hay procesos esperando, desbloquear uno
-        uint32_t pid = pop_from_queue(sem);
-        release_lock(&sem->lock);
-        scheduler_unblock_process(pid);
+        // Hay procesos esperando: preferimos despertar a uno.
+        // Para evitar la carrera con sem_wait (proceso aún no bloqueado),
+        // miramos el estado antes de decidir.
+        uint32_t pid_peek = sem->queue.pids[sem->queue.read_index];
+        PCB *p = scheduler_get_process(pid_peek);
+        if (p != NULL && p->status == PS_BLOCKED) {
+            uint32_t pid = pop_from_queue(sem);
+            release_lock(&sem->lock);
+            scheduler_unblock_process(pid);
+        } else {
+            // Aún no bloqueado: no sacamos de la cola; dejamos un "token"
+            // para que el waiter evite bloquear (re-chequeo en sem_wait).
+            if (sem->total_value == 0 || sem->value < sem->total_value) {
+                sem->value++;
+            }
+            release_lock(&sem->lock);
+        }
     } else {
         // No hay procesos esperando, incrementar contador
-        if (sem->value < sem->total_value) {
+        if (sem->total_value == 0 || sem->value < sem->total_value) {
             sem->value++;
         }
         release_lock(&sem->lock);
     }
-    
+
     return 0;
 }
 

@@ -47,11 +47,11 @@ static int64_t sys_nice(int64_t pid, int new_prio);
 static void sys_yield();
 static void sys_print_processes();
 
-//semaphores syscalls
+// semaphores syscalls (name-based)
 static int64_t sys_sem_open(const char *name, int value);
-static void sys_sem_close(int sem_id);
-static void sys_sem_wait(int sem_id);
-static void sys_sem_post(int sem_id);
+static void sys_sem_close(const char *name);
+static void sys_sem_wait(const char *name);
+static void sys_sem_post(const char *name);
 
 // pipes syscalls
 static int sys_create_pipe(int fds[2]);

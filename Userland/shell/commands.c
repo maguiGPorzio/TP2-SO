@@ -228,6 +228,11 @@ void test_pipes_command() {
     int pid_cat = sys_create_process(&cat_main, 1, args, "cat", fds_cat);
     int pid_red = sys_create_process(&red_main, 1, args, "red", fds_red);
 
+    sys_wait(pid_cat);
+    sys_wait(pid_red);
+    sys_destroy_pipe(fds_pipe[1]);
+
+    putchar('\n');
     shell_newline();
 }
 
@@ -236,7 +241,9 @@ void cat_runner() {
     const char *args[] = {"hola ", "manola", NULL};
     int pid = sys_create_process(&cat_main, 2, args, "cat", NULL);
     sys_wait(pid);
+    putchar('\n');
     shell_newline();
+
 }
 
 void red_runner() {

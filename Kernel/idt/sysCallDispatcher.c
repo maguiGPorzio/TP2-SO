@@ -281,18 +281,18 @@ static void sys_print_processes() {
     scheduler_print_processes();
 }
 
-// SEMAFORO
+// SEMÁFOROS (API basada en nombre)
 static int64_t sys_sem_open(const char *name, int value) {
-    return (int64_t)sem_open(name, value);
+    return (int64_t)sem_open((char *)name, value);
 }
-static void sys_sem_close(int sem_id) {
-    sem_close(sem_id);
+static void sys_sem_close(const char *name) {
+    sem_close((char *)name);
 }
-static void sys_sem_wait(int sem_id) {
-    sem_wait(sem_id);
+static void sys_sem_wait(const char *name) {
+    sem_wait((char *)name);
 }
-static void sys_sem_post(int sem_id) {
-    sem_post(sem_id);
+static void sys_sem_post(const char *name) {
+    sem_post((char *)name);
 }
 
 
