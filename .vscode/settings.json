@@ -10,6 +10,7 @@
         "test_util.h": "c",
         "commontypes.h": "c",
         "queue.h": "c",
-        "scheduler.h": "c"
+        "scheduler.h": "c",
+        "ready_queue.h": "c"
     }
 }

@@ -4,6 +4,7 @@
 #include "lib.h"
 #include "process.h"
 #include "videoDriver.h"
+#include "ready_queue.h"
 
 // ============================================
 //           ESTRUCTURAS INTERNAS
