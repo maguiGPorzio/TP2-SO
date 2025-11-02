@@ -217,7 +217,13 @@ void test_pipes_command() {
         return;
     }
 
-    printf("pipe: %d, fds: %d y %d\n", pipe_id, fds_pipe[0], fds_pipe[1]);
+    char c = 'a';
+
+    for (int i = STDOUT; i <= STDYELLOW; i++) {
+        sys_write(i, &c, 1);
+    }
+
+    printf("\npipe: %d, fds: %d y %d\n", pipe_id, fds_pipe[0], fds_pipe[1]);
 
     int fds_cat[2];
     fds_cat[0] = STDIN;

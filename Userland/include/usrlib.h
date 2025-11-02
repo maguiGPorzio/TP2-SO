@@ -19,6 +19,7 @@
 #define HEX_BUFFER_SIZE     17  // 16 digitos + terminador nulo
 
 
+extern void generate_invalid_opcode();
 
 /*-- FUNCIONES DE I/O --*/
 uint64_t print_err(char *str);
@@ -27,6 +28,8 @@ uint64_t putchar(char c);
 char getchar(void);
 uint64_t printf_aux(const char *fmt, const uint64_t *regArgs, const uint64_t *stackPtr, const double *floatArgs);
 uint64_t get_key_status(char key);
+extern uint64_t printf(const char *fmt, ...);
+extern uint64_t scanf(const char *fmt, ...);
 
 /*-- FUNCIONES PARA DIBUJAR --*/
 void draw_rectangle(uint64_t x0, uint64_t y0, uint64_t x1, uint64_t y1, uint32_t color);

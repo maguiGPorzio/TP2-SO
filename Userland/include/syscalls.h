@@ -14,7 +14,11 @@ enum {
     STDIN = 0,
     STDOUT,
     STDERR,
-    FIRS_FREE_FD
+    STDGREEN,
+    STDBLUE,
+    STDCYAN,
+    STDMAGENTA,
+    STDYELLOW,
 };
 
 #define EOF -1
@@ -43,9 +47,7 @@ extern uint64_t sys_key_status(char key);
 extern void     sys_sleep(uint64_t miliseconds);
 extern void     sys_clear_input_buffer();
 extern uint64_t sys_ticks();
-extern void generate_invalid_opcode();
-extern uint64_t printf(const char *fmt, ...);
-extern uint64_t scanf(const char *fmt, ...);
+
 
 /*-- SYSTEMCALLS DE MEMORIA --*/
 extern void * sys_malloc(uint64_t size);
