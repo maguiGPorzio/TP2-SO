@@ -12,6 +12,7 @@
 #include "process.h"
 #include "scheduler.h"
 #include "synchro.h"
+#include "pipes.h"
 
 extern void timer_tick();
 
@@ -71,8 +72,10 @@ int main() {
 
 	init_semaphore_manager();
 	// TODO: crear el proceso de la shell
-
+	
 	//((EntryPoint)sampleCodeModuleAddress)();
+
+	init_pipes();
 
 	timer_tick();
 	

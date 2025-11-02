@@ -216,6 +216,9 @@ void test_pipes_command() {
         shell_newline();
         return;
     }
+
+    printf("pipe: %d, fds: %d y %d\n", pipe_id, fds_pipe[0], fds_pipe[1]);
+
     int fds_cat[2];
     fds_cat[0] = STDIN;
     fds_cat[1] = fds_pipe[1];
