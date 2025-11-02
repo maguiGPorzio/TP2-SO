@@ -25,7 +25,6 @@ uint64_t print_err(char *str);
 uint64_t print_string(char *str);
 uint64_t putchar(char c);
 char getchar(void);
-char getchar_nonblock(); // no se queda esperando una tecla, si no hay devuelve 0
 uint64_t printf_aux(const char *fmt, const uint64_t *regArgs, const uint64_t *stackPtr, const double *floatArgs);
 uint64_t get_key_status(char key);
 

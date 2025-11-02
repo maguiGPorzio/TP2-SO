@@ -76,6 +76,8 @@ int main() {
 	//((EntryPoint)sampleCodeModuleAddress)();
 
 	init_pipes();
+	
+	init_keyboard_sem();
 
 	timer_tick();
 	

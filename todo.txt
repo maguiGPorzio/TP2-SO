@@ -33,6 +33,7 @@ no se que mas, magui es la CTO
 -- PIPES
 
 que el read sea bloqueante tambien de stdin
+recordar cambiar el getchar tambien y todo lo que lea de teclado
 
 hacer que pueda tener salidas de colores
 
