@@ -233,7 +233,7 @@ void test_pipes_command() {
 
     sys_wait(pid_cat);
     sys_wait(pid_red);
-    sys_destroy_pipe(fds_pipe[1]);
+    sys_destroy_pipe(pipe_id);
 
     putchar('\n');
     shell_newline();

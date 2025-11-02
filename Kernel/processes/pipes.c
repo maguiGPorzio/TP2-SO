@@ -159,9 +159,8 @@ int write_pipe(int fd, char * buf, int count) {
 
 
 
-void destroy_pipe(int fd) {
-    int idx = get_idx_from_fd(fd);
-    if (idx < 0) {
+void destroy_pipe(int idx) {
+    if (idx < 0 || idx >= MAX_PIPES) {
         return;
     }
 

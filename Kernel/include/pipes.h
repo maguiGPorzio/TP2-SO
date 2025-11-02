@@ -5,7 +5,7 @@
 
 #define PIPE_BUFFER_SIZE 1024
 #define MAX_PIPES 32
-#define SEM_NAME_SIZE 64
+#define SEM_NAME_SIZE 32
 #define EOF -1
 
 enum {
@@ -28,5 +28,5 @@ int read_pipe(int fd, char * buf, int count);
 int write_pipe(int fd, char * buf, int count);
 
 // libera los recursos del pipe
-void destroy_pipe(int fd); 
+void destroy_pipe(int idx); 
 
