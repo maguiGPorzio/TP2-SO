@@ -85,8 +85,8 @@ static uint64_t sys_write(uint64_t fd, const char * buffer, uint64_t count) {
     if (fd == STDIN) { // no se puede escribir en STDIN
         return -1;
     }
-    if (fd == STDOUT || fd == STDERR) {
-        uint32_t color = fd == STDERR ? 0xff0000 : 0xffffff;
+    if (fd < FIRST_FREE_FD) {
+        uint32_t color = fd_colors[fd];
         for (int i = 0; i < count; i++) {
             vdPutChar(buffer[i], color);
         }

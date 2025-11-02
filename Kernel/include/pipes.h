@@ -1,19 +1,14 @@
+#ifndef PIPES_H
+#define PIPES_H
 
 #include <stdint.h>
-
 #include "memoryManager.h"
+#include "fds.h"
 
 #define PIPE_BUFFER_SIZE 1024
 #define MAX_PIPES 32
 #define SEM_NAME_SIZE 32
 #define EOF -1
-
-enum {
-    STDIN = 0,
-    STDOUT,
-    STDERR,
-    FIRST_FREE_FD
-};
 
 int init_pipes();
 
@@ -30,3 +25,4 @@ int write_pipe(int fd, char * buf, int count);
 // libera los recursos del pipe
 void destroy_pipe(int idx); 
 
+#endif
