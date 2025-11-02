@@ -211,10 +211,10 @@ void test_pipes_command() {
     putchar('\b'); // borro el cursor
     char c = 'a';
     for (int i = STDOUT; i <= STDYELLOW; i++) {
-        sys_write(i, &c, 1);
+        fprint(i, "locura\n");
     }
 
-    print_string("\nrunning: 'cat hola | red'\n");
+    print("running: 'cat hola | red'\n");
 
     int fds_pipe[2];
     int pipe_id = sys_create_pipe(fds_pipe);

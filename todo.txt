@@ -22,27 +22,13 @@ resolver los warnings en la medida de lo posible
 
 agregar implementacion con la nueva queue
 
-que cree semaforos para STDIN (el teclado) para que el read del teclado sea bloqueante como los pipes
-
-no se que mas, magui es la CTO
-
-
-
-
-
--- PIPES
-
-que el read sea bloqueante tambien de stdin
-recordar cambiar el getchar tambien y todo lo que lea de teclado
-
-hacer que pueda tener salidas de colores
-
-hacer un fprintf
 
 
 
 
 -- APLICACIONES DE USUARIO
+
+rework al test utils
 
 rework de la shell para llamar programas pasandole argumentos
 
@@ -52,7 +38,6 @@ no tener memoria de lo que se escribio en la shell (agrandar o achicar la letra 
 
 ponerle flechita para arriba guardando el ultimo comando
 
-modularizar los .c de la usrlib, incluso agregando las funciones que usan los tests ahi
 
 
 
@@ -60,8 +45,6 @@ modularizar los .c de la usrlib, incluso agregando las funciones que usan los te
 -- ESTILO
 
 no usar size_t. Usar los tipos definidos en stdint
-
-que el mm sea una libreria, no un adt (conlleva un lindo refactor a como se llama)
 
 unificar criterio de los booleanos (int? uint8? stdbool?)
 

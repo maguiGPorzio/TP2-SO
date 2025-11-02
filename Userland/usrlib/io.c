@@ -1,5 +1,4 @@
-#include <stdint.h>
-#include "../include/usrlib.h"
+#include "usrlib.h"
 
 static uint64_t print_udecimal(uint64_t value);
 static uint64_t print_decimal(int64_t value);
@@ -7,84 +6,33 @@ static uint64_t print_hex(uint64_t value, uint8_t uppercase);
 static uint64_t print_pointer(uint64_t ptr);
 static uint64_t print_oct(uint64_t value);
 static uint64_t print_bin(uint64_t value);
-uint64_t num_to_str(uint64_t value, char * buffer, uint32_t base);
 static uint64_t print_float(double num);
 
-
-uint64_t print_err(char * str){
-    return sys_write(STDERR, str, strlen(str));
-}
-
-uint64_t print_string(char *str) {
+uint64_t fprint(uint64_t fd, char * str) {
     if (str == 0)
         return 0;
-    return sys_write(STDOUT, str, strlen(str));
+    return sys_write(fd, str, strlen(str));
 }
+
+uint64_t print(char *str) {
+    return fprint(STDOUT, str);   
+}
+
+uint64_t print_err(char * str){
+    return fprint(STDERR, str);
+}
+
+
 
 // Retorna 1 si se pudo escribir, 0 si no
 uint64_t putchar(char c) {
-    char buf[1];
-    buf[0] = c;
-    return sys_write(STDOUT, buf, 1);
+    return sys_write(STDOUT, &c, 1);
 }
 
 char getchar(){
     char c;
     sys_read(STDIN, &c, 1);
     return c;
-}
-
-
-
-
-
-uint64_t strlen(char * str) {
-    uint64_t len = 0;
-    while (str[len] != 0) {
-        len++;
-    }
-
-    return len;
-}
-
-
-int strcmp(char * s1, char * s2) {
-    while (*s1 && (*s1 == *s2)) {
-        s1++;
-        s2++;
-    }
-    return (uint8_t)(*s1) - (uint8_t)(*s2);
-}
-
-
-void draw_rectangle(uint64_t x0, uint64_t y0, uint64_t x1, uint64_t y1, uint32_t color) {
-    uint64_t info[] = {x0, y0, x1, y1};
-    sys_rectangle(0, info, color);
-}
-
-void fill_rectangle(uint64_t x0, uint64_t y0, uint64_t x1, uint64_t y1, uint32_t color) {
-    uint64_t info[] = {x0, y0, x1, y1};
-    sys_rectangle(1, info, color);
-}
-
-void draw_circle(uint64_t x_center, uint64_t y_center, uint64_t radius, uint32_t color) {
-    uint64_t info[] = {x_center, y_center, radius};
-    sys_circle(0, info, color);
-}
-
-void fill_circle(uint64_t x_center, uint64_t y_center, uint64_t radius, uint32_t color) {
-    uint64_t info[] = {x_center, y_center, radius};
-    sys_circle(1, info, color);
-}
-
-void draw_string(char * str, uint64_t x, uint64_t y, uint64_t size, uint32_t color) {
-    uint64_t info[] = {x, y, size};
-    sys_draw_string(str, info, color);
-}
-
-void draw_line(uint64_t x0, uint64_t y0, uint64_t x1, uint64_t y1, uint32_t color) {
-    uint64_t info[] = {x0, y0, x1, y1};
-    sys_line(info, color);
 }
 
 uint64_t printf_aux(const char *fmt, const uint64_t *intArgs, const uint64_t *stackPtr, const double *floatArgs) {
@@ -134,7 +82,7 @@ uint64_t printf_aux(const char *fmt, const uint64_t *intArgs, const uint64_t *st
                         chars_written += putchar((char)uint_arg);
                         break;
                     case 's':  
-                        chars_written += print_string((char*)uint_arg);      
+                        chars_written += print((char*)uint_arg);      
                         break;
                     case 'u':  
                         chars_written += print_udecimal(uint_arg);
@@ -187,23 +135,6 @@ uint64_t printf_aux(const char *fmt, const uint64_t *intArgs, const uint64_t *st
     return chars_written;
 }
 
-// Imprime el unsigned uint64_t en base 10 y devuelve la cantidad de caracteres escritos
-static uint64_t print_udecimal(uint64_t value) {
-    char buffer[DECIMAL_BUFFER_SIZE]; // Suficiente para un entero de 64 bits
-    uint64_t len = num_to_str(value, buffer, 10);
-    return sys_write(STDOUT, buffer, len);
-}
-
-// Imprime el signed uint64_t en base 10 y devuelve la cantidad de caracteres escritos
-static uint64_t print_decimal(int64_t value) {
-    if (value < 0) {
-        putchar('-');
-        value = -value; // Convertir a positivo para imprimir
-        return print_udecimal((uint64_t)value) + 1; // +1 por el signo negativo
-    }
-    return print_udecimal((uint64_t)value);
-}
-
 static uint64_t print_hex(uint64_t value, uint8_t uppercase) {
     char buffer[HEX_BUFFER_SIZE]; // Suficiente para un entero de 64 bits
     uint64_t len = num_to_str(value, buffer, 16);
@@ -220,7 +151,7 @@ static uint64_t print_hex(uint64_t value, uint8_t uppercase) {
 
 // Imprime el puntero en hexadecimal
 static uint64_t print_pointer(uint64_t ptr) {
-    uint64_t prefix = print_string("0x");
+    uint64_t prefix = print("0x");
     return print_hex(ptr, 0) + prefix; 
 }
 
@@ -236,34 +167,6 @@ static uint64_t print_bin(uint64_t value) {
     return sys_write(STDOUT, buffer, len);
 }
 
-// Esto es una copia de uintToBase de Kernel/naiveConsole.c (nos vino hecha)
-// Escribe el entero en el buffer en la base indicada
-uint64_t num_to_str(uint64_t value, char * buffer, uint32_t base) {
-	char *p = buffer;
-	char *p1, *p2;
-	uint64_t digits = 0;
-
-	//Calculate characters for each digit
-	do{
-		uint32_t remainder = value % base;
-		*p++ = (remainder < 10) ? remainder + '0' : remainder + 'A' - 10;
-		digits++;
-	}
-	while (value /= base);
-
-	*p = 0;
-
-	p1 = buffer;
-	p2 = p - 1;
-	while (p1 < p2){
-		char tmp = *p1;
-		*p1 = *p2;
-		*p2 = tmp;
-		p1++;
-		p2--;
-	}
-	return digits;
-}
 
 
 static uint64_t print_float(double num) {
@@ -388,4 +291,21 @@ uint64_t scanf_aux(const char *fmt, uint64_t regPtr[], uint64_t stkPtr[]) {
             }
     }
     return items_read;
+}
+
+// Imprime el unsigned uint64_t en base 10 y devuelve la cantidad de caracteres escritos
+static uint64_t print_udecimal(uint64_t value) {
+    char buffer[DECIMAL_BUFFER_SIZE]; // Suficiente para un entero de 64 bits
+    uint64_t len = num_to_str(value, buffer, 10);
+    return sys_write(STDOUT, buffer, len);
+}
+
+// Imprime el signed uint64_t en base 10 y devuelve la cantidad de caracteres escritos
+static uint64_t print_decimal(int64_t value) {
+    if (value < 0) {
+        putchar('-');
+        value = -value; // Convertir a positivo para imprimir
+        return print_udecimal((uint64_t)value) + 1; // +1 por el signo negativo
+    }
+    return print_udecimal((uint64_t)value);
 }
