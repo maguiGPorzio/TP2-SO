@@ -209,6 +209,13 @@ void test_sync_command() {
 
 void test_pipes_command() {
     putchar('\b'); // borro el cursor
+    char c = 'a';
+    for (int i = STDOUT; i <= STDYELLOW; i++) {
+        sys_write(i, &c, 1);
+    }
+
+    print_string("\nrunning: 'cat hola | red'\n");
+
     int fds_pipe[2];
     int pipe_id = sys_create_pipe(fds_pipe);
     if (pipe_id == -1) {
@@ -217,13 +224,7 @@ void test_pipes_command() {
         return;
     }
 
-    char c = 'a';
-
-    for (int i = STDOUT; i <= STDYELLOW; i++) {
-        sys_write(i, &c, 1);
-    }
-
-    printf("\npipe: %d, fds: %d y %d\n", pipe_id, fds_pipe[0], fds_pipe[1]);
+    printf("pipe: %d, fds: %d y %d\n", pipe_id, fds_pipe[0], fds_pipe[1]);
 
     int fds_cat[2];
     fds_cat[0] = STDIN;
