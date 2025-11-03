@@ -85,7 +85,7 @@ int create_pipe(int fds[2]) {
 
     // semaforo para leer
     num_to_str(pipe->read_fd, pipe->read_sem);
-    strcat(pipe->read_sem, "_read");
+    strcat(pipe->read_sem, "r");
     if (sem_open(pipe->read_sem, 0) < 0) {
         pipes[idx] = NULL;
         free_memory(mm, pipe);
@@ -94,7 +94,7 @@ int create_pipe(int fds[2]) {
     
     // semaforo para escribir
     num_to_str(pipe->write_fd, pipe->write_sem);
-    strcat(pipe->write_sem, "_write");
+    strcat(pipe->write_sem, "w");
     if (sem_open(pipe->write_sem, PIPE_BUFFER_SIZE) < 0) {
         sem_close(pipe->read_sem);
         pipes[idx] = NULL;

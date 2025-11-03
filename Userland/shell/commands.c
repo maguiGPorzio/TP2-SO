@@ -206,7 +206,7 @@ void print_processes() {
     }
     
     print("PID  NAME                 STATUS       PRIO  PPID  FD_R  FD_W  STACK_BASE    STACK_PTR\n");
-    print("--------------------------------------------------------------------------------\n");
+    print("--------------------------------------------------------------------------------------\n");
     
     for (int i = 0; i < count; i++) {
         process_info_t *p = &processes[i];
@@ -225,23 +225,23 @@ void print_processes() {
         
         // Status
         if (p->status == PS_READY) {
-            print("READY       ");
+            print("READY        ");
         } else if (p->status == PS_RUNNING) {
-            print("RUNNING     ");
+            print("RUNNING      ");
         } else if (p->status == PS_BLOCKED) {
-            print("BLOCKED     ");
+            print("BLOCKED      ");
         } else if (p->status == PS_TERMINATED) {
-            print("TERMINATED  ");
+            print("TERMINATED   ");
         } else {
-            print("UNKNOWN     ");
+            print("UNKNOWN      ");
         }
         
         // Prioridad
         printf("%d     ", p->priority);
         
-        // Parent PID (manejar -1 como caso especial)
-        if (p->parent_pid == -1) {
-            print("-1    ");
+
+        if (p->parent_pid < 0) {
+            print("-     "); // no parent pid
         } else {
             printf("%d     ", p->parent_pid);
         }
@@ -250,7 +250,7 @@ void print_processes() {
         printf("%d     %d     ", p->read_fd, p->write_fd);
         
         // Stack pointers en hex
-        printf("0x%x     0x%x\n", p->stack_base, p->stack_pointer);
+        printf("0x%x      0x%x\n", p->stack_base, p->stack_pointer);
     }
     
     shell_newline();
