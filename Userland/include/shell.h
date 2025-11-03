@@ -54,4 +54,5 @@ void test_sync_command();
 void test_pipes_command();
 void cat_runner();
 void red_runner();
+void printa_runner();
 

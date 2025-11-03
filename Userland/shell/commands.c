@@ -37,8 +37,11 @@ static Command commands[] = {
     { "test pipes", "runs cat hola | red", &test_pipes_command },
     { "cat", "runs cat hola manola", &cat_runner},
     { "red", "prints every input red until EOF", &red_runner},
+    { "print a", "prints a to stdout endlessly", &printa_runner},
     {0 ,0, 0} // marca de fin
 };
+
+// TODO: ver si en lugar de marca de fin ponemos un define que saque la cantidad con una cuenta con el sizeof
 
 static int clean_history;
 
@@ -261,6 +264,14 @@ void red_runner() {
     const char *args[] = {"hola ", "manola", NULL};
     int pid = sys_create_process(&red_main, 2, args, "red", NULL);
     sys_wait(pid);
+    shell_newline();
+}
+
+void printa_runner() {
+    putchar('\b'); // borro el cursor
+    const char *args[] = {"hola ", "manola", NULL};
+    int pid = sys_create_process(&printa_main, 2, args, "printa", NULL);
+    // sys_wait(pid);
     shell_newline();
 }
 
