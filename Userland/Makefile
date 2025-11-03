@@ -38,7 +38,7 @@ $(MODULE): $(OBJECTS) $(OBJECTS_SHELL) $(OBJECTS_USRLIB) $(OBJECTS_PROGRAMS) $(O
 # AGREGAR tests/*.o aquí
 # ============================================
 clean:
-	rm -rf asm/*.o shell/*.o usrlib/*.o golf/*.o tests/*.o *.o $(MODULE) $(SAMPLE_DATA)
+	rm -rf $(OBJECTS_ASM) $(OBJECTS_SHELL) $(OBJECTS_USRLIB) $(OBJECTS_TESTS) $(OBJECTS_PROGRAMS) $(OBJECTS) $(MODULE) $(SAMPLE_DATA)
 
 sampleDataModule:
 	printf "This is sample data." >> $(SAMPLE_DATA) && dd if=/dev/zero bs=1 count=1 >> $(SAMPLE_DATA)

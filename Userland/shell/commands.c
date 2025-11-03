@@ -209,9 +209,9 @@ void test_sync_command() {
 
 void test_pipes_command() {
     putchar('\b'); // borro el cursor
-    char c = 'a';
-    for (int i = STDOUT; i <= STDYELLOW; i++) {
-        fprint(i, "locura\n");
+
+    for (int fd = STDOUT; fd <= STDYELLOW; fd++) {
+        fprint(fd, "locura\n");
     }
 
     print("running: 'cat hola | red'\n");
