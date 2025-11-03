@@ -7,6 +7,9 @@ static uint32_t history_len = 0;
 
 int main(void) {
     sys_enable_textmode();
+    
+    // Limpiar buffer de teclado y resetear semáforo antes de empezar
+    sys_clear_input_buffer();
 
     char input[INPUT_MAX];
     while (1) {

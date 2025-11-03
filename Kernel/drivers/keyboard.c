@@ -2,6 +2,9 @@
 #include "lib.h"
 #include "naiveConsole.h"
 #include "videoDriver.h"
+#include "synchro.h"
+
+#define KEYBOARD_SEM_NAME "keyboard"
 
 static int shift = 0 ;
 static int caps_lock = 0;
@@ -40,15 +43,27 @@ static const char * scancodeToAscii[] = {lowerKeys, upperKeys};
 
 static uint8_t pressedKeys[LETTERS] = {0};
 
+// Inicializa el semáforo del teclado
+void init_keyboard_sem() {
+    sem_open(KEYBOARD_SEM_NAME, 0);  // Empieza en 0 (sin caracteres disponibles)
+}
+
 // Static porque no queremos que se pueda acceder desde otro archivo
 static void writeBuffer(unsigned char c) {
     buffer[buffer_end] = c;
     buffer_end = (buffer_end + 1) % BUFFER_LENGTH; // si hay buffer overflow, se pisa lo del principio (jodete usuario)
     buffer_current_size = (buffer_current_size + 1) % BUFFER_LENGTH;
+    
+    // Post al semáforo para indicar que hay un carácter disponible
+    sem_post(KEYBOARD_SEM_NAME);
 }
 
 void clear_buffer() {
-  buffer_end = buffer_start = buffer_current_size = 0;
+    buffer_end = buffer_start = buffer_current_size = 0;
+    
+    // Resetear el semáforo: cerrar y reabrir en 0
+    sem_close(KEYBOARD_SEM_NAME);
+    sem_open(KEYBOARD_SEM_NAME, 0);
 }
 
 uint8_t getCharFromBuffer() {
@@ -62,12 +77,13 @@ uint8_t getCharFromBuffer() {
 }
 
 // copia en el buff lo que hay en el buffer de teclado hasta count y va vaciando el buffer de teclado
+// Bloquea hasta tener TODOS los caracteres pedidos (comportamiento idéntico a pipes)
 uint64_t read_keyboard_buffer (char * buff_copy, uint64_t count) {
-    int i;
-    for (i=0; i < count && i < buffer_current_size; i++) {
+    for (int i = 0; i < count; i++) {
+        sem_wait(KEYBOARD_SEM_NAME);  // Bloquea hasta que haya un carácter disponible
         buff_copy[i] = getCharFromBuffer();
     }
-    return i;
+    return count;
 }
 
 

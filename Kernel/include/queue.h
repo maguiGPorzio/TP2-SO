@@ -4,8 +4,6 @@
 
 typedef struct queue_cdt * queue_t;
 
-
-
 // constructor
 queue_t q_init();
 

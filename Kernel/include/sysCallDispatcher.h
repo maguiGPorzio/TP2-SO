@@ -4,17 +4,11 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "memoryManager.h"
-
-#define STDOUT 1
-#define STDERR 2
-
-#define SYSCALL_COUNT 40 // <-- ACTUALIZAR CUANDO SE AGREGA UNA SYSCALL
-
-extern void * syscalls[SYSCALL_COUNT];
+#include "process.h"
 
 // pueden recibir hasta 3 argumentos
 static uint64_t sys_write(uint64_t fd, const char * buf, uint64_t count);
-static uint64_t sys_read(char * buf, uint64_t count);
+static uint64_t sys_read(int fd, char * buf, uint64_t count);
 static void sys_date(uint8_t * buffer);
 static void sys_time(uint8_t * buffer);
 static uint64_t sys_regs(char * buffer);
@@ -43,7 +37,7 @@ static void sys_free(void * ptr);
 static MemStatus sys_memStatus(void);
 
 // processes syscalls
-static int64_t sys_create_process(void * entry, int argc, const char **argv, const char *name);
+static int64_t sys_create_process(void * entry, int argc, const char **argv, const char *name, int fds[2]);
 static void    sys_exit(int status);
 static int64_t sys_getpid(void);
 static int64_t sys_kill(int pid);
@@ -52,12 +46,16 @@ static int64_t sys_unblock(int pid);
 static int64_t sys_wait(int pid);
 static int64_t sys_nice(int64_t pid, int new_prio);
 static void sys_yield();
-static void sys_print_processes();
+static int sys_processes_info(process_info_t * buf, int max_count);
 
-//semaphores syscalls
+// semaphores syscalls (name-based)
 static int64_t sys_sem_open(const char *name, int value);
-static void sys_sem_close(int sem_id);
-static void sys_sem_wait(int sem_id);
-static void sys_sem_post(int sem_id);
+static void sys_sem_close(const char *name);
+static void sys_sem_wait(const char *name);
+static void sys_sem_post(const char *name);
+
+// pipes syscalls
+static int sys_create_pipe(int fds[2]);
+static void sys_destroy_pipe(int fd);
 
 #endif

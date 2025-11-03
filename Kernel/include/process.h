@@ -51,7 +51,25 @@ typedef struct PCB {
     uint64_t cpu_ticks;              // Total de ticks de CPU usados
     int return_value;                // Valor de retorno (para exit)
     int waiting_on;                  // PID que está esperando (-1 si ninguno)
+
+    // file descriptors
+    int read_fd;
+    int write_fd;
 } PCB;
+
+
+// Estructura para exponer información de procesos a userland
+typedef struct process_info {
+    int pid;
+    char name[MAX_NAME_LENGTH];
+    ProcessStatus status;
+    uint8_t priority;
+    int parent_pid;
+    int read_fd;
+    int write_fd;
+    uint64_t stack_base;
+    uint64_t stack_pointer;
+} process_info_t;
 
 
 // ============================================
@@ -59,7 +77,7 @@ typedef struct PCB {
 // ============================================
 
 // Creación y limpieza (usadas por scheduler)
-PCB *proc_create(int pid, process_entry_t entry, int argc, const char **argv, const char *name);
+PCB *proc_create(int pid, process_entry_t entry, int argc, const char **argv, const char *name, int fds[2]);
 void free_process_resources(PCB *p);
 
 #endif // PROCESS_H

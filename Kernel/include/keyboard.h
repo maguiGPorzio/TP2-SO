@@ -19,6 +19,7 @@
 extern char getPressedKey();
 extern uint64_t reg_array[]; 
 
+void init_keyboard_sem();
 void printRegisters();
 void clear_buffer();
 uint8_t getCharFromBuffer();

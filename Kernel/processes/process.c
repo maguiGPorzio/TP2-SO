@@ -3,6 +3,7 @@
 #include "lib.h"
 #include "scheduler.h"
 #include "interrupts.h"
+#include "pipes.h"
 
 // Funciones ASM para context switching
 extern void *setup_initial_stack(void *caller, int pid, void *stack_pointer, void *rcx);
@@ -17,7 +18,7 @@ static void process_caller(int pid);
 //         LIFECYCLE DE PROCESOS
 // ============================================
 PCB* proc_create(int pid, process_entry_t entry, int argc, const char **argv,
-                const char *name) {
+                const char *name, int fds[2]) {
 
     if (!entry || !name || argc < 0) {
         return NULL;
@@ -67,6 +68,15 @@ PCB* proc_create(int pid, process_entry_t entry, int argc, const char **argv,
         }
     } else {
         p->argv = NULL;
+    }
+
+    // file descriptors
+    if (fds == NULL) {
+        p->read_fd = STDIN;
+        p->write_fd = STDOUT;
+    } else {
+        p->read_fd = fds[0];
+        p->write_fd = fds[1];
     }
 
     return p;

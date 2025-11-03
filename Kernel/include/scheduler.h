@@ -16,25 +16,18 @@ typedef int pid_t;
 #define DEFAULT_PRIORITY 3
 
 // ============================================
-//           TIPOS DE DATOS
-// ============================================
-
-typedef struct SchedulerCDT *SchedulerADT;
-
-// ============================================
 //           FUNCIONES PÚBLICAS
 // ============================================
 
 // Inicialización
-SchedulerADT init_scheduler(void);
-SchedulerADT get_scheduler(void);
+int init_scheduler(void);
 void scheduler_destroy(void);
 
 // Función principal del scheduler (llamada por timer interrupt)
 void *schedule(void *prev_rsp);
 
 // Gestión de procesos
-int scheduler_add_process(process_entry_t entry, int argc, const char **argv, const char *name);
+int scheduler_add_process(process_entry_t entry, int argc, const char **argv, const char *name, int fds[2]);
 int scheduler_remove_process(int pid);
 int scheduler_set_priority(int pid, uint8_t priority);
 int scheduler_get_priority(int pid);
@@ -52,6 +45,7 @@ int scheduler_unblock_process(int pid);
 void scheduler_force_reschedule(void);
 int scheduler_get_current_pid(void);
 
-void scheduler_print_processes();
+// Información de procesos
+int scheduler_get_processes(process_info_t *buffer, int max_count);
 
 #endif // SCHEDULER_H

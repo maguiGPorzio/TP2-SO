@@ -7,9 +7,9 @@
 #include "sound.h"
 #include "sysCallDispatcher.h"
 #include "memoryManager.h"
-#include "process.h"
 #include "scheduler.h"
 #include "synchro.h"
+#include "pipes.h"
 
 #define MIN_CHAR 0
 #define MAX_CHAR 256
@@ -55,35 +55,66 @@ void * syscalls[] = {
     &sys_wait,               // 32
     &sys_nice,               // 33
     &sys_yield,              // 34
-    &sys_print_processes,    // 35
+    &sys_processes_info,     // 35
 
     // syscalls de semaforos 
     &sys_sem_open,           // 36
     &sys_sem_close,          // 37
     &sys_sem_wait,           // 38
-    &sys_sem_post            // 39
+    &sys_sem_post,           // 39
+
+    // syscalls de pipes
+    &sys_create_pipe,        // 40
+    &sys_destroy_pipe        // 41
 };
 
-static uint64_t sys_regs(char * buffer){
+static uint64_t sys_regs(char * buffer) {
     return copyRegisters(buffer);
 }
 
 // devuelve cuantos chars escribió
 static uint64_t sys_write(uint64_t fd, const char * buffer, uint64_t count) {
-    if (fd != STDOUT && fd != STDERR) {
-        return 0;
+
+    if (fd == STDOUT) { // que es para este tipo stdout?
+        int pid = scheduler_get_current_pid();
+        PCB * p = scheduler_get_process(pid);
+        fd = p->write_fd;
     }
-    uint32_t color = fd == STDERR ? 0xff0000 : 0xffffff;
-    for (int i = 0; i < count; i++) {
-        vdPutChar(buffer[i], color);
+
+    if (fd == STDIN) { // no se puede escribir en STDIN
+        return -1;
     }
-    
-    return count;
+    if (fd < FIRST_FREE_FD) {
+        uint32_t color = fd_colors[fd];
+        for (int i = 0; i < count; i++) {
+            vdPutChar(buffer[i], color);
+        }
+
+        return count;
+    }
+
+    // es un pipe
+    return write_pipe(fd, buffer, count);
 }
 
 // leo hasta count
-static uint64_t sys_read(char * buffer, uint64_t count) {
-    return read_keyboard_buffer(buffer, count);
+static uint64_t sys_read(int fd, char * buffer, uint64_t count) {
+    if (fd == STDIN) { // que es para este tipo stdin?
+        int pid = scheduler_get_current_pid();
+        PCB * p = scheduler_get_process(pid);
+        fd = p->read_fd;
+    }
+    if (fd == STDOUT || fd == STDERR) { // no puede leer de ahi
+        return -1;
+    }
+
+    if (fd == STDIN) {
+        return read_keyboard_buffer(buffer, count);
+    }
+
+    // es un pipe
+    return read_pipe(fd, buffer, count);
+
 }
 
 static void sys_date(uint8_t * buffer){
@@ -198,12 +229,12 @@ static MemStatus sys_memStatus(void) {
 // ===================== Processes syscalls =====================
 
 // Crea un proceso: reserva un PID libre y delega en el scheduler
-static int64_t sys_create_process(void * entry, int argc, const char **argv, const char *name) {
+static int64_t sys_create_process(void * entry, int argc, const char **argv, const char *name, int fds[2]) {
     if (entry == NULL || name == NULL) {
         return -1;
     }
 
-    int new_pid = scheduler_add_process((process_entry_t)entry, argc, argv, name);
+    int new_pid = scheduler_add_process((process_entry_t)entry, argc, argv, name, fds);
     return new_pid;
 }
 
@@ -245,22 +276,31 @@ static void sys_yield() {
     scheduler_yield();
 }
 
-static void sys_print_processes() {
-    scheduler_print_processes();
+static int sys_processes_info(process_info_t * buf, int max_count) {
+    scheduler_get_processes(buf, max_count);
 }
 
-// SEMAFORO
+// SEMÁFOROS (API basada en nombre)
 static int64_t sys_sem_open(const char *name, int value) {
-    return (int64_t)sem_open(name, value);
+    return (int64_t)sem_open((char *)name, value);
 }
-static void sys_sem_close(int sem_id) {
-    sem_close(sem_id);
+static void sys_sem_close(const char *name) {
+    sem_close((char *)name);
 }
-static void sys_sem_wait(int sem_id) {
-    sem_wait(sem_id);
+static void sys_sem_wait(const char *name) {
+    sem_wait((char *)name);
 }
-static void sys_sem_post(int sem_id) {
-    sem_post(sem_id);
+static void sys_sem_post(const char *name) {
+    sem_post((char *)name);
+}
+
+
+static int sys_create_pipe(int fds[2]) {
+   return create_pipe(fds);
+}
+
+static void sys_destroy_pipe(int fd) {
+    destroy_pipe(fd);
 }
 
 

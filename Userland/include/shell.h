@@ -8,7 +8,7 @@ int64_t test_processes(uint64_t argc, char *argv[]);
 
 #define INPUT_MAX 100
 #define HISTORY_MAX 4096 
-#define PROMPT "$> "
+#define PROMPT "> "
 #define CURSOR '_'
 #define ERROR_MSG "Use command \'help\' to see available commands\n"
 #define HELP_MSG "* To change font size press + or -\n* Available commands:\n"
@@ -51,4 +51,8 @@ void test_processes_command();
 void test_priority_command();
 void print_processes();
 void test_sync_command();
+void test_pipes_command();
+void cat_runner();
+void red_runner();
+void printa_runner();
 

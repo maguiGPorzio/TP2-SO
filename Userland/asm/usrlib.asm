@@ -5,8 +5,9 @@ global  sys_enable_textmode, sys_disable_textmode, sys_put_pixel, sys_key_status
 global  sys_sleep, sys_clear_input_buffer, sys_ticks
 global  sys_malloc, sys_free, sys_memstatus
 ; Process/syscalls (scheduler-backed)
-global  sys_create_process, sys_exit_current, sys_getpid, sys_kill, sys_block, sys_unblock, sys_wait, sys_nice, sys_print_processes, sys_yield
+global  sys_create_process, sys_exit_current, sys_getpid, sys_kill, sys_block, sys_unblock, sys_wait, sys_nice, sys_processes_info, sys_yield
 global sys_sem_open,sys_sem_close,sys_sem_wait,sys_sem_post
+global sys_create_pipe, sys_destroy_pipe
 global generate_invalid_opcode
 global printf
 global scanf
@@ -33,7 +34,7 @@ sys_time:
 sys_date:
 	SYSCALL 2
 
-; 3 – uint64_t read(char* buf, uint64_t count);
+; 3 – uint64_t read(int fd, char* buf, uint64_t count);
 sys_read:
 	SYSCALL 3
 		
@@ -161,8 +162,8 @@ sys_nice:
 sys_yield:
     SYSCALL 34
 
-; 35 - void sys_print_processes()
-sys_print_processes:
+; 35 - int sys_processes_info(process_info_t * buf, int max_count)
+sys_processes_info:
     SYSCALL 35
 
 ; 36 - int64_t sys_sem_open(const char *name, int value);
@@ -180,6 +181,14 @@ sys_sem_wait:
 ; 39 - void sys_sem_post(int sem_id);
 sys_sem_post:
     SYSCALL 39
+
+; 40 - int sys_create_pipe(int fds[2])
+sys_create_pipe:
+    SYSCALL 40
+
+; 41 - void sys_destroy_pipe(int fd)
+sys_destroy_pipe:
+    SYSCALL 41
 
 generate_invalid_opcode:
     ud2         ; Genera excepción de opcode inválido

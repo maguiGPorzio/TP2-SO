@@ -4,6 +4,7 @@
 #include "lib.h"
 #include "process.h"
 #include "videoDriver.h"
+#include "ready_queue.h"
 
 // ============================================
 //           ESTRUCTURAS INTERNAS
@@ -17,7 +18,6 @@ typedef struct {
 } circular_buffer_t;
 
 typedef struct {
-    int total_value;  // Valor del semáforo
     int value; // Contador del semáforo
     //1 libre
     //0 ocupado
@@ -117,7 +117,6 @@ int64_t sem_open(char *name, int initial_value) {
     
     // Inicializar
     sem->value = initial_value;
-    sem->total_value = initial_value;
     strncpy(sem->name, name, MAX_SEM_NAME_LENGTH - 1);
     sem->name[MAX_SEM_NAME_LENGTH - 1] = '\0';
     sem->queue.read_index = 0;
@@ -195,12 +194,13 @@ int64_t sem_wait(char *name) {
     }
     
     release_lock(&sem->lock);
-    
-    // Bloquear el proceso (esto fuerza un reschedule O DEBERIA)
+
+     // Bloquear el proceso (esto fuerza un reschedule O DEBERIA)
     scheduler_block_process(pid);
     
     return 0;
 }
+
 
 int64_t sem_post(char *name) {
     if (sem_manager == NULL || name == NULL) {
@@ -221,9 +221,7 @@ int64_t sem_post(char *name) {
         scheduler_unblock_process(pid);
     } else {
         // No hay procesos esperando, incrementar contador
-        if (sem->value < sem->total_value) {
-            sem->value++;
-        }
+        sem->value++;
         release_lock(&sem->lock);
     }
     

@@ -117,3 +117,39 @@ char strlen(const char *str) {
 	}
 	return res;
 }
+
+uint64_t num_to_str(uint64_t value, char * buffer) {
+	char *p = buffer;
+	char *p1, *p2;
+	uint64_t digits = 0;
+
+	//Calculate characters for each digit
+	do{
+		uint32_t remainder = value % 10;
+		*p++ = (remainder < 10) ? remainder + '0' : remainder + 'A' - 10;
+		digits++;
+	}
+	while (value /= 10);
+
+	*p = 0;
+
+	p1 = buffer;
+	p2 = p - 1;
+	while (p1 < p2){
+		char tmp = *p1;
+		*p1 = *p2;
+		*p2 = tmp;
+		p1++;
+		p2--;
+	}
+	return digits;
+}
+
+int strcat(char *dest, const char *src) {
+	int i = strlen(dest);
+	while (*src) {
+		dest[i++] = *src++;
+	}
+	dest[i] = '\0';
+	return i;
+}

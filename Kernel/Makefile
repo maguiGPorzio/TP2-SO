@@ -7,6 +7,7 @@ SOURCES_DRIVERS=$(wildcard drivers/*.c)
 SOURCES_ASM=$(wildcard asm/*.asm)
 SOURCES_ASM_IDT=$(wildcard idt/*.asm)
 SOURCES_PROCESSES=$(wildcard processes/*.c)
+SOURCES_UTILS=$(wildcard utils/*.c)
 
 # ============================================
 #  SELECCIÓN CONDICIONAL DEL MEMORY MANAGER
@@ -26,7 +27,7 @@ else
     $(info ========================================)
 endif
 
-OBJECTS=$(SOURCES:.c=.o) $(SOURCES_IDT:.c=.o) $(SOURCES_DRIVERS:.c=.o) $(SOURCES_MEMORY:.c=.o) $(SOURCES_PROCESSES:.c=.o)
+OBJECTS=$(SOURCES:.c=.o) $(SOURCES_IDT:.c=.o) $(SOURCES_DRIVERS:.c=.o) $(SOURCES_MEMORY:.c=.o) $(SOURCES_PROCESSES:.c=.o) $(SOURCES_UTILS:.c=.o)
 OBJECTS_ASM=$(SOURCES_ASM:.asm=.o) $(SOURCES_ASM_IDT:.asm=.o)
 
 LOADERSRC=loader.asm
@@ -56,6 +57,6 @@ $(LOADEROBJECT):
 	$(ASM) $(ASMFLAGS) $(LOADERSRC) -o $(LOADEROBJECT)
 
 clean:
-	rm -rf asm/*.o *.o drivers/*.o idt/*.o memory/*.o processes/*.o *.bin
+	rm -rf asm/*.o *.o drivers/*.o idt/*.o memory/*.o processes/*.o utils/*.o *.bin
 
 .PHONY: all clean

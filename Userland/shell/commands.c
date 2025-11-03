@@ -1,4 +1,5 @@
 #include "../include/shell.h"
+#include "programs.h"
 
 #define E5 659
 #define B4 494
@@ -33,6 +34,9 @@ static Command commands[] = {
     { "test processes", "runs processes test", &test_processes_command },
     { "test priority", "runs a priority test", &test_priority_command },
     { "test sync", "runs a synchronization test", &test_sync_command },
+    { "test pipes", "runs cat hola | red", &test_pipes_command },
+    { "cat", "runs cat hola manola", &cat_runner},
+    { "red", "prints every input red until EOF", &red_runner},
     {0 ,0, 0} // marca de fin
 };
 
@@ -177,13 +181,13 @@ void test_mm_command() {
 
 void test_processes_command() {
     const char * args[] = {"4"};
-    sys_create_process(&test_processes, 1, args, "test_processes");
+    sys_create_process(&test_processes, 1, args, "test_processes", NULL);
 }
 
 void test_priority_command() {
     putchar('\b'); // borro el cursor
     const char * args[] = {"600000000"}; // tiene que ser un numero grande para que es note la dif
-    int pid = sys_create_process(&test_prio, 1, args, "test_prio");
+    int pid = sys_create_process(&test_prio, 1, args, "test_prio", NULL);
     sys_wait(pid);
     shell_newline();
 }
@@ -191,14 +195,128 @@ void test_priority_command() {
 
 void print_processes() {
     putchar('\b'); // borro el cursor
-    sys_print_processes();
+    
+    process_info_t processes[MAX_PROCESSES];
+    int count = sys_processes_info(processes, MAX_PROCESSES);
+    
+    if (count < 0) {
+        print_err("Failed to get processes info\n");
+        shell_newline();
+        return;
+    }
+    
+    print("PID  NAME                 STATUS       PRIO  PPID  FD_R  FD_W  STACK_BASE    STACK_PTR\n");
+    print("--------------------------------------------------------------------------------------\n");
+    
+    for (int i = 0; i < count; i++) {
+        process_info_t *p = &processes[i];
+        
+        // PID
+        printf("%d    ", p->pid);
+        
+        // Nombre
+        print(p->name);
+        
+        // Rellenar espacios para alinear (nombre max 20 chars)
+        int name_len = strlen(p->name);
+        for (int j = name_len; j < 21; j++) {
+            putchar(' ');
+        }
+        
+        // Status
+        if (p->status == PS_READY) {
+            print("READY        ");
+        } else if (p->status == PS_RUNNING) {
+            print("RUNNING      ");
+        } else if (p->status == PS_BLOCKED) {
+            print("BLOCKED      ");
+        } else if (p->status == PS_TERMINATED) {
+            print("TERMINATED   ");
+        } else {
+            print("UNKNOWN      ");
+        }
+        
+        // Prioridad
+        printf("%d     ", p->priority);
+        
+
+        if (p->parent_pid < 0) {
+            print("-     "); // no parent pid
+        } else {
+            printf("%d     ", p->parent_pid);
+        }
+        
+        // FDs
+        printf("%d     %d     ", p->read_fd, p->write_fd);
+        
+        // Stack pointers en hex
+        printf("0x%x      0x%x\n", p->stack_base, p->stack_pointer);
+    }
+    
     shell_newline();
 }
 
 void test_sync_command() {
     putchar('\b'); // borro el cursor
     const char *args[] = {"1000", "1", NULL};
-    int pid = sys_create_process(&test_sync, 2, args, "test_sync");
+    int pid = sys_create_process(&test_sync, 2, args, "test_sync", NULL);
+    sys_wait(pid);
+    shell_newline();
+}
+
+void test_pipes_command() {
+    putchar('\b'); // borro el cursor
+
+    for (int i = STDOUT; i <= STDYELLOW; i++) {
+        fprint(i, "locura\n");
+    }
+
+    print("running: 'cat hola | red'\n");
+
+    int fds_pipe[2];
+    int pipe_id = sys_create_pipe(fds_pipe);
+    if (pipe_id == -1) {
+        print_err("failed to create pipe");
+        shell_newline();
+        return;
+    }
+
+    printf("pipe: %d, fds: %d y %d\n", pipe_id, fds_pipe[0], fds_pipe[1]);
+
+    int fds_cat[2];
+    fds_cat[0] = STDIN;
+    fds_cat[1] = fds_pipe[1];
+
+    int fds_red[2];
+    fds_red[0] = fds_pipe[0];
+    fds_red[1] = STDOUT;
+
+    const char * args[] = {"hola", NULL};
+    int pid_cat = sys_create_process(&cat_main, 1, args, "cat", fds_cat);
+    int pid_red = sys_create_process(&red_main, 1, args, "red", fds_red);
+
+    sys_wait(pid_cat);
+    sys_wait(pid_red);
+    sys_destroy_pipe(pipe_id);
+
+    putchar('\n');
+    shell_newline();
+}
+
+void cat_runner() {
+    putchar('\b'); // borro el cursor
+    const char *args[] = {"hola ", "manola", NULL};
+    int pid = sys_create_process(&cat_main, 2, args, "cat", NULL);
+    sys_wait(pid);
+    putchar('\n');
+    shell_newline();
+
+}
+
+void red_runner() {
+    putchar('\b'); // borro el cursor
+    const char *args[] = {"hola ", "manola", NULL};
+    int pid = sys_create_process(&red_main, 2, args, "red", NULL);
     sys_wait(pid);
     shell_newline();
 }
