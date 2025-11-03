@@ -33,6 +33,8 @@ static int init(int argc, char **argv);
 static int scheduler_add_init();
 static inline bool pid_is_valid(pid_t pid);
 static void cleanup_all_processes(void);
+static int create_shell();
+static inline bool pid_is_valid(pid_t pid) ;
 
 static inline bool pid_is_valid(pid_t pid) {
     return pid >= 0 && pid <= MAX_PID;
@@ -40,10 +42,10 @@ static inline bool pid_is_valid(pid_t pid) {
 
 // Proceso init: arranca la shell y se queda haciendo halt para no consumir CPU. Se lo elige siempre que no haya otro proceso para correr!!!!
 static int init(int argc, char **argv) {
-    const char **shell_args = { NULL };
 
-    int shell_pid = scheduler_add_process((process_entry_t) SHELL_ADDRESS, 0, shell_args, "shell", NULL);
-    scheduler_set_priority(shell_pid, MAX_PRIORITY);
+    if (create_shell() != 0) {
+        return -1;
+    }
 
     while (1) {
 		_hlt();
@@ -51,9 +53,31 @@ static int init(int argc, char **argv) {
     return 0;
 }
 
+
+
 // ============================================
 //           INICIALIZACIÓN
 // ============================================
+
+static int create_shell(){
+    PCB *pcb_shell = proc_create(SHELL_PID, (process_entry_t) SHELL_ADDRESS, 0, NULL, "shell", NULL);
+    if (pcb_shell == NULL) {
+        return -1;
+    }
+    pcb_shell->priority = MAX_PRIORITY;
+    pcb_shell->status = PS_READY; 
+    pcb_shell->cpu_ticks = 0;
+    pcb_shell->remaining_quantum = pcb_shell->priority;
+    processes[SHELL_PID] = pcb_shell;
+    process_count++;
+    if (ready_queue == NULL || !q_add(ready_queue, SHELL_PID)) {
+        processes[SHELL_PID] = NULL;
+        process_count--;
+        free_process_resources(pcb_shell);
+        return -1;
+    }
+    return 0;
+}
 
 // Agrega el proceso al array de procesos y a la cola READY
 static int scheduler_add_init() {
@@ -125,13 +149,8 @@ void * schedule(void * prev_rsp) {
     if (current) {
         current->stack_pointer = prev_rsp; // actualiza el rsp del proceso que estuvo corriendo hasta ahora en su pcb
         
-<<<<<<< HEAD
-        current->cpu_ticks++; // cuantas veces interrumpimos este proceso que estuvo corriendo hasta ahora
-        scheduler->total_cpu_ticks++;
-=======
         current->cpu_ticks++; // cuantas veces interrumpimos este proceso que estuvo corrriendo hasta ahora
         total_cpu_ticks++;
->>>>>>> origin/main
 
         if (current->status == PS_RUNNING && current->remaining_quantum > 0) { // si se lo interrumpió antes de que se termine su quantum y estaba corriendo
             current->remaining_quantum--;
@@ -143,9 +162,6 @@ void * schedule(void * prev_rsp) {
 
         if(current->status == PS_RUNNING){ // si no entró en el if anterior, es porque no tiene que seguir corriendo. Si su status es RUNNING, la razón no fue por haberse bloqueado, terminado o porque se le hizo kill, entonces hay que cambiar su status a READY. En el caso de que se lo hubiera bloqueado, matado o terminado, ya su status se cambió en otras funciones
             current->status = PS_READY;
-<<<<<<< HEAD
-        } // 
-=======
         }
         if (current->status == PS_READY && current->pid != INIT_PID) {
             if (ready_queue == NULL || !q_add(ready_queue, current->pid)) {
@@ -155,7 +171,6 @@ void * schedule(void * prev_rsp) {
                 return prev_rsp;
             }
         }
->>>>>>> origin/main
     }
 
     // Si el proceso actual tiene que cambiar:
@@ -325,11 +340,7 @@ void scheduler_yield(void) {
 }
 
 int scheduler_kill_process(int pid) {
-<<<<<<< HEAD
-    if(!scheduler || !pid_is_valid(pid) || pid == INIT_PID) {
-=======
     if(!scheduler_initialized || !pid_is_valid(pid)) {
->>>>>>> origin/main
         return -1;
     }
     
@@ -343,15 +354,10 @@ int scheduler_kill_process(int pid) {
         scheduler_remove_process(killed_process->pid); 
     } else{ // si el padre no es init, no vamos a eliminarlo porque su padre podria hacerle un wait
         // Lo sacamos de la cola de procesos ready para que no vuelva a correr PERO NO  del array de procesos (para que el padre pueda acceder a su ret_value)
-<<<<<<< HEAD
-        if (killed_process->status == PS_READY || killed_process->status == PS_RUNNING) { // TODO: si al final el runninig no lo guardamos en la cola, sacar esta condición
-            ready_queue_dequeue(&scheduler->ready_queue, killed_process);
-=======
         if (killed_process->status == PS_READY || killed_process->status == PS_RUNNING) {
             if (ready_queue != NULL) {
                 q_remove(ready_queue, killed_process->pid);
             }
->>>>>>> origin/main
         }
         killed_process->status = PS_TERMINATED; // Le cambio el estado despues de hacer el dequeue o sino no va a entrar en la condición del if
         killed_process->return_value = KILLED_RET_VALUE;
@@ -363,11 +369,7 @@ int scheduler_kill_process(int pid) {
         }
     
     }
-<<<<<<< HEAD
-    if(pid == scheduler->current_pid){ // TODO: ver si un proceso se suicida a si mismo con kill, sino sacarlo 
-=======
     if(pid == current_pid){
->>>>>>> origin/main
         scheduler_yield();
     }
     return 0;
