@@ -22,13 +22,13 @@
 extern void generate_invalid_opcode();
 
 /*-- FUNCIONES DE I/O --*/
-uint64_t fprint(uint64_t fd, char *str);
 uint64_t print(char *str);
 uint64_t print_err(char *str);
 uint64_t putchar(char c);
 char getchar(void);
 uint64_t printf_aux(const char *fmt, const uint64_t *regArgs, const uint64_t *stackPtr, const double *floatArgs);
 uint64_t get_key_status(char key);
+uint64_t fprint(uint64_t fd, char *str);
 extern uint64_t printf(const char *fmt, ...);
 extern uint64_t scanf(const char *fmt, ...);
 

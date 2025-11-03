@@ -310,7 +310,6 @@ void cat_runner() {
     sys_wait(pid);
     putchar('\n');
     shell_newline();
-
 }
 
 void red_runner() {

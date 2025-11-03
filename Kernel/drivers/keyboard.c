@@ -47,7 +47,6 @@ static uint8_t pressedKeys[LETTERS] = {0};
 void init_keyboard_sem() {
     sem_open(KEYBOARD_SEM_NAME, 0);  // Empieza en 0 (sin caracteres disponibles)
 }
-
 // Static porque no queremos que se pueda acceder desde otro archivo
 static void writeBuffer(unsigned char c) {
     buffer[buffer_end] = c;

@@ -12,6 +12,8 @@
         "queue.h": "c",
         "scheduler.h": "c",
         "ready_queue.h": "c",
-        "process.h": "c"
+        "process.h": "c",
+        "syscalls.h": "c",
+        "fds.h": "c"
     }
 }

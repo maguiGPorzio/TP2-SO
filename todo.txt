@@ -23,6 +23,11 @@ resolver los warnings en la medida de lo posible
 agregar implementacion con la nueva queue
 
 
+-- PIPES
+
+ver el tema del cierre del pipe, quizas con un reader count y writer count
+
+ver tambien que onda con el pipe si se mata al proceso que lo creo, hay que ver de cerrarle los fds
 
 
 
