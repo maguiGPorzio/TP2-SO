@@ -7,7 +7,6 @@
 #include "sound.h"
 #include "sysCallDispatcher.h"
 #include "memoryManager.h"
-#include "process.h"
 #include "scheduler.h"
 #include "synchro.h"
 #include "pipes.h"
@@ -56,7 +55,7 @@ void * syscalls[] = {
     &sys_wait,               // 32
     &sys_nice,               // 33
     &sys_yield,              // 34
-    &sys_print_processes,    // 35
+    &sys_processes_info,     // 35
 
     // syscalls de semaforos 
     &sys_sem_open,           // 36
@@ -277,8 +276,8 @@ static void sys_yield() {
     scheduler_yield();
 }
 
-static void sys_print_processes() {
-    scheduler_print_processes();
+static int sys_processes_info(process_info_t * buf, int max_count) {
+    scheduler_get_processes(buf, max_count);
 }
 
 // SEMÁFOROS (API basada en nombre)

@@ -58,6 +58,20 @@ typedef struct PCB {
 } PCB;
 
 
+// Estructura para exponer información de procesos a userland
+typedef struct process_info {
+    int pid;
+    char name[MAX_NAME_LENGTH];
+    ProcessStatus status;
+    uint8_t priority;
+    int parent_pid;
+    int read_fd;
+    int write_fd;
+    uint64_t stack_base;
+    uint64_t stack_pointer;
+} process_info_t;
+
+
 // ============================================
 //      FUNCIONES INTERNAS (process.c)
 // ============================================

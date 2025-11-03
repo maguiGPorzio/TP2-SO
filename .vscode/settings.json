@@ -11,6 +11,7 @@
         "commontypes.h": "c",
         "queue.h": "c",
         "scheduler.h": "c",
-        "ready_queue.h": "c"
+        "ready_queue.h": "c",
+        "process.h": "c"
     }
 }

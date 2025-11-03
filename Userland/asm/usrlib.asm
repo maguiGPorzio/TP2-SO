@@ -5,7 +5,7 @@ global  sys_enable_textmode, sys_disable_textmode, sys_put_pixel, sys_key_status
 global  sys_sleep, sys_clear_input_buffer, sys_ticks
 global  sys_malloc, sys_free, sys_memstatus
 ; Process/syscalls (scheduler-backed)
-global  sys_create_process, sys_exit_current, sys_getpid, sys_kill, sys_block, sys_unblock, sys_wait, sys_nice, sys_print_processes, sys_yield
+global  sys_create_process, sys_exit_current, sys_getpid, sys_kill, sys_block, sys_unblock, sys_wait, sys_nice, sys_processes_info, sys_yield
 global sys_sem_open,sys_sem_close,sys_sem_wait,sys_sem_post
 global sys_create_pipe, sys_destroy_pipe
 global generate_invalid_opcode
@@ -162,8 +162,8 @@ sys_nice:
 sys_yield:
     SYSCALL 34
 
-; 35 - void sys_print_processes()
-sys_print_processes:
+; 35 - int sys_processes_info(process_info_t * buf, int max_count)
+sys_processes_info:
     SYSCALL 35
 
 ; 36 - int64_t sys_sem_open(const char *name, int value);

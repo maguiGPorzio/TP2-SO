@@ -449,27 +449,31 @@ PCB *scheduler_get_process(int pid) {
     return processes[pid];
 }
 
-void scheduler_print_processes() {
-    if (!scheduler_initialized) {
-        return;
+
+int scheduler_get_processes(process_info_t *buffer, int max_count) {
+    if (!scheduler_initialized || buffer == NULL || max_count <= 0) {
+        return -1;
     }
 
-    uint32_t color = 0xFFFFFF;
-    for (int i = 0; i < MAX_PROCESSES; i++) {
-        PCB * p = processes[i];
+    int count = 0;
+    for (int i = 0; i < MAX_PROCESSES && count < max_count; i++) {
+        PCB *p = processes[i];
         if (p) {
-            vdPrint(p->name, color);
-            vdPrint("   STATUS: ", color);
-            switch (p->status) {
-                case PS_READY:      vdPrint("READY", color);      break;
-                case PS_RUNNING:    vdPrint("RUNNING", color);    break;
-                case PS_BLOCKED: vdPrint("BLOCKED", color); break;
-                case PS_TERMINATED: vdPrint("TERMINATED", color); break;
-                default:            vdPrint("UNKNOWN", color);    break;
-            }
-            vdPrint("\n", color);
+            buffer[count].pid = p->pid;
+            strncpy(buffer[count].name, p->name, MAX_NAME_LENGTH);
+            buffer[count].status = p->status;
+            buffer[count].priority = p->priority;
+            buffer[count].parent_pid = p->parent_pid;
+            buffer[count].read_fd = p->read_fd;
+            buffer[count].write_fd = p->write_fd;
+            buffer[count].stack_base = (uint64_t)p->stack_base;
+            buffer[count].stack_pointer = (uint64_t)p->stack_pointer;
+            
+            count++;
         }
     }
+
+    return count;
 }
 
 // ============================================

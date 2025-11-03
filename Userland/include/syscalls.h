@@ -1,14 +1,9 @@
 #include <stdint.h>
 #include <stddef.h>
 
-typedef struct {
-    size_t total_memory;
-    size_t used_memory;
-    size_t free_memory;
-    size_t allocated_blocks;
-} MemStatus;
-
-typedef int (*process_entry_t)(int argc, char **argv);
+#define EOF -1
+#define MAX_NAME_LENGTH 32
+#define MAX_PROCESSES 64
 
 enum {
     STDIN = 0,
@@ -21,7 +16,36 @@ enum {
     STDYELLOW,
 };
 
-#define EOF -1
+typedef struct {
+    size_t total_memory;
+    size_t used_memory;
+    size_t free_memory;
+    size_t allocated_blocks;
+} MemStatus;
+
+typedef int (*process_entry_t)(int argc, char **argv);
+
+typedef enum {
+    PS_READY = 0,
+    PS_RUNNING,
+    PS_BLOCKED,
+    PS_TERMINATED
+} ProcessStatus;
+
+typedef struct process_info {
+    int pid;
+    char name[MAX_NAME_LENGTH];
+    ProcessStatus status;
+    uint8_t priority;
+    int parent_pid;
+    int read_fd;
+    int write_fd;
+    uint64_t stack_base;
+    uint64_t stack_pointer;
+} process_info_t;
+
+
+
 
 /*-- SYSTEMCALLS DE ARQUI --*/
 extern uint64_t sys_regs(char *buf);
@@ -64,7 +88,8 @@ extern int64_t sys_unblock(int64_t pid);
 extern int64_t sys_wait(int64_t pid);
 extern int64_t sys_nice(int64_t pid, int new_prio);
 extern void sys_yield();
-extern void sys_print_processes();
+extern int sys_processes_info(process_info_t * buf, int max_count);
+
 
 /*-- SYSTEMCALLS DE SEMAFOROS --*/
 extern int64_t sys_sem_open(const char *name, int value);

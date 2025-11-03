@@ -37,11 +37,8 @@ static Command commands[] = {
     { "test pipes", "runs cat hola | red", &test_pipes_command },
     { "cat", "runs cat hola manola", &cat_runner},
     { "red", "prints every input red until EOF", &red_runner},
-    { "print a", "prints a to stdout endlessly", &printa_runner},
     {0 ,0, 0} // marca de fin
 };
-
-// TODO: ver si en lugar de marca de fin ponemos un define que saque la cantidad con una cuenta con el sizeof
 
 static int clean_history;
 
@@ -198,7 +195,64 @@ void test_priority_command() {
 
 void print_processes() {
     putchar('\b'); // borro el cursor
-    sys_print_processes();
+    
+    process_info_t processes[MAX_PROCESSES];
+    int count = sys_processes_info(processes, MAX_PROCESSES);
+    
+    if (count < 0) {
+        print_err("Failed to get processes info\n");
+        shell_newline();
+        return;
+    }
+    
+    print("PID  NAME                 STATUS       PRIO  PPID  FD_R  FD_W  STACK_BASE    STACK_PTR\n");
+    print("--------------------------------------------------------------------------------\n");
+    
+    for (int i = 0; i < count; i++) {
+        process_info_t *p = &processes[i];
+        
+        // PID
+        printf("%d    ", p->pid);
+        
+        // Nombre
+        print(p->name);
+        
+        // Rellenar espacios para alinear (nombre max 20 chars)
+        int name_len = strlen(p->name);
+        for (int j = name_len; j < 21; j++) {
+            putchar(' ');
+        }
+        
+        // Status
+        if (p->status == PS_READY) {
+            print("READY       ");
+        } else if (p->status == PS_RUNNING) {
+            print("RUNNING     ");
+        } else if (p->status == PS_BLOCKED) {
+            print("BLOCKED     ");
+        } else if (p->status == PS_TERMINATED) {
+            print("TERMINATED  ");
+        } else {
+            print("UNKNOWN     ");
+        }
+        
+        // Prioridad
+        printf("%d     ", p->priority);
+        
+        // Parent PID (manejar -1 como caso especial)
+        if (p->parent_pid == -1) {
+            print("-1    ");
+        } else {
+            printf("%d     ", p->parent_pid);
+        }
+        
+        // FDs
+        printf("%d     %d     ", p->read_fd, p->write_fd);
+        
+        // Stack pointers en hex
+        printf("0x%x     0x%x\n", p->stack_base, p->stack_pointer);
+    }
+    
     shell_newline();
 }
 
@@ -213,8 +267,8 @@ void test_sync_command() {
 void test_pipes_command() {
     putchar('\b'); // borro el cursor
 
-    for (int fd = STDOUT; fd <= STDYELLOW; fd++) {
-        fprint(fd, "locura\n");
+    for (int i = STDOUT; i <= STDYELLOW; i++) {
+        fprint(i, "locura\n");
     }
 
     print("running: 'cat hola | red'\n");
@@ -264,14 +318,6 @@ void red_runner() {
     const char *args[] = {"hola ", "manola", NULL};
     int pid = sys_create_process(&red_main, 2, args, "red", NULL);
     sys_wait(pid);
-    shell_newline();
-}
-
-void printa_runner() {
-    putchar('\b'); // borro el cursor
-    const char *args[] = {"hola ", "manola", NULL};
-    int pid = sys_create_process(&printa_main, 2, args, "printa", NULL);
-    // sys_wait(pid);
     shell_newline();
 }
 

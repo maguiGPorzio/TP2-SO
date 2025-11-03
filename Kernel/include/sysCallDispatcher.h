@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "memoryManager.h"
+#include "process.h"
 
 // pueden recibir hasta 3 argumentos
 static uint64_t sys_write(uint64_t fd, const char * buf, uint64_t count);
@@ -45,7 +46,7 @@ static int64_t sys_unblock(int pid);
 static int64_t sys_wait(int pid);
 static int64_t sys_nice(int64_t pid, int new_prio);
 static void sys_yield();
-static void sys_print_processes();
+static int sys_processes_info(process_info_t * buf, int max_count);
 
 // semaphores syscalls (name-based)
 static int64_t sys_sem_open(const char *name, int value);
