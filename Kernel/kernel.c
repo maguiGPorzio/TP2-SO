@@ -81,5 +81,5 @@ int main() {
 
 	timer_tick();
 	
-	return 0;
+	return -1;
 }
