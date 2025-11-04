@@ -58,4 +58,6 @@ static void sys_sem_post(const char *name);
 static int sys_create_pipe(int fds[2]);
 static void sys_destroy_pipe(int fd);
 
+static int sys_set_foreground_process(int pid);
+
 #endif

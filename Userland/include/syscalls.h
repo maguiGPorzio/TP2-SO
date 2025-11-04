@@ -100,3 +100,5 @@ extern void sys_sem_post(const char *name);
 /*-- SYSTEMCALLS DE PIPES --*/
 extern int sys_create_pipe(int fds[2]);
 extern void sys_destroy_pipe(int fd);
+
+extern int sys_set_foreground_process(int pid);

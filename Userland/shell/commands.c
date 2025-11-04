@@ -115,7 +115,7 @@ static process_entry_t find_program_entry(char *name) {
     return NULL;
 }
 
-static int try_external_program(char *name, int argc, char **argv) {
+static int try_external_program(char *name, int argc, char **argv, bool background) {
     process_entry_t entry = find_program_entry(name);
     
     if (entry == NULL) {
@@ -134,10 +134,24 @@ static int try_external_program(char *name, int argc, char **argv) {
         print_err("Failed to create process\n");
         return 0;
     }
+
+    /*
     
+    if (background) {
+        // no esperar; shell sigue en FG
+        sys_set_foreground_process(NO_PID); // o SHELL_PID, según tu diseño
+        register_bg_job(&pid, 1, -1, current_input); // ver §4
+        return 1;
+    } 
+        
+    // Sigue acá si es foreground
+    sys_set_foreground_process(pid);
     sys_wait(pid);
+    sys_set_foreground_process(NO_PID);
     putchar('\n');
     return 1;
+    */
+   return 1;
 }
 
 // Ejecuta dos comandos conectados por pipe: left_cmd | right_cmd
@@ -242,7 +256,7 @@ static bool is_cmd_background(char *line){
 
 
 void process_line(char *line) {
-    bool backgorund = is_cmd_background(line);
+    bool background = is_cmd_background(line);
 
     char *tokens[MAX_ARGS];
     int token_count = parse_input(line, tokens);
@@ -291,7 +305,7 @@ void process_line(char *line) {
     }
     
     // Luego buscar en programas externos
-    if (try_external_program(command, argc, argv)) {
+    if (try_external_program(command, argc, argv, background)) {
         return;
     }
     

@@ -64,7 +64,7 @@ pid_t scheduler_get_foreground_pid(void) {
 
 // Establece el PID del proceso en foreground.
 // Devuelve 0 en éxito, -1 en error (scheduler no inicializado o pid inválido).
-int scheduler_set_foreground_pid(pid_t pid) {
+int scheduler_set_foreground_process(pid_t pid) {
     if (!scheduler_initialized) {
         return -1;
     }

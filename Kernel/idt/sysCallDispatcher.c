@@ -65,7 +65,9 @@ void * syscalls[] = {
 
     // syscalls de pipes
     &sys_create_pipe,        // 40
-    &sys_destroy_pipe        // 41
+    &sys_destroy_pipe,        // 41
+
+    &sys_set_foreground_process // 42
 };
 
 static uint64_t sys_regs(char * buffer) {
@@ -303,5 +305,8 @@ static void sys_destroy_pipe(int fd) {
     destroy_pipe(fd);
 }
 
-
+static int sys_set_foreground_process(int pid) {
+    // scheduler_set_foreground_process devuelve 0/-1 según éxito
+    return scheduler_set_foreground_process((pid_t)pid);
+}
 
