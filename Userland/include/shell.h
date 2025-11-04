@@ -2,9 +2,23 @@
 #include "test_mm.h"
 #include "test_sync.h"
 
-// Prototipos de tests disponibles desde la shell
-int64_t test_prio(uint64_t argc, char *argv[]);
-int64_t test_processes(uint64_t argc, char *argv[]);
+typedef void (*command_handler_t)(int argc, char **argv);
+
+typedef struct {
+    char *name;
+    char * description;
+    command_handler_t handler;
+
+} BuiltinCommand;
+
+typedef struct {
+    char *name;
+    char * description;
+    process_entry_t entry;
+} ExternalProgram;
+
+
+
 
 #define INPUT_MAX 128
 #define PROMPT "> "

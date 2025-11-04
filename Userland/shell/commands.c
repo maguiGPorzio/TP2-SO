@@ -7,17 +7,13 @@
 //           COMANDOS BUILTIN
 // ============================================
 
-typedef struct {
-    char *name;
-    void (*handler)(int argc, char **argv);
-} BuiltinCommand;
 
 static void builtin_clear(int argc, char **argv);
 static void builtin_help(int argc, char **argv);
 
 static BuiltinCommand builtins[] = {
-    { "clear", &builtin_clear },
-    { "help", &builtin_help },
+    { "clear", "clears the screen", &builtin_clear },
+    { "help", "provides information about available commands", &builtin_help },
     { NULL, NULL }
 };
 
@@ -25,17 +21,14 @@ static BuiltinCommand builtins[] = {
 //           PROGRAMAS EXTERNOS
 // ============================================
 
-typedef struct {
-    char *name;
-    process_entry_t entry;
-} ExternalProgram;
+
 
 static ExternalProgram programs[] = {
-    { "cat", &cat_main },
-    { "red", &red_main },
-    { "time", &time_main },
-    { "date", &date_main },
-    { "ps", &ps_main },
+    { "cat", "prints to STDOUT its params", &cat_main },
+    { "red", "reads from STDIN and prints it to STDERR", &red_main },
+    { "time", "prints system time to STDOUT", &time_main },
+    { "date", "prints system date to STDOUT",&date_main },
+    { "ps", "prints to STDOUT information about current processes",&ps_main },
     { NULL, NULL }
 };
 
@@ -43,23 +36,27 @@ static ExternalProgram programs[] = {
 //           PARSING Y EJECUCIÓN
 // ============================================
 
-static void parse_input(char *input, char **argv, int *argc) {
-    *argc = 0;
-    int in_token = 0;
+// Parsea el input y devuelve el número de tokens encontrados
+// tokens[0] = comando, tokens[1..n] = argumentos
+static int parse_input(char *input, char **tokens) {
+    int count = 0;
+    int in_token = 0;  // Flag: indica si estamos dentro de una palabra
     
-    for (int i = 0; input[i] != '\0' && *argc < MAX_ARGS; i++) {
+    for (int i = 0; input[i] != '\0' && count < MAX_ARGS; i++) {
         if (input[i] == ' ') {
             if (in_token) {
-                input[i] = '\0';
+                input[i] = '\0';  // terminar la palabra actual
                 in_token = 0;
             }
         } else {
             if (!in_token) {
-                argv[(*argc)++] = &input[i];
+                tokens[count++] = &input[i];  // guardar inicio de nueva palabra
                 in_token = 1;
             }
         }
     }
+    
+    return count;
 }
 
 static int try_builtin_command(char *name, int argc, char **argv) {
@@ -97,16 +94,16 @@ static int try_external_program(char *name, int argc, char **argv) {
 }
 
 void process_line(char *line) {
-    char *argv[MAX_ARGS];
-    int argc = 0;
+    char *tokens[MAX_ARGS];
+    int token_count = parse_input(line, tokens);
     
-    parse_input(line, argv, &argc);
-    
-    if (argc == 0) {
+    if (token_count == 0) {
         return;
     }
     
-    char *command = argv[0];
+    char *command = tokens[0];
+    char **argv = &tokens[1];      // argv[0] es el primer argumento
+    int argc = token_count - 1;    // argc no cuenta el comando
     
     // Primero buscar en builtins
     if (try_builtin_command(command, argc, argv)) {
@@ -135,12 +132,14 @@ static void builtin_clear(int argc, char **argv) {
 
 static void builtin_help(int argc, char **argv) {
 
-    print("Available commands:\n\n");
+    print("\nType '+' or '-' to change font size\n\n");
     
     print("Builtin commands:\n");
     for (int i = 0; builtins[i].name != NULL; i++) {
         print("  ");
         print(builtins[i].name);
+        print(" - ");
+        print(builtins[i].description);
         putchar('\n');
     }
     
@@ -148,9 +147,10 @@ static void builtin_help(int argc, char **argv) {
     for (int i = 0; programs[i].name != NULL; i++) {
         print("  ");
         print(programs[i].name);
+        print(" - ");
+        print(programs[i].description);
         putchar('\n');
     }
-    
-    
 
+    putchar('\n');
 }

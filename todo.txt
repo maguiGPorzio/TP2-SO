@@ -32,8 +32,6 @@ compartirlos acordando un identificador a priori"
 
 -- APLICACIONES DE USUARIO
 
-hacer el comando help con descripciones
-
 rework al test utils
 
 hacer el test caller
