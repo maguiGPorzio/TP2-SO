@@ -6,6 +6,9 @@
 
 #define KEYBOARD_SEM_NAME "keyboard"
 
+// Variable global exportada para que ASM pueda accederla
+const uint8_t SNAPSHOT_KEY = LEFT_CONTROL;
+
 static int shift = 0 ;
 static int caps_lock = 0;
 static int copied_registers=0;
@@ -93,7 +96,7 @@ void handlePressedKey() {
         shift = 1;
     } else if (scancode == LEFT_SHIFT + BREAKCODE_OFFSET || scancode == RIGHT_SHIFT + BREAKCODE_OFFSET) { 
         shift = 0;
-    } else if (scancode == LEFT_CONTROL) {
+    } else if (scancode == SNAPSHOT_KEY) {  // Usa la variable global
         copied_registers = 1;
         storeSnapshot();
         return; 
