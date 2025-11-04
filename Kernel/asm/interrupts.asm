@@ -24,6 +24,7 @@ GLOBAL setup_initial_stack
 
 GLOBAL timer_tick ; simula un tick del timer
 
+EXTERN SNAPSHOT_KEY
 EXTERN irqDispatcher
 EXTERN exceptionDispatcher
 EXTERN syscalls
@@ -148,7 +149,7 @@ _irq01Handler:
 	xor rax, rax
 	in al, 0x60 ; guardo la tecla
 	mov [pressed_key], rax
-	cmp rax, SNAPSHOT_KEY
+	cmp rax, [SNAPSHOT_KEY]
 	jne .doNotCapture
 
 	pop rax
@@ -263,6 +264,5 @@ SECTION .bss
 	aux resq 1
 	pressed_key resq 1
 	reg_array resq 20 ; 20 registros
-	SNAPSHOT_KEY equ 0x1D ; Left Ctrl key scancode
 	syscall_frame_ptr resq 1
 	syscall_id_tmp   resq 1
