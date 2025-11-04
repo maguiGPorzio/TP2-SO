@@ -29,7 +29,7 @@ static pid_t foreground_process_pid = NO_PID;                  // PID  del proce
 // ============================================
 
 static PCB *pick_next_process(void);
-static void reparent_children_to_init(int16_t pid);
+static void reparent_children_to_init(pid_t pid);
 static int init(int argc, char **argv);
 static int scheduler_add_init();
 static inline bool pid_is_valid(pid_t pid);
@@ -229,7 +229,7 @@ static PCB *pick_next_process(void) {
     }
 
     while (!q_is_empty(ready_queue)) {
-        int next_pid = q_poll(ready_queue);
+        pid_t next_pid = (pid_t) q_poll(ready_queue);
         if (!pid_is_valid(next_pid)) {
             continue;
         }
@@ -255,7 +255,7 @@ int scheduler_add_process(process_entry_t entry, int argc, const char **argv, co
     }
 
     // Buscar primer PID libre
-    int pid = -1;
+    pid_t pid = NO_PID;
     for (int i = 0; i < MAX_PROCESSES; i++) {
         if (processes[i] == NULL) {
             pid = i;
@@ -291,7 +291,7 @@ int scheduler_add_process(process_entry_t entry, int argc, const char **argv, co
     return pid;
 }
 
-int scheduler_remove_process(int pid) {
+int scheduler_remove_process(pid_t pid) {
     if (!scheduler_initialized || !pid_is_valid(pid)) {
         return -1;
     }
@@ -324,7 +324,7 @@ int scheduler_remove_process(int pid) {
     return 0;
 }
 
-int scheduler_set_priority(int pid, uint8_t new_priority) {
+int scheduler_set_priority(pid_t pid, uint8_t new_priority) {
    if (!scheduler_initialized || !pid_is_valid(pid) || 
         processes[pid] == NULL || 
         new_priority < MIN_PRIORITY || new_priority > MAX_PRIORITY) {
@@ -336,7 +336,7 @@ int scheduler_set_priority(int pid, uint8_t new_priority) {
     return 0;
 }
 
-int scheduler_get_priority(int pid) {
+int scheduler_get_priority(pid_t pid) {
     if (!scheduler_initialized || !pid_is_valid(pid) || processes[pid] == NULL) {
         return -1;
     }
@@ -364,7 +364,7 @@ void scheduler_yield(void) {
     scheduler_force_reschedule(); 
 }
 
-int scheduler_kill_process(int pid) {
+int scheduler_kill_process(pid_t pid) {
     if(!scheduler_initialized || !pid_is_valid(pid)) {
         return -1;
     }
@@ -406,7 +406,7 @@ int scheduler_kill_process(int pid) {
 // ============================================
 
 // Llamar desde proc_block() en processes.c
-int scheduler_block_process(int pid) {
+int scheduler_block_process(pid_t pid) {
     if (!scheduler_initialized || !pid_is_valid(pid)) {
         return -1;
     }
@@ -434,7 +434,7 @@ int scheduler_block_process(int pid) {
 }
 
 
-int scheduler_unblock_process(int pid) {
+int scheduler_unblock_process(pid_t pid) {
     if (!scheduler_initialized || !pid_is_valid(pid)) {
         return -1;
     }
@@ -490,7 +490,7 @@ void scheduler_destroy(void) {
 }
 
 // En scheduler.c
-PCB *scheduler_get_process(int pid) {
+PCB *scheduler_get_process(pid_t pid) {
     if (!scheduler_initialized || !pid_is_valid(pid)) {
         return NULL;
     }
@@ -561,7 +561,7 @@ void scheduler_exit_process(int64_t ret_value) {
 
 
 // Bloquea al proceso actual hasta que el hijo indicado termine. Devuelve el status del hijo si ya terminó o 0.
-int scheduler_waitpid(int child_pid) {
+int scheduler_waitpid(pid_t child_pid) {
     if (!scheduler_initialized || !pid_is_valid(child_pid) || 
         processes[child_pid] == NULL || 
         processes[child_pid]->parent_pid != current_pid) {
@@ -583,7 +583,25 @@ int scheduler_waitpid(int child_pid) {
     return ret_value;
 }
 
-static void reparent_children_to_init(int16_t pid) {
+int adopt_init_as_parent(pid_t pid) {
+    if(!scheduler_initialized || !pid_is_valid(pid)) {
+        return -1;
+    }
+    PCB *init_process = processes[INIT_PID];
+    if (init_process == NULL) {
+        return -1;
+    }
+
+    PCB *orphan_process = processes[pid];
+    if (orphan_process == NULL) {
+        return -1;
+    }
+
+    orphan_process->parent_pid = INIT_PID;
+    return 0;
+}
+
+static void reparent_children_to_init(pid_t pid) {
     if(!scheduler_initialized || !pid_is_valid(pid)) {
         return;
     }
@@ -598,6 +616,5 @@ static void reparent_children_to_init(int16_t pid) {
                 processes[i]->parent_pid = INIT_PID;
             }   
         }
-			
 	}
 }

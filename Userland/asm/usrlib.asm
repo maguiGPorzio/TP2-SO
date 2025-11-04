@@ -195,6 +195,10 @@ sys_destroy_pipe:
 sys_set_foreground_process:
     SYSCALL 42
 
+; 43 - int sys_adopt_init_as_parent(int pid)
+sys_adopt_init_as_parent:
+    SYSCALL 43
+
 generate_invalid_opcode:
     ud2         ; Genera excepción de opcode inválido
     ret

@@ -122,13 +122,7 @@ static int try_external_program(char *name, int argc, char **argv, bool backgrou
         return 0;
     }
     
-    int pid = sys_create_process(
-        entry,
-        argc,
-        (const char **)argv,
-        name,
-        NULL
-    );
+    int pid = sys_create_process(entry, argc, (const char **)argv, name, NULL);
     
     if (pid < 0) {
         print_err("Failed to create process\n");

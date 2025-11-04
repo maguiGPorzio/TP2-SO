@@ -67,7 +67,8 @@ void * syscalls[] = {
     &sys_create_pipe,        // 40
     &sys_destroy_pipe,        // 41
 
-    &sys_set_foreground_process // 42
+    &sys_set_foreground_process, // 42
+    &sys_adopt_init_as_parent  // 43
 };
 
 static uint64_t sys_regs(char * buffer) {
@@ -279,7 +280,7 @@ static void sys_yield() {
 }
 
 static int sys_processes_info(process_info_t * buf, int max_count) {
-    scheduler_get_processes(buf, max_count);
+    return scheduler_get_processes(buf, max_count);
 }
 
 // SEMÁFOROS (API basada en nombre)
@@ -308,5 +309,9 @@ static void sys_destroy_pipe(int fd) {
 static int sys_set_foreground_process(int pid) {
     // scheduler_set_foreground_process devuelve 0/-1 según éxito
     return scheduler_set_foreground_process((pid_t)pid);
+}
+
+static int sys_adopt_init_as_parent(int pid) {
+    return adopt_init_as_parent((pid_t)pid);
 }
 
