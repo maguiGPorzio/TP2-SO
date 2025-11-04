@@ -56,5 +56,6 @@ int ps_main(int argc, char *argv[]) {
         printf("0x%x      0x%x\n", p->stack_base, p->stack_pointer);
     }
     
+    putchar(EOF);
     return 0;
 }

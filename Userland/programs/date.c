@@ -21,6 +21,8 @@ int date_main(int argc, char *argv[]) {
     output_buf[8] = '\n';
     output_buf[9] = 0;
     print(output_buf);
+    putchar(EOF);
+
     
     return 0;
 }
