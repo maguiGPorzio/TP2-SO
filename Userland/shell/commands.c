@@ -1,6 +1,7 @@
 #include "../include/shell.h"
 #include "programs.h"
 #include "tests.h"
+#include <stdbool.h>
 
 #define MAX_ARGS 16
 
@@ -13,6 +14,8 @@ static void cls(int argc, char * argv[]);
 static void help(int argc, char * argv[]);
 static void test_runner(int argc, char * argv[]);
 static void print_test_use();
+
+static bool is_cmd_background(char *line);
 
 static BuiltinCommand builtins[] = {
     { "clear", "clears the screen", &cls },
@@ -220,7 +223,27 @@ static int execute_piped_commands(char **left_tokens, int left_count,
     return 1;
 }
 
+static bool is_cmd_background(char *line){
+    bool background = false;
+
+    int len = strlen(line);
+    int i = len - 1;
+
+    // salteo espacios finales
+    while (i >= 0 && (line[i] == ' ' || line[i] == '\t' || line[i] == '\n')) { 
+        i--;
+    }
+    if (i >= 0 && line[i] == '&') {
+        background = true;
+        line[i] = '\0'; // quitar el '&' para que no interfiera con el parsing
+    }
+    return background;
+}
+
+
 void process_line(char *line) {
+    bool backgorund = is_cmd_background(line);
+
     char *tokens[MAX_ARGS];
     int token_count = parse_input(line, tokens);
     
