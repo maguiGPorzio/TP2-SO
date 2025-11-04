@@ -32,7 +32,6 @@ compartirlos acordando un identificador a priori"
 
 -- APLICACIONES DE USUARIO
 
-rework al test utils
 
 hacer el test caller
 

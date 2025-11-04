@@ -206,17 +206,6 @@ uint64_t get_key_status(char key) {
     return sys_key_status(key);
 }
 
-float inv_sqrt(float number){
-    const float threehalfs = 1.5F;
-    float x2 = number * 0.5F;
-
-    union { float f; uint32_t i; } conv = { .f = number };
-    conv.i  = 0x5f3759df - (conv.i >> 1);  
-    float y = conv.f;
-
-    y = y * (threehalfs - (x2 * y * y));
-    return y;             
-}
 
 uint64_t scanf_aux(const char *fmt, uint64_t regPtr[], uint64_t stkPtr[]) {
     uint64_t items_read = 0;

@@ -45,8 +45,11 @@ void draw_line(uint64_t x0, uint64_t y0, uint64_t x1, uint64_t y1, uint32_t colo
 uint64_t strlen(char * str);
 int strcmp(char * s1, char * s2);
 uint64_t num_to_str(uint64_t value, char * buffer, uint32_t base);
+int64_t satoi(char *str);
 
 /*-- FUNCIONES DE MATEMATICAS --*/
 float inv_sqrt(float number);
+uint32_t GetUint();
+uint32_t GetUniform(uint32_t max);
 
 #endif 
