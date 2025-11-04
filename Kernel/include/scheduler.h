@@ -48,4 +48,8 @@ int scheduler_get_current_pid(void);
 // Información de procesos
 int scheduler_get_processes(process_info_t *buffer, int max_count);
 
+// Foreground process control (getter/setter)
+pid_t scheduler_get_foreground_pid(void);
+int scheduler_set_foreground_pid(pid_t pid);
+
 #endif // SCHEDULER_H

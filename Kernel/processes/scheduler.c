@@ -54,6 +54,30 @@ static int init(int argc, char **argv) {
     return 0;
 }
 
+// Devuelve el PID del proceso en foreground o NO_PID si no está inicializado
+pid_t scheduler_get_foreground_pid(void) {
+    if (!scheduler_initialized) {
+        return NO_PID;
+    }
+    return foreground_process_pid;
+}
+
+// Establece el PID del proceso en foreground.
+// Devuelve 0 en éxito, -1 en error (scheduler no inicializado o pid inválido).
+int scheduler_set_foreground_pid(pid_t pid) {
+    if (!scheduler_initialized) {
+        return -1;
+    }
+
+    // Permitimos limpiar el foreground pasando NO_PID
+    if (pid != NO_PID && !pid_is_valid(pid)) {
+        return -1;
+    }
+
+    foreground_process_pid = pid;
+    return 0;
+}
+
 
 
 // ============================================
