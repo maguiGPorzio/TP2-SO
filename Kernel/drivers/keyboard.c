@@ -107,9 +107,11 @@ void handlePressedKey() {
             pressedKeys[raw-'a'] = 0; // marcamos la tecla como no presionada
         }
         return;
-    } else if (scancode == UP_ARROW || scancode == DOWN_ARROW || scancode == LEFT_ARROW || scancode == RIGHT_ARROW || scancode==0){  
+    } 
+    else if (scancode == UP_ARROW || scancode == DOWN_ARROW || scancode == LEFT_ARROW || scancode == RIGHT_ARROW || scancode==0){  
         return;
-    } else {
+    } 
+    else {
         int index;                      
         char raw = lowerKeys[scancode]; 
         int isLetter = (raw >= 'a' && raw <= 'z');  
