@@ -33,13 +33,13 @@ ver tambien que onda con el pipe si se mata al proceso que lo creo, hay que ver 
 
 -- APLICACIONES DE USUARIO
 
+hacer el comando help con descripciones
+
 rework al test utils
 
-rework de la shell para llamar programas pasandole argumentos
+hacer el test caller
 
-programas de usuario en carpeta user_programs
-
-no tener memoria de lo que se escribio en la shell (agrandar o achicar la letra hace clear)
+agregar implementacion del | en la shell
 
 ponerle flechita para arriba guardando el ultimo comando
 
