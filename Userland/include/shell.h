@@ -1,58 +1,36 @@
 #include "usrlib.h"
-#include "test_mm.h"
-#include "test_sync.h"
 
-// Prototipos de tests disponibles desde la shell
-int64_t test_prio(uint64_t argc, char *argv[]);
-int64_t test_processes(uint64_t argc, char *argv[]);
+typedef void (*command_handler_t)(int argc, char **argv);
 
-#define INPUT_MAX 100
-#define HISTORY_MAX 4096 
+typedef struct {
+    char *name;
+    char * description;
+    command_handler_t handler;
+
+} BuiltinCommand;
+
+typedef struct {
+    char *name;
+    char * description;
+    process_entry_t entry;
+} ExternalProgram;
+
+
+
+
+#define INPUT_MAX 128
 #define PROMPT "> "
 #define CURSOR '_'
 #define ERROR_MSG "Use command \'help\' to see available commands\n"
-#define HELP_MSG "* To change font size press + or -\n* Available commands:\n"
 
-typedef struct {
-    char character;
-    uint64_t fd; // STDOUT o STDERR
-} HistoryEntry;
-
-typedef void (*Runnable)(void);
-
-typedef struct Command {
-    char *name;
-    char *description;
-    Runnable fn;
-} Command;
-
-// funciones de la shell
-void shell_putchar(char c, uint64_t fd); 
-void shell_print_string(char *str);
-void shell_print_err(char *str);    
-void shell_newline();  
+// funciones de la shell  
 void read_line(char * buf, uint64_t max);
-void process_line(char * line, uint32_t * history_len); 
+void process_line(char * line); 
 void incfont();
 void decfont();
-void redraw_history();
 
-// comandos
-void help();
-void cls();
-void test_division_zero();
-void test_invalid_opcode();
-void print_saved_registers();
-void print_time();
-void print_date();
-void song();
-void test_mm_command();
-void test_processes_command();
-void test_priority_command();
-void print_processes();
-void test_sync_command();
-void test_pipes_command();
-void cat_runner();
-void red_runner();
-void printa_runner();
+
+
+
+
 

@@ -1,324 +1,370 @@
 #include "../include/shell.h"
 #include "programs.h"
+#include "tests.h"
 
-#define E5 659
-#define B4 494
-#define C5 523
-#define D5 587
-#define G4 392
-#define F5 698
-#define A4 440
-#define A5 880
-#define G5 784
-#define E4 330
-#define C4 262
+#define MAX_ARGS 16
 
-// Duraciones (en milisegundos)
-#define Q 400  // negra
-#define E 200  // corchea
-#define S 100  // semicorchea
+// ============================================
+//           COMANDOS BUILTIN
+// ============================================
 
 
-// COMANDOS
-static Command commands[] = {
-    { "clear", "clears the screen",    &cls },
-    { "help", "provides commands information", &help     },
-    { "song", "plays tetris song", &song },
-    { "print date", "prints system's date", &print_date },
-    { "print regs", "prints the last saved register values", &print_saved_registers },
-    { "print time", "prints system's time", &print_time },
-    { "print processes", "prints current processes", &print_processes },
-    { "test div0", "causes division by zero exception", &test_division_zero }, 
-    { "test invopcode", "causes invalid opcode exception", &test_invalid_opcode }, 
-    { "test mm", "runs a memory manager test", &test_mm_command }, 
-    { "test processes", "runs processes test", &test_processes_command },
-    { "test priority", "runs a priority test", &test_priority_command },
-    { "test sync", "runs a synchronization test", &test_sync_command },
-    { "test pipes", "runs cat hola | red", &test_pipes_command },
-    { "cat", "runs cat hola manola", &cat_runner},
-    { "red", "prints every input red until EOF", &red_runner},
-    {0 ,0, 0} // marca de fin
+static void cls(int argc, char * argv[]);
+static void help(int argc, char * argv[]);
+static void test_runner(int argc, char * argv[]);
+static void print_test_use();
+
+static BuiltinCommand builtins[] = {
+    { "clear", "clears the screen", &cls },
+    { "help", "provides information about available commands", &help },
+    { "test", "runs a test, run 'test' to see more information about its use", &test_runner },
+    { NULL, NULL }
 };
 
-static int clean_history;
+// ============================================
+//           PROGRAMAS EXTERNOS
+// ============================================
 
-static int get_command_idx(char * line) {
 
-    for (int i = 0; commands[i].name; i++) {
-        if (strcmp(line, commands[i].name) == 0) {
+
+static ExternalProgram programs[] = {
+    { "cat", "prints to STDOUT its params", &cat_main },
+    { "red", "reads from STDIN and prints it to STDERR", &red_main },
+    { "time", "prints system time to STDOUT", &time_main },
+    { "date", "prints system date to STDOUT",&date_main },
+    { "ps", "prints to STDOUT information about current processes",&ps_main },
+    { NULL, NULL }
+};
+
+// ============================================
+//           PARSING Y EJECUCIÓN
+// ============================================
+
+// Busca el operador '|' en los tokens y retorna su índice, o -1 si no existe
+static int find_pipe_operator(char **tokens, int token_count) {
+    for (int i = 0; i < token_count; i++) {
+        // El token del pipe será un string que empieza con '|'
+        if (tokens[i][0] == '|') {
             return i;
         }
     }
-
     return -1;
 }
 
-
-void process_line(char * line, uint32_t * history_len) {
-    clean_history = 0;
-    int idx = get_command_idx(line);
-
-    if (idx < 0) {
-        shell_print_err("Unknown command: '");
-        shell_print_err(line);
-        shell_print_err("'\n");
-        shell_print_err(ERROR_MSG); 
-        return;
-    }
-
-    commands[idx].fn();
-    if (clean_history) {
-        *history_len = 0;
-    }
-	
-}
-
-/*-- IMPLEMENTACION DE LOS COMANDOS --*/
-
-void help() {
-    shell_newline();
-    shell_print_string(HELP_MSG); 
-    shell_newline();
-    for (Command *cmd = commands; cmd->name; ++cmd) {
-        shell_print_string("    ");
-        shell_print_string(cmd->name);
-        shell_print_string(" - ");
-        shell_print_string(cmd->description);
-        shell_newline();
-    }
-    shell_newline();
-}
-
-void cls() { 
-    sys_clear(); 
-    clean_history = 1; 
-}
-
-
-void test_division_zero() {
-    cls();
-    int a = 1;
-    int b = 0;
-    a = a / b;  // Esto genera la excepción
-}
-
-void test_invalid_opcode(void) {
-    cls();
-    generate_invalid_opcode(); 
-}
-
-void print_saved_registers() {
-    char buf[REGSBUF_SIZE];
-    if(sys_regs(buf)) {
-        shell_print_string(buf);
-    } else {
-        shell_print_err("No register snapshot available. Press left ctrl to take one\n");
-    }
-}
-
-// funcion helper para horas y fechas
-static void print_formatted_data(void (*syscall_fn)(uint8_t*), char separator) {
-    uint8_t buf[3];
-    syscall_fn(buf);
-    char number_buf[4];
-    char output_buf[10]; // xx:xx:xx\n\0 o dd/mm/yy\n\0
+// Parsea el input y devuelve el número de tokens encontrados
+// tokens[0] = comando, tokens[1..n] = argumentos
+// Reconoce '|' como delimitador especial
+static int parse_input(char *input, char **tokens) {
+    int count = 0;
+    int in_token = 0;
     
-    for (int i = 0; i < 3; i++) {
-        uint64_t digits = num_to_str(buf[i], number_buf, 16);
-        if (digits == 1) {
-            output_buf[3*i] = '0';
-            output_buf[3*i + 1] = number_buf[0];
+    for (int i = 0; input[i] != '\0' && count < MAX_ARGS; i++) {
+        char c = input[i];
+        
+        if (c == ' ' || c == '|') {
+            // Terminar token actual si estábamos en uno
+            if (in_token) {
+                input[i] = '\0';
+                in_token = 0;
+            }
+            
+            // Si es pipe, guardarlo como token
+            if (c == '|') {
+                tokens[count++] = &input[i];
+                // Mover a siguiente posición
+                i++;
+                // Saltar espacios después del pipe
+                while (input[i] == ' ') {
+                    input[i] = '\0';
+                    i++;
+                }
+                i--; // Compensar el i++ del for
+            }
         } else {
-            output_buf[3*i] = number_buf[0];
-            output_buf[3*i + 1] = number_buf[1];
+            // Estamos en un carácter normal
+            if (!in_token) {
+                tokens[count++] = &input[i];
+                in_token = 1;
+            }
         }
-        output_buf[3*i + 2] = separator;
     }
-    output_buf[8] = '\n';
-    output_buf[9] = 0;
-    shell_print_string(output_buf);
+    
+    return count;
 }
 
-void print_time() {
-    print_formatted_data(sys_time, ':');
+static int try_builtin_command(char *name, int argc, char **argv) {
+    for (int i = 0; builtins[i].name != NULL; i++) {
+        if (strcmp(name, builtins[i].name) == 0) {
+            builtins[i].handler(argc, argv);
+            return 1;
+        }
+    }
+    return 0;
 }
 
-void print_date() {
-    print_formatted_data(sys_date, '/');
+// Encuentra el entry point de un programa externo. Retorna NULL si no existe.
+static process_entry_t find_program_entry(char *name) {
+    for (int i = 0; programs[i].name != NULL; i++) {
+        if (strcmp(name, programs[i].name) == 0) {
+            return programs[i].entry;
+        }
+    }
+    return NULL;
 }
 
-void song() {
-    sys_beep(1320, 500);
-    sys_beep(990, 250);
-    sys_beep(1056, 250);
-    sys_beep(1188, 250);
-    sys_beep(1320, 125);
-    sys_beep(1188, 125);
-    sys_beep(1056, 250);
-    sys_beep(990, 250);
-    sys_beep(880, 500);
-    sys_beep(880, 250);
-    sys_beep(1056, 250);
-    sys_beep(1320, 500);
-    sys_beep(1188, 250);
-    sys_beep(1056, 250);
-    sys_beep(990, 750);
-    sys_beep(1056, 250);
-    sys_beep(1188, 500);
-    sys_beep(1320, 500);
-    sys_beep(1056, 500);
-    sys_beep(880, 500);
-    sys_beep(880, 500);
-    sys_clear_input_buffer();
-    shell_newline();
-}
-
-// Llama al test de memory manager con un límite predeterminado
-void test_mm_command() {
-    static char * args[] = { "20000" }; // tamaño máximo configurable aquí
-    test_mm(1, args);
-}
-
-void test_processes_command() {
-    const char * args[] = {"4"};
-    sys_create_process(&test_processes, 1, args, "test_processes", NULL);
-}
-
-void test_priority_command() {
-    putchar('\b'); // borro el cursor
-    const char * args[] = {"600000000"}; // tiene que ser un numero grande para que es note la dif
-    int pid = sys_create_process(&test_prio, 1, args, "test_prio", NULL);
+static int try_external_program(char *name, int argc, char **argv) {
+    process_entry_t entry = find_program_entry(name);
+    
+    if (entry == NULL) {
+        return 0;
+    }
+    
+    int pid = sys_create_process(
+        entry,
+        argc,
+        (const char **)argv,
+        name,
+        NULL
+    );
+    
+    if (pid < 0) {
+        print_err("Failed to create process\n");
+        return 0;
+    }
+    
     sys_wait(pid);
-    shell_newline();
+    putchar('\n');
+    return 1;
 }
 
-
-void print_processes() {
-    putchar('\b'); // borro el cursor
+// Ejecuta dos comandos conectados por pipe: left_cmd | right_cmd
+static int execute_piped_commands(char **left_tokens, int left_count, 
+                                    char **right_tokens, int right_count) {
+    // Validar que ambos comandos existen
+    char *left_cmd = left_tokens[0];
+    char *right_cmd = right_tokens[0];
     
-    process_info_t processes[MAX_PROCESSES];
-    int count = sys_processes_info(processes, MAX_PROCESSES);
+    process_entry_t left_entry = find_program_entry(left_cmd);
+    process_entry_t right_entry = find_program_entry(right_cmd);
     
-    if (count < 0) {
-        print_err("Failed to get processes info\n");
-        shell_newline();
-        return;
+    if (left_entry == NULL) {
+        print_err("Unknown command: '");
+        print_err(left_cmd);
+        print_err("'\n");
+        return 0;
     }
     
-    print("PID  NAME                 STATUS       PRIO  PPID  FD_R  FD_W  STACK_BASE    STACK_PTR\n");
-    print("--------------------------------------------------------------------------------------\n");
-    
-    for (int i = 0; i < count; i++) {
-        process_info_t *p = &processes[i];
-        
-        // PID
-        printf("%d    ", p->pid);
-        
-        // Nombre
-        print(p->name);
-        
-        // Rellenar espacios para alinear (nombre max 20 chars)
-        int name_len = strlen(p->name);
-        for (int j = name_len; j < 21; j++) {
-            putchar(' ');
-        }
-        
-        // Status
-        if (p->status == PS_READY) {
-            print("READY        ");
-        } else if (p->status == PS_RUNNING) {
-            print("RUNNING      ");
-        } else if (p->status == PS_BLOCKED) {
-            print("BLOCKED      ");
-        } else if (p->status == PS_TERMINATED) {
-            print("TERMINATED   ");
-        } else {
-            print("UNKNOWN      ");
-        }
-        
-        // Prioridad
-        printf("%d     ", p->priority);
-        
-
-        if (p->parent_pid < 0) {
-            print("-     "); // no parent pid
-        } else {
-            printf("%d     ", p->parent_pid);
-        }
-        
-        // FDs
-        printf("%d     %d     ", p->read_fd, p->write_fd);
-        
-        // Stack pointers en hex
-        printf("0x%x      0x%x\n", p->stack_base, p->stack_pointer);
+    if (right_entry == NULL) {
+        print_err("Unknown command: '");
+        print_err(right_cmd);
+        print_err("'\n");
+        return 0;
     }
     
-    shell_newline();
-}
-
-void test_sync_command() {
-    putchar('\b'); // borro el cursor
-    const char *args[] = {"1000", "1", NULL};
-    int pid = sys_create_process(&test_sync, 2, args, "test_sync", NULL);
-    sys_wait(pid);
-    shell_newline();
-}
-
-void test_pipes_command() {
-    putchar('\b'); // borro el cursor
-
-    for (int i = STDOUT; i <= STDYELLOW; i++) {
-        fprint(i, "locura\n");
-    }
-
-    print("running: 'cat hola | red'\n");
-
+    // Crear pipe
     int fds_pipe[2];
     int pipe_id = sys_create_pipe(fds_pipe);
-    if (pipe_id == -1) {
-        print_err("failed to create pipe");
-        shell_newline();
+    if (pipe_id < 0) {
+        print_err("Failed to create pipe\n");
+        return 0;
+    }
+    
+    // Preparar argumentos (sin contar el comando)
+    char **left_argv = &left_tokens[1];
+    int left_argc = left_count - 1;
+    
+    char **right_argv = &right_tokens[1];
+    int right_argc = right_count - 1;
+    
+    // FDs para el comando izquierdo (escribe al pipe)
+    int fds_left[2];
+    fds_left[0] = STDIN;          // Lee de STDIN
+    fds_left[1] = fds_pipe[1];    // Escribe al pipe (write end)
+    
+    // FDs para el comando derecho (lee del pipe)
+    int fds_right[2];
+    fds_right[0] = fds_pipe[0];   // Lee del pipe (read end)
+    fds_right[1] = STDOUT;        // Escribe a STDOUT
+    
+    // Crear ambos procesos
+    int pid_left = sys_create_process(
+        left_entry,
+        left_argc,
+        (const char **)left_argv,
+        left_cmd,
+        fds_left
+    );
+    
+    int pid_right = sys_create_process(
+        right_entry,
+        right_argc,
+        (const char **)right_argv,
+        right_cmd,
+        fds_right
+    );
+    
+    if (pid_left < 0 || pid_right < 0) {
+        print_err("Failed to create piped processes\n");
+        sys_destroy_pipe(pipe_id);
+        return 0;
+    }
+    
+    // Esperar a que terminen ambos procesos
+    sys_wait(pid_left);
+    sys_wait(pid_right);
+    
+    // Destruir el pipe
+    sys_destroy_pipe(pipe_id);
+    
+    putchar('\n');
+    return 1;
+}
+
+void process_line(char *line) {
+    char *tokens[MAX_ARGS];
+    int token_count = parse_input(line, tokens);
+    
+    if (token_count == 0) {
         return;
     }
+    
+    // Buscar si hay un operador pipe '|'
+    int pipe_idx = find_pipe_operator(tokens, token_count);
+    
+    if (pipe_idx != -1) {
+        // HAY PIPE: dividir en dos comandos
+        
+        // Validar sintaxis básica
+        if (pipe_idx == 0) {
+            print_err("Syntax error: pipe at start of command\n");
+            return;
+        }
+        if (pipe_idx == token_count - 1) {
+            print_err("Syntax error: pipe at end of command\n");
+            return;
+        }
+        
+        // Comando izquierdo: tokens[0..pipe_idx-1]
+        char **left_tokens = &tokens[0];
+        int left_count = pipe_idx;
+        
+        // Comando derecho: tokens[pipe_idx+1..token_count-1]
+        char **right_tokens = &tokens[pipe_idx + 1];
+        int right_count = token_count - pipe_idx - 1;
+        
+        // Ejecutar con pipe
+        execute_piped_commands(left_tokens, left_count, right_tokens, right_count);
+        return;
+    }
+    
+    // NO HAY PIPE: ejecución normal
+    char *command = tokens[0];
+    char **argv = &tokens[1];      // argv[0] es el primer argumento
+    int argc = token_count - 1;    // argc no cuenta el comando
+    
+    // Primero buscar en builtins
+    if (try_builtin_command(command, argc, argv)) {
+        return;
+    }
+    
+    // Luego buscar en programas externos
+    if (try_external_program(command, argc, argv)) {
+        return;
+    }
+    
+    // No se encontró
+    print_err("Unknown command: '");
+    print_err(command);
+    print_err("'\n");
+    print_err(ERROR_MSG);
+}
 
-    printf("pipe: %d, fds: %d y %d\n", pipe_id, fds_pipe[0], fds_pipe[1]);
+// ============================================
+//      IMPLEMENTACIÓN DE BUILTINS
+// ============================================
 
-    int fds_cat[2];
-    fds_cat[0] = STDIN;
-    fds_cat[1] = fds_pipe[1];
+static void cls(int argc, char * argv[]) {
+    sys_clear();
+}
 
-    int fds_red[2];
-    fds_red[0] = fds_pipe[0];
-    fds_red[1] = STDOUT;
+static void help(int argc, char * argv[]) {
 
-    const char * args[] = {"hola", NULL};
-    int pid_cat = sys_create_process(&cat_main, 1, args, "cat", fds_cat);
-    int pid_red = sys_create_process(&red_main, 1, args, "red", fds_red);
-
-    sys_wait(pid_cat);
-    sys_wait(pid_red);
-    sys_destroy_pipe(pipe_id);
+    print("\nType '+' or '-' to change font size\n\n");
+    
+    print("Builtin commands:\n");
+    for (int i = 0; builtins[i].name != NULL; i++) {
+        print("  ");
+        print(builtins[i].name);
+        print(" - ");
+        print(builtins[i].description);
+        putchar('\n');
+    }
+    
+    print("\nExternal programs:\n");
+    for (int i = 0; programs[i].name != NULL; i++) {
+        print("  ");
+        print(programs[i].name);
+        print(" - ");
+        print(programs[i].description);
+        putchar('\n');
+    }
 
     putchar('\n');
-    shell_newline();
 }
 
-void cat_runner() {
-    putchar('\b'); // borro el cursor
-    const char *args[] = {"hola ", "manola", NULL};
-    int pid = sys_create_process(&cat_main, 2, args, "cat", NULL);
+static void test_runner(int argc, char * argv[]) {
+    if (argc == 0) {
+        print_err("Error: missing test name\n");
+        print_test_use();
+        return;
+    }
+    
+    char *test_name = argv[0];
+    char **test_argv = &argv[1];  // Argumentos para el test (si los hay)
+    int test_argc = argc - 1;     // Número de argumentos para el test
+    
+    process_entry_t test_entry = NULL;
+    
+    // Determinar qué test ejecutar
+    if (strcmp(test_name, "mm") == 0) {
+        test_entry = (process_entry_t)test_mm;
+    } else if (strcmp(test_name, "prio") == 0) {
+        test_entry = (process_entry_t)test_prio;
+    } else if (strcmp(test_name, "processes") == 0) {
+        test_entry = (process_entry_t)test_processes;
+    } else if (strcmp(test_name, "sync") == 0) {
+        test_entry = (process_entry_t)test_sync;
+    } else {
+        print_err("Error: unknown test '");
+        print_err(test_name);
+        print_err("'\n");
+        print_test_use();
+        return;
+    }
+    
+    // Crear y ejecutar el proceso del test
+    int pid = sys_create_process(
+        test_entry,
+        test_argc,
+        (const char **)test_argv,
+        test_name,
+        NULL
+    );
+    
+    if (pid < 0) {
+        print_err("Error: failed to create test process\n");
+        return;
+    }
+    
     sys_wait(pid);
     putchar('\n');
-    shell_newline();
-
 }
 
-void red_runner() {
-    putchar('\b'); // borro el cursor
-    const char *args[] = {"hola ", "manola", NULL};
-    int pid = sys_create_process(&red_main, 2, args, "red", NULL);
-    sys_wait(pid);
-    shell_newline();
+static void print_test_use() {
+    print("Use: test <test_name> [test_params]\n");
+    print("Available test names:\n");
+    print("  mm         - memory manager test\n");
+    print("  prio       - priority scheduling test\n");
+    print("  processes  - process management test\n");
+    print("  sync       - synchronization test\n");
 }
-
-

@@ -44,3 +44,26 @@ int strcmp(char * s1, char * s2) {
     }
     return (uint8_t)(*s1) - (uint8_t)(*s2);
 }
+
+// Parameters
+int64_t satoi(char *str) {
+	uint64_t i = 0;
+	int64_t res = 0;
+	int8_t sign = 1;
+
+	if (!str)
+		return 0;
+
+	if (str[i] == '-') {
+		i++;
+		sign = -1;
+	}
+
+	for (; str[i] != '\0'; ++i) {
+		if (str[i] < '0' || str[i] > '9')
+		return 0;
+		res = res * 10 + str[i] - '0';
+	}
+
+	return res * sign;
+}

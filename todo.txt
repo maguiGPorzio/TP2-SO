@@ -1,47 +1,43 @@
-<<<<<<< HEAD
-ver si sacar de la cola el proceso running
+-- TESTS 
 
-que la shell no haga espera activa
------- PROCESOS
-=======
->>>>>>> origin/main
 
+revisar lo que esta comentado en el test de memoria
 
 
 -- PROCESOS
 
-que init no se pueda matar, que limpie los recursos de los huerfanos
-
-tener un proceso idle
-
-implementar la nueva queue
-
-la syscall de ps
+que init y la shell no se puedan matar (me parece lo mas simple)
 
 hacer lo de los processos en foreground / background
 
+ctrl+c y ctrl+d
 
+agregar al read de teclado validador de que el proceso que quiere leer sea el que este en foreground
+
+limpieza de pipes abiertos cuando un proceso hace exit / lo matan -> ver con Rodri antes de implementar
 
 
 -- SYNCRO
 
 resolver los warnings en la medida de lo posible
 
-agregar implementacion con la nueva queue
+lo del cli y sti
 
 
+-- PIPES
+
+ver el tema del cierre del pipe
+
+que onda con esta oracion del enunciado: "El sistema también deberá permitir que procesos no relacionados puedan
+compartirlos acordando un identificador a priori" -> pipes con nombre?
 
 
 
 -- APLICACIONES DE USUARIO
 
-rework al test utils
+agregar implementacion del & en la shell
 
-rework de la shell para llamar programas pasandole argumentos
-
-programas de usuario en carpeta user_programs
-
-no tener memoria de lo que se escribio en la shell (agrandar o achicar la letra hace clear)
+hacer todas las aplicaciones de usuario que pide el enunciado
 
 ponerle flechita para arriba guardando el ultimo comando
 
@@ -58,15 +54,26 @@ unificar criterio de los booleanos (int? uint8? stdbool?)
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 -- NON ESSENTIALS
 
 hacer una syscall para que imprima el logo de ramOS en modo texto y ponerlo cuando arranca la shell
 
 iterar sobre el videodriver y las syscalls (agregarle alguno de una matriz)
 
-agregar que se pueda cambiar el color de fondo del modo texto y de la stdin / out
-
-quizas agregar colores no? tipo file descriptors que sean colores para el videodriver no es mala.
+agregar que se pueda cambiar el color de fondo del modo texto
 
 hacer qeu corra el jueguito (con delta time)
 

@@ -11,18 +11,26 @@ typedef struct P_rq {
   enum State state;
 } p_rq;
 
-int64_t test_processes(uint64_t argc, char *argv[]) {
+int test_processes(int argc, char *argv[]) {
   uint8_t rq;
   uint8_t alive = 0;
   uint8_t action;
   uint64_t max_processes;
   const char *argvAux[] = {0};
 
-  if (argc != 1)
+  if (argc != 1) {
+    printf("Error: test_processes requires exactly 1 argument\n");
+    printf("Usage: test processes <max_processes>\n");
+    printf("  max_processes: number of processes to create and manage\n");
+    printf("Example: test processes 10\n");
     return -1;
+  }
 
-  if ((max_processes = satoi(argv[0])) <= 0)
+  if ((max_processes = satoi(argv[0])) <= 0) {
+    printf("Error: invalid max_processes value '%s'\n", argv[0]);
+    printf("max_processes must be a positive integer\n");
     return -1;
+  }
 
   p_rq p_rqs[max_processes];
 

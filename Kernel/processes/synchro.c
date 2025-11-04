@@ -192,12 +192,18 @@ int64_t sem_wait(char *name) {
         release_lock(&sem->lock);
         return -1;
     }
+
+    //deshabilitar interrupciones
     
     release_lock(&sem->lock);
 
-     // Bloquear el proceso (esto fuerza un reschedule O DEBERIA)
+    //PROBLEMA: si justo antes de llamar a scheduler_block_process ocurre un context switch y un proceso hace un sem_post de este semaforo
+    //cuando termine el sem_post del otro proceso y vuelva a este proceso, este proceso se va a bloquear y quizas 
+    //este proceso era el unico en la cola de bloqueados del semaforo, entonces no va a estar en la cola pero va a estar bloqueado
+    //NO LO PUEDO PONER DENTRO DEL LOCK PORQUE ESO LLEVARIA A DEADLOCK PORQUE EL scheduler_block_process FORZA UN CONTEXT SWITCH Y ENTONCES NUNCA SE LIBERARIA EL LOCK
     scheduler_block_process(pid);
     
+    //habilitar interrupciones
     return 0;
 }
 

@@ -6,6 +6,9 @@
 
 #define KEYBOARD_SEM_NAME "keyboard"
 
+// Variable global exportada para que ASM pueda accederla
+const uint8_t SNAPSHOT_KEY = LEFT_CONTROL;
+
 static int shift = 0 ;
 static int caps_lock = 0;
 static int copied_registers=0;
@@ -47,7 +50,6 @@ static uint8_t pressedKeys[LETTERS] = {0};
 void init_keyboard_sem() {
     sem_open(KEYBOARD_SEM_NAME, 0);  // Empieza en 0 (sin caracteres disponibles)
 }
-
 // Static porque no queremos que se pueda acceder desde otro archivo
 static void writeBuffer(unsigned char c) {
     buffer[buffer_end] = c;
@@ -94,7 +96,7 @@ void handlePressedKey() {
         shift = 1;
     } else if (scancode == LEFT_SHIFT + BREAKCODE_OFFSET || scancode == RIGHT_SHIFT + BREAKCODE_OFFSET) { 
         shift = 0;
-    } else if (scancode == LEFT_CONTROL) {
+    } else if (scancode == SNAPSHOT_KEY) {  // Usa la variable global
         copied_registers = 1;
         storeSnapshot();
         return; 
@@ -108,9 +110,11 @@ void handlePressedKey() {
             pressedKeys[raw-'a'] = 0; // marcamos la tecla como no presionada
         }
         return;
-    } else if (scancode == UP_ARROW || scancode == DOWN_ARROW || scancode == LEFT_ARROW || scancode == RIGHT_ARROW || scancode==0){  
+    } 
+    else if (scancode == UP_ARROW || scancode == DOWN_ARROW || scancode == LEFT_ARROW || scancode == RIGHT_ARROW || scancode==0){  
         return;
-    } else {
+    } 
+    else {
         int index;                      
         char raw = lowerKeys[scancode]; 
         int isLetter = (raw >= 'a' && raw <= 'z');  
