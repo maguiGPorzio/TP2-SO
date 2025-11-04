@@ -1,6 +1,4 @@
 #include "usrlib.h"
-#include "test_mm.h"
-#include "test_sync.h"
 
 typedef void (*command_handler_t)(int argc, char **argv);
 

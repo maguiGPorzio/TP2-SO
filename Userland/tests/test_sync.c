@@ -1,4 +1,8 @@
-#include "test_sync.h"
+#include "usrlib.h"
+
+
+#define SEM_ID "sem"
+#define TOTAL_PAIR_PROCESSES 2
 
 int64_t global; // shared memory
 
@@ -45,11 +49,18 @@ static uint64_t my_process_inc(uint64_t argc, char *argv[]) {
   return 0;
 }
 
-uint64_t test_sync(uint64_t argc, char *argv[]) { 
+int test_sync(int argc, char *argv[]) { 
   uint64_t pids[2 * TOTAL_PAIR_PROCESSES];
 
-  if (argc != 2)
+  if (argc != 2) {
+    printf("Error: test_sync requires exactly 2 arguments\n");
+    printf("Usage: test sync <iterations> <use_semaphore>\n");
+    printf("  iterations: number of increments/decrements per process\n");
+    printf("  use_semaphore: 1 to use semaphores (synchronized), 0 for no sync (race condition)\n");
+    printf("Example: test sync 10000 0  (no sync, should fail)\n");
+    printf("Example: test sync 10000 1  (with sync, should succeed)\n");
     return -1;
+  }
 
   char *argvDec[] = {argv[0], "-1", argv[1], NULL};
   char *argvInc[] = {argv[0], "1", argv[1], NULL};

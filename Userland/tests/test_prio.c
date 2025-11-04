@@ -19,16 +19,24 @@ void zero_to_max() {
   printf("PROCESS %d DONE!\n", sys_getpid());
 }
 
-uint64_t test_prio(uint64_t argc, char *argv[]) {
+int test_prio(int argc, char *argv[]) {
   int64_t pids[TOTAL_PROCESSES];
   const char *ztm_argv[] = {0};
   uint64_t i;
 
-  if (argc != 1)
+  if (argc != 1) {
+    printf("Error: test_prio requires exactly 1 argument\n");
+    printf("Usage: test prio <max_iterations>\n");
+    printf("  max_iterations: number to count up to (affects duration)\n");
+    printf("Example: test prio 100000000\n");
     return -1;
+  }
 
-  if ((max_value = satoi(argv[0])) <= 0)
+  if ((max_value = satoi(argv[0])) <= 0) {
+    printf("Error: invalid max_iterations value '%s'\n", argv[0]);
+    printf("max_iterations must be a positive integer\n");
     return -1;
+  }
 
   printf("SAME PRIORITY...\n");
 

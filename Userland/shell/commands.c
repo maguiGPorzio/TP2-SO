@@ -1,5 +1,6 @@
 #include "../include/shell.h"
 #include "programs.h"
+#include "tests.h"
 
 #define MAX_ARGS 16
 
@@ -8,12 +9,15 @@
 // ============================================
 
 
-static void builtin_clear(int argc, char **argv);
-static void builtin_help(int argc, char **argv);
+static void cls(int argc, char * argv[]);
+static void help(int argc, char * argv[]);
+static void test_runner(int argc, char * argv[]);
+static void print_test_use();
 
 static BuiltinCommand builtins[] = {
-    { "clear", "clears the screen", &builtin_clear },
-    { "help", "provides information about available commands", &builtin_help },
+    { "clear", "clears the screen", &cls },
+    { "help", "provides information about available commands", &help },
+    { "test", "runs a test, run 'test' to see more information about its use", &test_runner },
     { NULL, NULL }
 };
 
@@ -126,11 +130,11 @@ void process_line(char *line) {
 //      IMPLEMENTACIÓN DE BUILTINS
 // ============================================
 
-static void builtin_clear(int argc, char **argv) {
+static void cls(int argc, char * argv[]) {
     sys_clear();
 }
 
-static void builtin_help(int argc, char **argv) {
+static void help(int argc, char * argv[]) {
 
     print("\nType '+' or '-' to change font size\n\n");
     
@@ -153,4 +157,61 @@ static void builtin_help(int argc, char **argv) {
     }
 
     putchar('\n');
+}
+
+static void test_runner(int argc, char * argv[]) {
+    if (argc == 0) {
+        print_err("Error: missing test name\n");
+        print_test_use();
+        return;
+    }
+    
+    char *test_name = argv[0];
+    char **test_argv = &argv[1];  // Argumentos para el test (si los hay)
+    int test_argc = argc - 1;     // Número de argumentos para el test
+    
+    process_entry_t test_entry = NULL;
+    
+    // Determinar qué test ejecutar
+    if (strcmp(test_name, "mm") == 0) {
+        test_entry = (process_entry_t)test_mm;
+    } else if (strcmp(test_name, "prio") == 0) {
+        test_entry = (process_entry_t)test_prio;
+    } else if (strcmp(test_name, "processes") == 0) {
+        test_entry = (process_entry_t)test_processes;
+    } else if (strcmp(test_name, "sync") == 0) {
+        test_entry = (process_entry_t)test_sync;
+    } else {
+        print_err("Error: unknown test '");
+        print_err(test_name);
+        print_err("'\n");
+        print_test_use();
+        return;
+    }
+    
+    // Crear y ejecutar el proceso del test
+    int pid = sys_create_process(
+        test_entry,
+        test_argc,
+        (const char **)test_argv,
+        test_name,
+        NULL
+    );
+    
+    if (pid < 0) {
+        print_err("Error: failed to create test process\n");
+        return;
+    }
+    
+    sys_wait(pid);
+    putchar('\n');
+}
+
+static void print_test_use() {
+    print("Use: test <test_name> [test_params]\n");
+    print("Available test names:\n");
+    print("  mm         - memory manager test\n");
+    print("  prio       - priority scheduling test\n");
+    print("  processes  - process management test\n");
+    print("  sync       - synchronization test\n");
 }

@@ -1,26 +1,37 @@
 //TEST CATEDRA
-#include "../include/test_mm.h" // para sys_* y MemStatus
+#include "usrlib.h"
 #include "../include/test_util.h"
 
 #define MAX_BLOCKS 128
+
+void * memset(void * destination, int32_t character, uint64_t length);
+void * memcpy(void * destination, const void * source, uint64_t length);
 
 typedef struct MM_rq {
   void *address;
   uint32_t size;
 } mm_rq;
 
-int64_t test_mm(uint64_t argc, char * argv[]){
+int test_mm(int argc, char * argv[]) {
 
   mm_rq mm_rqs[MAX_BLOCKS];
   uint8_t rq;
   uint32_t total;
   uint64_t max_memory;
 
-  if (argc != 1)
+  if (argc != 1) {
+    printf("Error: test_mm requires exactly 1 argument\n");
+    printf("Usage: test mm <max_memory>\n");
+    printf("  max_memory: maximum bytes to allocate per iteration\n");
+    printf("Example: test mm 10485760  (10MB)\n");
     return -1;
+  }
 
-  if ((max_memory = satoi(argv[0])) <= 0)
+  if ((max_memory = satoi(argv[0])) <= 0) {
+    printf("Error: invalid max_memory value '%s'\n", argv[0]);
+    printf("max_memory must be a positive integer\n");
     return -1;
+  }
 
   while (1) {
     rq = 0;
