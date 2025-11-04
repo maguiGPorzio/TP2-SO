@@ -11,7 +11,9 @@ hacer lo de los processos en foreground / background
 
 ctrl+c y ctrl+d
 
-limpieza de pipes abiertos cuando un proceso hace exit / lo matan -> Rodri
+agregar al read de teclado validador de que el proceso que quiere leer sea el que este en foreground
+
+limpieza de pipes abiertos cuando un proceso hace exit / lo matan -> ver con Rodri antes de implementar
 
 
 -- SYNCRO
