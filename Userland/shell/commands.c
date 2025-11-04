@@ -18,7 +18,8 @@ static BuiltinCommand builtins[] = {
     { "clear", "clears the screen", &cls },
     { "help", "provides information about available commands", &help },
     { "test", "runs a test, run 'test' to see more information about its use", &test_runner },
-    { NULL, NULL }
+
+    { NULL, NULL, NULL }
 };
 
 // ============================================
@@ -30,11 +31,15 @@ static BuiltinCommand builtins[] = {
 static ExternalProgram programs[] = {
     { "cat", "prints to STDOUT its params", &cat_main },
     { "red", "reads from STDIN and prints it to STDERR", &red_main },
+    { "rainbow", "reads from STDIN and prints one char to each color fd", &rainbow_main},
     { "time", "prints system time to STDOUT", &time_main },
     { "date", "prints system date to STDOUT",&date_main },
     { "ps", "prints to STDOUT information about current processes",&ps_main },
-    { NULL, NULL }
+
+    { NULL, NULL, NULL } // TODO: ver si lo hacemos null terminated o con un define del length
 };
+
+
 
 // ============================================
 //           PARSING Y EJECUCIÓN
@@ -148,14 +153,14 @@ static int execute_piped_commands(char **left_tokens, int left_count,
     process_entry_t right_entry = find_program_entry(right_cmd);
     
     if (left_entry == NULL) {
-        print_err("Unknown command: '");
+        print_err("Unknown program: '");
         print_err(left_cmd);
         print_err("'\n");
         return 0;
     }
     
     if (right_entry == NULL) {
-        print_err("Unknown command: '");
+        print_err("Unknown program: '");
         print_err(right_cmd);
         print_err("'\n");
         return 0;

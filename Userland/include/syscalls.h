@@ -14,6 +14,7 @@ enum {
     STDCYAN,
     STDMAGENTA,
     STDYELLOW,
+    FDS_COUNT
 };
 
 typedef struct {
