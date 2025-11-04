@@ -5,13 +5,13 @@ revisar lo que esta comentado en el test de memoria
 
 -- PROCESOS
 
-que init y la shell no se puedan matar
+que init y la shell no se puedan matar (me parece lo mas simple)
 
 hacer lo de los processos en foreground / background
 
 ctrl+c y ctrl+d
 
-limpieza de pipes cuando hace exit / lo matan?
+limpieza de pipes abiertos cuando un proceso hace exit / lo matan -> Rodri
 
 
 -- SYNCRO
@@ -23,21 +23,14 @@ lo del cli y sti
 
 -- PIPES
 
-ver el tema del cierre del pipe, quizas con un reader count y writer count
-
-ver tambien que onda con el pipe si se mata al proceso que lo creo, hay que ver de cerrarle los fds
+ver el tema del cierre del pipe
 
 que onda con esta oracion del enunciado: "El sistema también deberá permitir que procesos no relacionados puedan
-compartirlos acordando un identificador a priori"
+compartirlos acordando un identificador a priori" -> pipes con nombre?
 
 
 
 -- APLICACIONES DE USUARIO
-
-
-hacer el test caller
-
-agregar implementacion del | en la shell
 
 agregar implementacion del & en la shell
 
@@ -58,15 +51,26 @@ unificar criterio de los booleanos (int? uint8? stdbool?)
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 -- NON ESSENTIALS
 
 hacer una syscall para que imprima el logo de ramOS en modo texto y ponerlo cuando arranca la shell
 
 iterar sobre el videodriver y las syscalls (agregarle alguno de una matriz)
 
-agregar que se pueda cambiar el color de fondo del modo texto y de la stdin / out
-
-quizas agregar colores no? tipo file descriptors que sean colores para el videodriver no es mala.
+agregar que se pueda cambiar el color de fondo del modo texto
 
 hacer qeu corra el jueguito (con delta time)
 
