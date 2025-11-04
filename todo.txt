@@ -3,24 +3,20 @@
 
 -- PROCESOS
 
-que init no se pueda matar, que limpie los recursos de los huerfanos
-
-tener un proceso idle
-
-implementar la nueva queue
-
-la syscall de ps
+que init y la shell no se puedan matar
 
 hacer lo de los processos en foreground / background
 
+ctrl+c y ctrl+d
 
+limpieza de pipes cuando hace exit / lo matan?
 
 
 -- SYNCRO
 
 resolver los warnings en la medida de lo posible
 
-agregar implementacion con la nueva queue
+lo del cli y sti
 
 
 -- PIPES
@@ -28,6 +24,9 @@ agregar implementacion con la nueva queue
 ver el tema del cierre del pipe, quizas con un reader count y writer count
 
 ver tambien que onda con el pipe si se mata al proceso que lo creo, hay que ver de cerrarle los fds
+
+que onda con esta oracion del enunciado: "El sistema también deberá permitir que procesos no relacionados puedan
+compartirlos acordando un identificador a priori"
 
 
 
@@ -40,6 +39,10 @@ rework al test utils
 hacer el test caller
 
 agregar implementacion del | en la shell
+
+agregar implementacion del & en la shell
+
+hacer todas las aplicaciones de usuario que pide el enunciado
 
 ponerle flechita para arriba guardando el ultimo comando
 
