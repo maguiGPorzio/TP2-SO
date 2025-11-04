@@ -17,11 +17,12 @@
 
 static PCB *processes[MAX_PROCESSES];       // Array para acceso por PID
 static queue_t ready_queue = NULL;              // Cola de PIDs listos para correr
-static int current_pid = NO_PID;                // PID del proceso actual
+static pid_t current_pid = NO_PID;                // PID del proceso actual
 static uint8_t process_count = 0;               // Cantidad total de procesos
 static uint64_t total_cpu_ticks = 0;            // Total de ticks de CPU
 static bool force_reschedule = false;           // Flag para forzar cambio de proceso
 static bool scheduler_initialized = false;
+static pid_t foreground_process_pid = NO_PID;                  // PID  del proceso que está corriendo en foreground
 
 // ============================================
 //        DECLARACIONES AUXILIARES
