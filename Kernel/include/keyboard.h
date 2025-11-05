@@ -7,6 +7,7 @@
 #define RIGHT_SHIFT 0x36
 #define CAPS_LOCK 0x3A
 #define LEFT_CONTROL 0x1D
+#define RIGHT_CONTROL 0xE01D
 #define LEFT_ARROW  0x4B
 #define RIGHT_ARROW  0x4D
 #define UP_ARROW  0x48

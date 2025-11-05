@@ -3,6 +3,7 @@
 #include "naiveConsole.h"
 #include "videoDriver.h"
 #include "synchro.h"
+#include "scheduler.h"
 
 #define KEYBOARD_SEM_NAME "keyboard"
 
@@ -11,6 +12,7 @@ const uint8_t SNAPSHOT_KEY = LEFT_CONTROL;
 
 static int shift = 0 ;
 static int caps_lock = 0;
+static int control = 0;
 static int copied_registers=0;
 
 uint16_t buffer_start = 0; // índice del buffer del próximo carácter a leer 
@@ -22,7 +24,7 @@ static char reg_buff[800]; // ACA FIJARNOS QUÉ TAMAÑO NOS CONVIENE
 
 static void writeBuffer(unsigned char c);
 
-static const char lowerKeys[] = {
+static const char lower_keys[] = {
       0,   27, '1', '2', '3', '4', '5', '6', '7', '8', '9',  '0', '-', '=',
    '\b', '\t', 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p',  '[', ']',
    '\n',    0, 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', '\'', '`',
@@ -42,9 +44,9 @@ static const char upperKeys[] = {
       0,   0,    0,   0,   0,   0
 };
 
-static const char * scancodeToAscii[] = {lowerKeys, upperKeys};
+static const char * scancodeToAscii[] = {lower_keys, upperKeys};
 
-static uint8_t pressedKeys[LETTERS] = {0};
+static uint8_t pressed_keys[LETTERS] = {0};
 
 // Inicializa el semáforo del teclado
 void init_keyboard_sem() {
@@ -96,6 +98,10 @@ void handlePressedKey() {
         shift = 1;
     } else if (scancode == LEFT_SHIFT + BREAKCODE_OFFSET || scancode == RIGHT_SHIFT + BREAKCODE_OFFSET) { 
         shift = 0;
+    } else if (scancode == LEFT_CONTROL || scancode == RIGHT_CONTROL) {
+        control = 1;
+    } else if (scancode == LEFT_CONTROL + BREAKCODE_OFFSET || scancode == RIGHT_CONTROL + BREAKCODE_OFFSET) {
+        control = 0;
     } else if (scancode == SNAPSHOT_KEY) {  // Usa la variable global
         copied_registers = 1;
         storeSnapshot();
@@ -105,9 +111,9 @@ void handlePressedKey() {
     } else if (scancode == 0){
         return;
     }else if (scancode > BREAKCODE_OFFSET){ // se soltó una tecla o es un caracter no imprimible
-        char raw = lowerKeys[scancode - BREAKCODE_OFFSET]; 
+        char raw = lower_keys[scancode - BREAKCODE_OFFSET]; 
         if (raw >= 'a' && raw <= 'z') {
-            pressedKeys[raw-'a'] = 0; // marcamos la tecla como no presionada
+            pressed_keys[raw-'a'] = 0; // marcamos la tecla como no presionada
         }
         return;
     } 
@@ -116,12 +122,20 @@ void handlePressedKey() {
     } 
     else {
         int index;                      
-        char raw = lowerKeys[scancode]; 
+        char raw = lower_keys[scancode]; 
         int isLetter = (raw >= 'a' && raw <= 'z');  
+
+        if (isLetter && raw == 'c' && control) {
+            if (!pressed_keys['c' - 'a']) {            // para que solo se llame una vez
+                scheduler_kill_foreground_process();
+            }
+            pressed_keys['c' - 'a'] = 1;               // marcamos como presionada
+            return;                                   // para no meter la 'c' en el buffer
+        }
 
         if (isLetter) {
             index = shift ^ caps_lock;
-            pressedKeys[raw-'a'] = 1;
+            pressed_keys[raw-'a'] = 1;
         } else {
             index = shift;                      
         }
@@ -143,7 +157,7 @@ void writeStringToBuffer(const char *str) {
 uint8_t is_pressed_key(char c) {
     if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) { 
         c = (c >= 'A' && c <= 'Z') ? c - 'A' + 'a' : c; // Convertir a minúscula si es mayúscula
-        return pressedKeys[c-'a']; // Devuelve 1 si la tecla está presionada, 0 si no
+        return pressed_keys[c-'a']; // Devuelve 1 si la tecla está presionada, 0 si no
     }
     return 0; // Si el char es inválido, retornamos 0
 }
