@@ -216,6 +216,9 @@ void pipe_on_process_killed(pid_t victim) {
                 scheduler_kill_process(reader_pid);
             }
         }
+
+        // Destruir el pipe después de matar al otro proceso
+        destroy_pipe(i);
     }
 }
 
