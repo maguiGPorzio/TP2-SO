@@ -40,6 +40,7 @@ static ExternalProgram programs[] = {
     { "date", "prints system date to STDOUT", &date_main },
     { "ps", "prints to STDOUT information about current processes", &ps_main },
     { "printa", "prints the letter 'a' indefinitely to STDOUT", &print_a_main },
+    {"mem", "prints memory usage information", &mem},
     { "test_mm", "runs an mm test", &test_mm},
     { "test_prio", "runs a priority test", &test_prio},
     { "test_processes", "runs an process test", &test_processes},

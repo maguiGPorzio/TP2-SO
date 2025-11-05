@@ -41,7 +41,7 @@ hacer todas las aplicaciones de usuario que pide el enunciado
 
 ponerle flechita para arriba guardando el ultimo comando
 
-
+que no se le pueda hacer & a red por ejemplo
 
 
 
