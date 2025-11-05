@@ -8,5 +8,6 @@ int print_a_main(int argc, char *argv[]);
 int time_main(int argc, char *argv[]);
 int date_main(int argc, char *argv[]);
 int ps_main(int argc, char *argv[]);
+int rainbow_main(int argc, char *argv[]);
 
 #endif
