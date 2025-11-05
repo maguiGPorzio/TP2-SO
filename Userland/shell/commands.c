@@ -14,9 +14,7 @@
 
 static void cls(int argc, char * argv[]);
 static void help(int argc, char * argv[]);
-static void test_runner(int argc, char * argv[]);
 static void kill_process(int argc, char * argv[]);
-static void print_test_use();
 
 static bool is_cmd_background(char *line);
 
@@ -24,7 +22,6 @@ static BuiltinCommand builtins[] = {
     { "clear", "clears the screen", &cls },
     { "help", "provides information about available commands", &help },
     { "kill", "kills a process by PID", &kill_process },
-    { "test", "runs a test, run 'test' to see more information about its use", &test_runner },
 
     { NULL, NULL, NULL }
 };
@@ -40,9 +37,13 @@ static ExternalProgram programs[] = {
     { "red", "reads from STDIN and prints it to STDERR", &red_main },
     { "rainbow", "reads from STDIN and prints one char to each color fd", &rainbow_main},
     { "time", "prints system time to STDOUT", &time_main },
-    { "date", "prints system date to STDOUT",&date_main },
-    { "ps", "prints to STDOUT information about current processes",&ps_main },
-    { "printa", "prints the letter 'a' indefinitely to STDOUT",&print_a_main },
+    { "date", "prints system date to STDOUT", &date_main },
+    { "ps", "prints to STDOUT information about current processes", &ps_main },
+    { "printa", "prints the letter 'a' indefinitely to STDOUT", &print_a_main },
+    { "test_mm", "runs an mm test", &test_mm},
+    { "test_prio", "runs a priority test", &test_prio},
+    { "test_processes", "runs an process test", &test_processes},
+    { "test_sync", "runs a sync test", &test_sync},
     { NULL, NULL }
 };
 
@@ -356,54 +357,6 @@ static void help(int argc, char * argv[]) {
     putchar('\n');
 }
 
-static void test_runner(int argc, char * argv[]) {
-    if (argc == 0) {
-        print_err("Error: missing test name\n");
-        print_test_use();
-        return;
-    }
-    
-    char *test_name = argv[0];
-    char **test_argv = &argv[1];  // Argumentos para el test (si los hay)
-    int test_argc = argc - 1;     // Número de argumentos para el test
-    
-    process_entry_t test_entry = NULL;
-    
-    // Determinar qué test ejecutar
-    if (strcmp(test_name, "mm") == 0) {
-        test_entry = (process_entry_t)test_mm;
-    } else if (strcmp(test_name, "prio") == 0) {
-        test_entry = (process_entry_t)test_prio;
-    } else if (strcmp(test_name, "processes") == 0) {
-        test_entry = (process_entry_t)test_processes;
-    } else if (strcmp(test_name, "sync") == 0) {
-        test_entry = (process_entry_t)test_sync;
-    } else {
-        print_err("Error: unknown test '");
-        print_err(test_name);
-        print_err("'\n");
-        print_test_use();
-        return;
-    }
-    
-    // Crear y ejecutar el proceso del test
-    int pid = sys_create_process(
-        test_entry,
-        test_argc,
-        (const char **)test_argv,
-        test_name,
-        NULL
-    );
-    
-    if (pid < 0) {
-        print_err("Error: failed to create test process\n");
-        return;
-    }
-    
-    sys_wait(pid);
-    putchar('\n');
-}
-
 static void kill_process(int argc, char * argv[]) {
     if (argc == 0) {
         print_err("Error: kill requires a PID\n");
@@ -441,11 +394,11 @@ static void kill_process(int argc, char * argv[]) {
     }
 }
 
-static void print_test_use() {
-    print("Use: test <test_name> [test_params]\n");
-    print("Available test names:\n");
-    print("  mm         - memory manager test\n");
-    print("  prio       - priority scheduling test\n");
-    print("  processes  - process management test\n");
-    print("  sync       - synchronization test\n");
-}
+// static void print_test_use() {
+//     print("Use: test <test_name> [test_params]\n");
+//     print("Available test names:\n");
+//     print("  mm         - memory manager test\n");
+//     print("  prio       - priority scheduling test\n");
+//     print("  processes  - process management test\n");
+//     print("  sync       - synchronization test\n");
+// }
