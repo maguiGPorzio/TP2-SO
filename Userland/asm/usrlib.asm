@@ -8,7 +8,7 @@ global  sys_malloc, sys_free, sys_memstatus
 global  sys_create_process, sys_exit_current, sys_getpid, sys_kill, sys_block, sys_unblock, sys_wait, sys_nice, sys_processes_info, sys_yield
 global sys_sem_open,sys_sem_close,sys_sem_wait,sys_sem_post
 global sys_create_pipe, sys_destroy_pipe
-global sys_set_foreground_process
+global sys_set_foreground_process, sys_adopt_init_as_parent
 global generate_invalid_opcode
 global printf
 global scanf

@@ -1,3 +1,5 @@
+#ifndef SHELL_H
+#define SHELL_H
 #include "usrlib.h"
 
 typedef void (*command_handler_t)(int argc, char **argv);
@@ -28,9 +30,4 @@ void read_line(char * buf, uint64_t max);
 void process_line(char * line); 
 void incfont();
 void decfont();
-
-
-
-
-
-
+#endif 

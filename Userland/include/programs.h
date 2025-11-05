@@ -4,7 +4,7 @@
 
 int cat_main(int argc, char *argv[]);
 int red_main(int argc, char *argv[]);
-int printa_main(int argc, char *argv[]);
+int print_a_main(int argc, char *argv[]);
 int time_main(int argc, char *argv[]);
 int date_main(int argc, char *argv[]);
 int ps_main(int argc, char *argv[]);

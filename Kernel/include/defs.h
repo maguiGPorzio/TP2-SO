@@ -1,5 +1,5 @@
-#ifndef _defs_
-#define _defs_
+#ifndef DEFS_H
+#define DEFS_H
 
 
 /* Flags para derechos de acceso de los segmentos */

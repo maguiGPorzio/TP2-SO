@@ -618,3 +618,25 @@ static void reparent_children_to_init(pid_t pid) {
         }
 	}
 }
+
+
+// Mata el proceso que está en foreground. Devuelve 0 en éxito, -1 en error.
+int scheduler_kill_foreground_process(void) {
+    if (!scheduler_initialized) {
+        return -1;
+    }
+
+    // Si no hay proceso en foreground, retornar error
+    if (foreground_process_pid == NO_PID) {
+        return -1;
+    }
+
+    int result = scheduler_kill_process(foreground_process_pid);
+    
+    // Limpiar el foreground
+    if (result == 0) {
+        foreground_process_pid = NO_PID;
+    }
+
+    return result;
+}

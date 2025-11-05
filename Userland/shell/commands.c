@@ -2,7 +2,9 @@
 #include "programs.h"
 #include "tests.h"
 #include <stdbool.h>
+#include "syscalls.h"
 
+#define NO_PID -1 // TODO: ver esto donde lo ponemos porque lo comparte con Kernel
 #define MAX_ARGS 16
 
 // ============================================
@@ -36,6 +38,7 @@ static ExternalProgram programs[] = {
     { "time", "prints system time to STDOUT", &time_main },
     { "date", "prints system date to STDOUT",&date_main },
     { "ps", "prints to STDOUT information about current processes",&ps_main },
+    { "printa", "prints the letter 'a' indefinitely to STDOUT",&print_a_main },
     { NULL, NULL }
 };
 
@@ -129,12 +132,8 @@ static int try_external_program(char *name, int argc, char **argv, bool backgrou
         return 0;
     }
 
-    /*
-    
     if (background) {
-        // no esperar; shell sigue en FG
-        sys_set_foreground_process(NO_PID); // o SHELL_PID, según tu diseño
-        register_bg_job(&pid, 1, -1, current_input); // ver §4
+        sys_adopt_init_as_parent(pid); // los hago huerfanos para que cuando terminen se liberen solos
         return 1;
     } 
         
@@ -144,8 +143,6 @@ static int try_external_program(char *name, int argc, char **argv, bool backgrou
     sys_set_foreground_process(NO_PID);
     putchar('\n');
     return 1;
-    */
-   return 1;
 }
 
 // Ejecuta dos comandos conectados por pipe: left_cmd | right_cmd

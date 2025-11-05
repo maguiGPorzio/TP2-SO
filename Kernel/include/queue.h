@@ -1,6 +1,8 @@
+#ifndef QUEUE_H
+#define QUEUE_H
+
 #include <stdint.h>
 #include <stdbool.h>
-
 
 typedef struct queue_cdt * queue_t;
 
@@ -22,3 +24,4 @@ int q_is_empty(queue_t q);
 // libera los recursos de la queue
 void q_destroy(queue_t q); 
 
+#endif 

@@ -1,3 +1,6 @@
+#ifndef SYSCALLS_H
+#define SYSCALLS_H
+
 #include <stdint.h>
 #include <stddef.h>
 
@@ -103,3 +106,5 @@ extern void sys_destroy_pipe(int fd);
 
 extern int sys_set_foreground_process(int pid);
 extern int sys_adopt_init_as_parent(int pid);
+
+#endif
