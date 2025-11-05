@@ -48,6 +48,8 @@ static int init(int argc, char **argv) {
         return -1;
     }
 
+    scheduler_set_foreground_process(SHELL_PID);
+
     while (1) {
 		_hlt();
 	}
@@ -375,6 +377,10 @@ int scheduler_kill_process(pid_t pid) {
     }
     reparent_children_to_init(killed_process->pid);
 
+    if (pid == foreground_process_pid) {
+        foreground_process_pid = SHELL_PID;
+    }
+
     if(killed_process->parent_pid == INIT_PID) { // si el padre es init, no hace falta mantener su pcb para guardarnos ret_value pues nadie le va a hacer waitpid
         scheduler_remove_process(killed_process->pid); 
     } else{ // si el padre no es init, no vamos a eliminarlo porque su padre podria hacerle un wait
@@ -537,6 +543,10 @@ void scheduler_exit_process(int64_t ret_value) {
     PCB * current_process = processes[current_pid];
     reparent_children_to_init(current_process->pid);
 
+    if (current_pid == foreground_process_pid) {
+        foreground_process_pid = SHELL_PID;
+    }
+
     if(current_process->parent_pid == INIT_PID) { // si el padre es init, no hace falta mantener su pcb para guardarnos ret_value pues nadie le va a hacer waitpid
         scheduler_remove_process(current_process->pid); 
     } else{ // si el padre no es init, no vamos a eliminarlo porque su padre podria hacerle un wait
@@ -632,11 +642,8 @@ int scheduler_kill_foreground_process(void) {
     }
 
     int result = scheduler_kill_process(foreground_process_pid);
+    // Después de matar el proceso en foreground, establecer la shell como proceso en foreground
+    foreground_process_pid = SHELL_PID;
     
-    // Limpiar el foreground
-    if (result == 0) {
-        foreground_process_pid = NO_PID;
-    }
-
     return result;
 }

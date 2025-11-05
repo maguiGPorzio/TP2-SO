@@ -144,7 +144,7 @@ static int try_external_program(char *name, int argc, char **argv, bool backgrou
     // Sigue acá si es foreground
     sys_set_foreground_process(pid);
     sys_wait(pid);
-    sys_set_foreground_process(NO_PID);
+    sys_clear_input_buffer(); // limpiar buffer de entrada por si quedó algo
     putchar('\n');
     return 1;
 }
@@ -224,11 +224,11 @@ static int execute_piped_commands(char **left_tokens, int left_count,
     // Esperar a que terminen ambos procesos
     sys_wait(pid_left);
     sys_wait(pid_right);
+    sys_clear_input_buffer(); // limpiar buffer de entrada por si quedó algo
+    putchar('\n');
     
     // Destruir el pipe
     sys_destroy_pipe(pipe_id);
-    
-    putchar('\n');
     return 1;
 }
 
