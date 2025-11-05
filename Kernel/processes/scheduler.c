@@ -87,7 +87,7 @@ int scheduler_set_foreground_process(pid_t pid) {
 // ============================================
 
 static int create_shell(){
-    PCB *pcb_shell = proc_create(SHELL_PID, (process_entry_t) SHELL_ADDRESS, 0, NULL, "shell", NULL);
+    PCB *pcb_shell = proc_create(SHELL_PID, (process_entry_t) SHELL_ADDRESS, 0, NULL, "shell", false, NULL);
     if (pcb_shell == NULL) {
         return -1;
     }
@@ -112,7 +112,7 @@ static int scheduler_add_init() {
         return -1;
     }
 
-    PCB *pcb_init = proc_create(INIT_PID, (process_entry_t) init, 0, NULL, "init", NULL);
+    PCB *pcb_init = proc_create(INIT_PID, (process_entry_t) init, 0, NULL, "init", false, NULL);
     if (pcb_init == NULL) {
         return -1;
     }
@@ -268,7 +268,7 @@ int scheduler_add_process(process_entry_t entry, int argc, const char **argv, co
         return -1;
     }
 
-    PCB *process = proc_create(pid, entry, argc, argv, name, fds);
+    PCB *process = proc_create(pid, entry, argc, argv, name, true, fds);
     if (process == NULL) {
         return -1;
     }
@@ -375,6 +375,11 @@ int scheduler_kill_process(pid_t pid) {
     if (!killed_process) {
         return -1;
     }
+
+    if (!killed_process->killable) {
+        return -1;
+    }
+
     reparent_children_to_init(killed_process->pid);
 
     if (pid == foreground_process_pid) {

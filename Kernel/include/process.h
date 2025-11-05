@@ -57,6 +57,7 @@ typedef struct PCB {
     // file descriptors
     int read_fd;
     int write_fd;
+    bool killable;                   // si false, el proceso no puede ser matado (init/shell)
 } PCB;
 
 
@@ -79,7 +80,7 @@ typedef struct process_info {
 // ============================================
 
 // Creación y limpieza (usadas por scheduler)
-PCB *proc_create(int pid, process_entry_t entry, int argc, const char **argv, const char *name, int fds[2]);
+PCB *proc_create(int pid, process_entry_t entry, int argc, const char **argv, const char *name, bool killable, int fds[2]);
 void free_process_resources(PCB *p);
 
 #endif // PROCESS_H

@@ -18,7 +18,7 @@ static void process_caller(int pid);
 //         LIFECYCLE DE PROCESOS
 // ============================================
 PCB* proc_create(int pid, process_entry_t entry, int argc, const char **argv,
-                const char *name, int fds[2]) {
+                const char *name, bool killable, int fds[2]) {
 
     if (!entry || !name || argc < 0) {
         return NULL;
@@ -42,6 +42,7 @@ PCB* proc_create(int pid, process_entry_t entry, int argc, const char **argv,
     p->entry = entry;
     p->return_value = 0; // TODO: FIJARSE COMO INCIIALIZARLO
     p->waiting_on = NO_PID;
+    p->killable = killable;
 
     // ============================
     // Pila del proceso
