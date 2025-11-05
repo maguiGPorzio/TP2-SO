@@ -49,19 +49,7 @@ int block(int argc, char *argv[]) {
         printf("Process %u (%s) is already BLOCKED.\n", (unsigned)pid, target->name);
         
     } else {
-        const char *status_name;
-        switch (target->status) {
-            case PS_RUNNING:
-                status_name = "RUNNING";
-                break;
-            case PS_TERMINATED:
-                status_name = "TERMINATED";
-                break;
-            default:
-                status_name = "UNKNOWN";
-                break;
-        }
-        printf("Error: Process %u is %s, cannot change state.\n", (unsigned)pid, status_name);
+        printf("Error: Process %u is %s, cannot change state.\n", (unsigned)pid, target->status == PS_RUNNING ? "RUNNING" : "TERMINATED");
         return -1;
     }
     
