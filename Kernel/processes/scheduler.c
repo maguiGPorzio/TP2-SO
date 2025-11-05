@@ -367,17 +367,21 @@ void scheduler_yield(void) {
 }
 
 int scheduler_kill_process(pid_t pid) {
-    if(!scheduler_initialized || !pid_is_valid(pid)) {
-        return -1;
+    if(!scheduler_initialized) {
+        return -1; // Scheduler not initialized
+    }
+    
+    if (!pid_is_valid(pid)) {
+        return -2; // Invalid PID
     }
     
     PCB *killed_process = processes[pid];
     if (!killed_process) {
-        return -1;
+        return -3; // No process found with this PID
     }
 
     if (!killed_process->killable) {
-        return -1;
+        return -4; // Process is protected (init or shell)
     }
 
     reparent_children_to_init(killed_process->pid);

@@ -415,20 +415,23 @@ static void kill_process(int argc, char * argv[]) {
     char *pid_str = argv[0];
     int pid = satoi(pid_str);
     
-    if (pid <= 0) {
-        print_err("Error: invalid PID '");
-        print_err(pid_str);
-        print_err("'\n");
-        return;
-    }
-    
     // Llamar la syscall para matar el proceso
     int result = sys_kill(pid);
-    
-    if (result < 0) {
-        print_err("Error: failed to kill process ");
-        print_err(pid_str);
-        print_err("\n");
+
+    // Imprimir mensajes específicos según el código de error
+    switch (result) {
+        case -1:
+            print_err("[ERROR] Scheduler not initialized\n");
+            break;
+        case -2:
+            print_err("[ERROR] Invalid PID\n");
+            break;
+        case -3:
+            print_err("[ERROR] No process found with that PID\n");
+            break;
+        case -4:
+            print_err("[ERROR] Cannot kill process: protected process (init or shell)\n");
+            break;
     }
 }
 

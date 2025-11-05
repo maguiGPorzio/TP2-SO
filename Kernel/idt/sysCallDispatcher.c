@@ -254,7 +254,7 @@ static int64_t sys_getpid(void) {
 
 // Mata un proceso por PID
 static int64_t sys_kill(int pid) {
-    return (int64_t)scheduler_kill_process(pid);
+    return scheduler_kill_process(pid);
 }
 
 // Bloquea un proceso por PID
