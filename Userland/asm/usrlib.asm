@@ -8,7 +8,7 @@ global  sys_malloc, sys_free, sys_memstatus
 global  sys_create_process, sys_exit_current, sys_getpid, sys_kill, sys_block, sys_unblock, sys_wait, sys_nice, sys_processes_info, sys_yield
 global sys_sem_open,sys_sem_close,sys_sem_wait,sys_sem_post
 global sys_create_pipe, sys_destroy_pipe
-global sys_set_foreground_process, sys_adopt_init_as_parent
+global sys_set_foreground_process, sys_adopt_init_as_parent, sys_get_foreground_process
 global generate_invalid_opcode
 global printf
 global scanf
@@ -198,6 +198,10 @@ sys_set_foreground_process:
 ; 43 - int sys_adopt_init_as_parent(int pid)
 sys_adopt_init_as_parent:
     SYSCALL 43
+
+; 44 - int sys_get_foreground_process(void)
+sys_get_foreground_process:
+    SYSCALL 44
 
 generate_invalid_opcode:
     ud2         ; Genera excepción de opcode inválido

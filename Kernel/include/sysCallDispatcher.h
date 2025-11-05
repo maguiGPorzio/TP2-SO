@@ -60,5 +60,5 @@ static void sys_destroy_pipe(int fd);
 
 static int sys_set_foreground_process(int pid);
 static int sys_adopt_init_as_parent(int pid);
-
+static int sys_get_foreground_process(void);
 #endif

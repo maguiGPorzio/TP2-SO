@@ -68,7 +68,8 @@ void * syscalls[] = {
     &sys_destroy_pipe,        // 41
 
     &sys_set_foreground_process, // 42
-    &sys_adopt_init_as_parent  // 43
+    &sys_adopt_init_as_parent,   // 43
+    &sys_get_foreground_process  // 44
 };
 
 static uint64_t sys_regs(char * buffer) {
@@ -309,6 +310,11 @@ static void sys_destroy_pipe(int fd) {
 static int sys_set_foreground_process(int pid) {
     // scheduler_set_foreground_process devuelve 0/-1 según éxito
     return scheduler_set_foreground_process((pid_t)pid);
+}
+
+static int sys_get_foreground_process(void) {
+    // scheduler_get_foreground_pid devuelve el PID del proceso en foreground o NO_PID
+    return scheduler_get_foreground_pid();
 }
 
 static int sys_adopt_init_as_parent(int pid) {
