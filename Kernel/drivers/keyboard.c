@@ -34,7 +34,7 @@ static const char lower_keys[] = {
       0,    0,   0,   0,   0,   0,   0,   0,  0,    0,   0,   0,    0,   0,
 };
 
-static const char upperKeys[] = {
+static const char upper_keys[] = {
       0,   27, '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '+',
    '\b', '\t', 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '{', '}',
    '\n',    0, 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ':', '"', '~',
@@ -44,7 +44,7 @@ static const char upperKeys[] = {
       0,   0,    0,   0,   0,   0
 };
 
-static const char * scancodeToAscii[] = {lower_keys, upperKeys};
+static const char * scancode_to_ascii[] = {lower_keys, upper_keys};
 
 static uint8_t pressed_keys[LETTERS] = {0};
 
@@ -123,9 +123,9 @@ void handlePressedKey() {
     else {
         int index;                      
         char raw = lower_keys[scancode]; 
-        int isLetter = (raw >= 'a' && raw <= 'z');  
+        int is_letter = (raw >= 'a' && raw <= 'z');  
 
-        if (isLetter && raw == 'c' && control) {
+        if (is_letter && raw == 'c' && control) {
             if (!pressed_keys['c' - 'a']) {            // para que solo se llame una vez
                 scheduler_kill_foreground_process();
             }
@@ -133,15 +133,15 @@ void handlePressedKey() {
             return;                                   // para no meter la 'c' en el buffer
         }
 
-        if (isLetter) {
+        if (is_letter) {
             index = shift ^ caps_lock;
             pressed_keys[raw-'a'] = 1;
         } else {
             index = shift;                      
         }
 
-        writeBuffer(scancodeToAscii[index][scancode]);
-		// vdPutChar(scancodeToAscii[index][scancode], 0xffffff);
+        writeBuffer(scancode_to_ascii[index][scancode]);
+		// vdPutChar(scancode_to_ascii[index][scancode], 0xffffff);
     }
 
     return;
