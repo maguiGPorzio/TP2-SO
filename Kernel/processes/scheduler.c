@@ -2,6 +2,7 @@
 #include "process.h" 
 #include "lib.h"
 #include "queue.h"
+#include "pipes.h"
 #include "interrupts.h" // lo incluí para usar _hlt()
 #include "videoDriver.h"
 #include <stddef.h>
@@ -390,7 +391,12 @@ int scheduler_kill_process(pid_t pid) {
         foreground_process_pid = SHELL_PID;
     }
 
-    if(killed_process->parent_pid == INIT_PID) { // si el padre es init, no hace falta mantener su pcb para guardarnos ret_value pues nadie le va a hacer waitpid
+    killed_process->status = PS_TERMINATED;
+    killed_process->return_value = KILLED_RET_VALUE;
+
+    pipe_on_process_killed(killed_process->pid);
+
+    if(killed_process->parent_pid == INIT_PID) {
         scheduler_remove_process(killed_process->pid); 
     } else{ // si el padre no es init, no vamos a eliminarlo porque su padre podria hacerle un wait
         // Lo sacamos de la cola de procesos ready para que no vuelva a correr PERO NO  del array de procesos (para que el padre pueda acceder a su ret_value)
@@ -403,11 +409,9 @@ int scheduler_kill_process(pid_t pid) {
         killed_process->return_value = KILLED_RET_VALUE;
         PCB* parent = processes[killed_process->parent_pid];
 
-        // Si el padre estaba bloqueado haciendo waitpid, lo desbloqueamos
-        if (parent->status == PS_BLOCKED && parent->waiting_on == killed_process->pid) {
+        if (parent != NULL && parent->status == PS_BLOCKED && parent->waiting_on == killed_process->pid) {
             scheduler_unblock_process(parent->pid);
         }
-    
     }
     if(pid == current_pid){
         scheduler_yield();
