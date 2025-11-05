@@ -411,6 +411,12 @@ static void kill_process(int argc, char * argv[]) {
         return;
     }
     
+    if (argc > 1) {
+        print_err("Error: kill takes exactly one argument\n");
+        print_err("Usage: kill <pid>\n");
+        return;
+    }
+    
     // Parsear el PID desde el string usando satoi
     char *pid_str = argv[0];
     int pid = satoi(pid_str);
