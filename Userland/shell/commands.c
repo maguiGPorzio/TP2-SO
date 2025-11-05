@@ -15,6 +15,7 @@
 static void cls(int argc, char * argv[]);
 static void help(int argc, char * argv[]);
 static void test_runner(int argc, char * argv[]);
+static void kill_process(int argc, char * argv[]);
 static void print_test_use();
 
 static bool is_cmd_background(char *line);
@@ -22,6 +23,7 @@ static bool is_cmd_background(char *line);
 static BuiltinCommand builtins[] = {
     { "clear", "clears the screen", &cls },
     { "help", "provides information about available commands", &help },
+    { "kill", "kills a process by PID", &kill_process },
     { "test", "runs a test, run 'test' to see more information about its use", &test_runner },
 
     { NULL, NULL, NULL }
@@ -151,7 +153,7 @@ static int try_external_program(char *name, int argc, char **argv, bool backgrou
 
 // Ejecuta dos comandos conectados por pipe: left_cmd | right_cmd
 static int execute_piped_commands(char **left_tokens, int left_count, 
-                                    char **right_tokens, int right_count) {
+                                    char **right_tokens, int right_count, bool background) {
     // Validar que ambos comandos existen
     char *left_cmd = left_tokens[0];
     char *right_cmd = right_tokens[0];
@@ -221,6 +223,16 @@ static int execute_piped_commands(char **left_tokens, int left_count,
         return 0;
     }
     
+    if (background) {
+        // Background: hacer huérfanos a ambos procesos
+        sys_adopt_init_as_parent(pid_left);
+        sys_adopt_init_as_parent(pid_right);
+        return 1;
+    }
+    
+    // Foreground: establecer el último proceso como foreground para poder matarlo con Ctrl+C
+    sys_set_foreground_process(pid_right);
+    
     // Esperar a que terminen ambos procesos
     sys_wait(pid_left);
     sys_wait(pid_right);
@@ -284,8 +296,8 @@ void process_line(char *line) {
         char **right_tokens = &tokens[pipe_idx + 1];
         int right_count = token_count - pipe_idx - 1;
         
-        // Ejecutar con pipe
-        execute_piped_commands(left_tokens, left_count, right_tokens, right_count);
+        // Ejecutar con pipe (pasando el flag background)
+        execute_piped_commands(left_tokens, left_count, right_tokens, right_count, background);
         return;
     }
     
@@ -390,6 +402,34 @@ static void test_runner(int argc, char * argv[]) {
     
     sys_wait(pid);
     putchar('\n');
+}
+
+static void kill_process(int argc, char * argv[]) {
+    if (argc == 0) {
+        print_err("Error: kill requires a PID\n");
+        print_err("Usage: kill <pid>\n");
+        return;
+    }
+    
+    // Parsear el PID desde el string usando satoi
+    char *pid_str = argv[0];
+    int pid = satoi(pid_str);
+    
+    if (pid <= 0) {
+        print_err("Error: invalid PID '");
+        print_err(pid_str);
+        print_err("'\n");
+        return;
+    }
+    
+    // Llamar la syscall para matar el proceso
+    int result = sys_kill(pid);
+    
+    if (result < 0) {
+        print_err("Error: failed to kill process ");
+        print_err(pid_str);
+        print_err("\n");
+    }
 }
 
 static void print_test_use() {
