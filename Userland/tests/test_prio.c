@@ -25,16 +25,17 @@ int test_prio(int argc, char *argv[]) {
   uint64_t i;
 
   if (argc != 1) {
-    printf("Error: test_prio requires exactly 1 argument\n");
-    printf("Usage: test prio <max_iterations>\n");
-    printf("  max_iterations: number to count up to (affects duration)\n");
-    printf("Example: test prio 100000000\n");
+    print_err("Error: test_prio requires exactly 1 argument\n");
+    print_err("Usage: test prio <max_iterations>\n");
+    print_err("  max_iterations: number to count up to (affects duration)\n");
+    print_err("Example: test prio 100000000\n");
     return -1;
   }
 
   if ((max_value = satoi(argv[0])) <= 0) {
-    printf("Error: invalid max_iterations value '%s'\n", argv[0]);
-    printf("max_iterations must be a positive integer\n");
+    print_err("Error: invalid max_iterations value ");
+    print_err(argv[0]);
+    print_err("\nmax_iterations must be a positive integer\n");
     return -1;
   }
 

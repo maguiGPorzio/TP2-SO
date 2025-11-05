@@ -20,16 +20,17 @@ int test_mm(int argc, char * argv[]) {
   uint64_t max_memory;
 
   if (argc != 1) {
-    printf("Error: test_mm requires exactly 1 argument\n");
-    printf("Usage: test mm <max_memory>\n");
-    printf("  max_memory: maximum bytes to allocate per iteration\n");
-    printf("Example: test mm 10485760  (10MB)\n");
+    print_err("Error: test_mm requires exactly 1 argument\n");
+    print_err("Usage: test mm <max_memory>\n");
+    print_err("  max_memory: maximum bytes to allocate per iteration\n");
+    print_err("Example: test mm 10485760  (10MB)\n");
     return -1;
   }
 
   if ((max_memory = satoi(argv[0])) <= 0) {
-    printf("Error: invalid max_memory value '%s'\n", argv[0]);
-    printf("max_memory must be a positive integer\n");
+    print_err("Error: invalid max_memory value ");
+    print_err(argv[0]);
+    printf("\nmax_memory must be a positive integer\n");
     return -1;
   }
 

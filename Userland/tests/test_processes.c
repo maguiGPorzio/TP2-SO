@@ -19,16 +19,17 @@ int test_processes(int argc, char *argv[]) {
   const char *argvAux[] = {0};
 
   if (argc != 1) {
-    printf("Error: test_processes requires exactly 1 argument\n");
-    printf("Usage: test processes <max_processes>\n");
-    printf("  max_processes: number of processes to create and manage\n");
-    printf("Example: test processes 10\n");
+    print_err("Error: test_processes requires exactly 1 argument\n");
+    print_err("Usage: test processes <max_processes>\n");
+    print_err("  max_processes: number of processes to create and manage\n");
+    print_err("Example: test processes 10\n");
     return -1;
   }
 
   if ((max_processes = satoi(argv[0])) <= 0) {
-    printf("Error: invalid max_processes value '%s'\n", argv[0]);
-    printf("max_processes must be a positive integer\n");
+    printf("Error: invalid max_processes value ");
+    print_err(argv[0]);
+    printf("\nmax_processes must be a positive integer\n");
     return -1;
   }
 
@@ -41,7 +42,7 @@ int test_processes(int argc, char *argv[]) {
       p_rqs[rq].pid = sys_create_process(&endless_loop, 0, argvAux, "endless_loop", NULL);
 
       if (p_rqs[rq].pid == -1) {
-        printf("test_processes: ERROR creating process\n");
+        print_err("test_processes: ERROR creating process\n");
         return -1;
       } else {
         p_rqs[rq].state = RUNNING;
@@ -59,7 +60,7 @@ int test_processes(int argc, char *argv[]) {
           case 0:
             if (p_rqs[rq].state == RUNNING || p_rqs[rq].state == BLOCKED) {
               if (sys_kill(p_rqs[rq].pid) == -1) {
-                printf("test_processes: ERROR killing process\n");
+                print_err("test_processes: ERROR killing process\n");
                 return -1;
               }
               sys_wait(p_rqs[rq].pid); // lo agregue yo asi se le liberan los recursos al pobre hombre
@@ -71,7 +72,7 @@ int test_processes(int argc, char *argv[]) {
           case 1:
             if (p_rqs[rq].state == RUNNING) {
               if (sys_block(p_rqs[rq].pid) == -1) {
-                printf("test_processes: ERROR blocking process\n");
+                print_err("test_processes: ERROR blocking process\n");
                 return -1;
               }
               p_rqs[rq].state = BLOCKED;
@@ -84,7 +85,7 @@ int test_processes(int argc, char *argv[]) {
       for (rq = 0; rq < max_processes; rq++)
         if (p_rqs[rq].state == BLOCKED && GetUniform(100) % 2) {
           if (sys_unblock(p_rqs[rq].pid) == -1) {
-            printf("test_processes: ERROR unblocking process\n");
+            print_err("test_processes: ERROR unblocking process\n");
             return -1;
           }
           p_rqs[rq].state = RUNNING;

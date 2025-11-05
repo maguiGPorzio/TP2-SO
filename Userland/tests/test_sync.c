@@ -30,7 +30,7 @@ static uint64_t my_process_inc(uint64_t argc, char *argv[]) {
 
   if (use_sem)
     if (sys_sem_open(SEM_ID, 1) == -1) {
-      printf("test_sync: ERROR opening semaphore\n");
+      print_err("test_sync: ERROR opening semaphore\n");
       return -1;
     }
 
@@ -53,12 +53,12 @@ int test_sync(int argc, char *argv[]) {
   uint64_t pids[2 * TOTAL_PAIR_PROCESSES];
 
   if (argc != 2) {
-    printf("Error: test_sync requires exactly 2 arguments\n");
-    printf("Usage: test sync <iterations> <use_semaphore>\n");
-    printf("  iterations: number of increments/decrements per process\n");
-    printf("  use_semaphore: 1 to use semaphores (synchronized), 0 for no sync (race condition)\n");
-    printf("Example: test sync 10000 0  (no sync, should fail)\n");
-    printf("Example: test sync 10000 1  (with sync, should succeed)\n");
+    print_err("Error: test_sync requires exactly 2 arguments\n");
+    print_err("Usage: test sync <iterations> <use_semaphore>\n");
+    print_err("  iterations: number of increments/decrements per process\n");
+    print_err("  use_semaphore: 1 to use semaphores (synchronized), 0 for no sync (race condition)\n");
+    print_err("Example: test sync 10000 0  (no sync, should fail)\n");
+    print_err("Example: test sync 10000 1  (with sync, should succeed)\n");
     return -1;
   }
 
