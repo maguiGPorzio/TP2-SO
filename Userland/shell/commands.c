@@ -41,6 +41,7 @@ static ExternalProgram programs[] = {
     { "ps", "prints to STDOUT information about current processes", &ps_main },
     { "printa", "prints the letter 'a' indefinitely to STDOUT", &print_a_main },
     { "printb", "prints the letter 'b' indefinitely to STDOUT", &print_b_main },
+    { "text", "lo puse para probar wc", &text_main },
     { "loop", "runs an infinite loop printing dots to STDOUT", &loop_main },
     { "nice", "changes the priority of a process", &nice_main },
     { "wc", "counts the amount of lines of the input", &wc_main },

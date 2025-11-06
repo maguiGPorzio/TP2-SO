@@ -68,9 +68,6 @@ static int get_idx_from_fd(int fd) {
     return (idx < 0 || idx >= MAX_PIPES) ? -1 : idx;
 }
 
-
-
-
 int init_pipes() {
     free_indexes = q_init();
     if (!free_indexes) {
