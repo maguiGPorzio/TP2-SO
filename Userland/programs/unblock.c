@@ -42,8 +42,7 @@ int unblock(int argc, char *argv[]) {
             printf("Error: Failed to unblock process %u.\n", (unsigned)pid);
             return -1;
         }
-        printf("Process %u (%s) changed from BLOCKED to READY.\n", 
-               (unsigned)pid, target->name);
+        printf("Process %u (%s) changed from BLOCKED to READY.\n", (unsigned)pid, target->name);
 
     } else if (target->status == PS_RUNNING || target->status == PS_READY) {
         printf("Process %u (%s) is already %s.\n", (unsigned)pid, target->name, "READY");

@@ -43,6 +43,8 @@ ponerle flechita para arriba guardando el ultimo comando
 
 que no se le pueda hacer & a red por ejemplo
 
+cambiar los -1 por error en los programas que hizo magui x lo menos
+
 
 
 -- ESTILO
