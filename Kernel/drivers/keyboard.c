@@ -4,6 +4,7 @@
 #include "videoDriver.h"
 #include "synchro.h"
 #include "scheduler.h"
+#include "pipes.h"
 
 #define KEYBOARD_SEM_NAME "keyboard"
 
@@ -139,6 +140,24 @@ void handlePressedKey() {
             }
             pressed_keys['c' - 'a'] = 1;               // marcamos como presionada
             return;                                   // para no meter la 'c' en el buffer
+        }
+
+        if (is_letter && raw == 'd' && control) {
+            if (!pressed_keys['d' - 'a']) {            // para que solo se llame una vez
+                pid_t fg_pid = scheduler_get_foreground_pid();
+                PCB * fg_process = scheduler_get_process(fg_pid);
+                if (fg_process){
+                    if(fg_process->read_fd == STDIN) {
+                    writeBuffer(EOF);
+                    } else{
+                        char c = EOF;
+                        write_pipe(fg_process->read_fd + 1, &c, 1);
+                    }
+
+                }
+            }
+            pressed_keys['d' - 'a'] = 1;               // marcamos como presionada
+            return;                                   // para no meter la 'd' en el buffer
         }
 
         if (is_letter) {
