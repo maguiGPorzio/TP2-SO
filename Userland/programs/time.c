@@ -23,5 +23,5 @@ int time_main(int argc, char *argv[]) {
     print(output_buf);
     putchar(EOF);
     
-    return 0;
+    return OK;
 }

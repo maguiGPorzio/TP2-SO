@@ -24,6 +24,9 @@ GLOBAL setup_initial_stack
 
 GLOBAL timer_tick ; simula un tick del timer
 
+GLOBAL _cli
+GLOBAL _sti
+
 EXTERN SNAPSHOT_KEY
 EXTERN irqDispatcher
 EXTERN exceptionDispatcher

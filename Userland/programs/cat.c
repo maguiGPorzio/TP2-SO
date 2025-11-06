@@ -6,5 +6,5 @@ int cat_main(int argc, char * argv[]) {
         putchar(' ');
     }
     putchar(EOF);
-    return 0;
+    return OK;
 }
