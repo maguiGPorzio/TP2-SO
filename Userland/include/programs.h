@@ -12,5 +12,6 @@ int rainbow_main(int argc, char *argv[]);
 int mem(int argc, char *argv[]);
 int block(int argc, char *argv[]);
 int unblock(int argc, char *argv[]);
+int filter(int argc, char *argv[]);
 
 #endif

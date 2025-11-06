@@ -43,6 +43,7 @@ static ExternalProgram programs[] = {
     { "mem", "prints memory usage information", &mem},
     { "block", "blocks a running process", &block}, 
     { "unblock", "unblocks a blocked process", &unblock},
+    { "filter", "filters out vowels from input until '-' is encountered", &filter},
     { "test_mm", "runs an mm test", &test_mm},
     { "test_prio", "runs a priority test", &test_prio},
     { "test_processes", "runs an process test", &test_processes},
