@@ -57,5 +57,5 @@ int ps_main(int argc, char *argv[]) {
     }
     
     putchar(EOF);
-    return 0;
+    return OK;
 }

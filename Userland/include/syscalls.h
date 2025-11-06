@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#define OK 0
+#define ERROR -1
 #define EOF -1
 #define MAX_NAME_LENGTH 32
 #define MAX_PROCESSES 64

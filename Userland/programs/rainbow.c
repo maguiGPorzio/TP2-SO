@@ -12,7 +12,7 @@ int rainbow_main(int argc, char * argv[]) {
 
     }
 
-    return 0;
+    return OK;
 }
 
 static int get_next_fd(int fd) {
