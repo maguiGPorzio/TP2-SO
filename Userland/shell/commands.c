@@ -42,7 +42,7 @@ static ExternalProgram programs[] = {
     { "printa", "prints the letter 'a' indefinitely to STDOUT", &print_a_main },
     { "printb", "prints the letter 'b' indefinitely to STDOUT", &print_b_main },
     //{ "mem", "prints memory status to STDOUT", &mem_main },
-    //{ "loop", "runs an infinite loop printing dots to STDOUT", &loop_main },
+    { "loop", "runs an infinite loop printing dots to STDOUT", &loop_main },
     //{ "nice", "changes the priority of a process", &nice_main },
     //{ "block", "blocks a process by PID", &block_main },
     //{ "wc", "counts lines, words, and characters from STDIN", &wc_main },
