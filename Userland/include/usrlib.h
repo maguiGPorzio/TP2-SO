@@ -4,6 +4,9 @@
 #include <stdint.h>
 #include "syscalls.h"
 
+#define MIN_PRIORITY 1
+#define MAX_PRIORITY 5 // TODO: ver donde poner esto porque lo comparte con Kernel también
+
 
 #define REGSBUF_SIZE 800
 

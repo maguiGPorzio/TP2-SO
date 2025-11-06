@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include "memoryManager.h"
 #include "fds.h"
+#include "scheduler.h"
 
 #define PIPE_BUFFER_SIZE 1024
 #define MAX_PIPES 32
@@ -24,5 +25,7 @@ int write_pipe(int fd, char * buf, int count);
 
 // libera los recursos del pipe
 void destroy_pipe(int idx); 
+
+void pipe_on_process_killed(pid_t victim);
 
 #endif

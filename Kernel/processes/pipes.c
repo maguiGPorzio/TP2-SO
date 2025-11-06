@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include "pipes.h"
 #include "lib.h"
 #include "synchro.h"
@@ -16,6 +17,29 @@ typedef struct pipe {
 
 static pipe_t * pipes[MAX_PIPES] = {NULL};
 static queue_t free_indexes = NULL;
+
+static bool pipe_process_is_alive(pid_t pid) {
+    PCB *process = scheduler_get_process(pid);
+    return process != NULL && process->status != PS_TERMINATED;
+}
+
+static pid_t pipe_find_process_by_fd(int fd, bool match_read_fd) {
+    for (pid_t pid = 0; pid <= MAX_PID; pid++) {
+        PCB *process = scheduler_get_process(pid);
+        if (process == NULL || process->status == PS_TERMINATED) {
+            continue;
+        }
+
+        if (match_read_fd) {
+            if (process->read_fd == fd) {
+                return pid;
+            }
+        } else if (process->write_fd == fd) {
+            return pid;
+        }
+    }
+    return NO_PID;
+}
 
 
 static int get_free_idx() {
@@ -155,6 +179,47 @@ int write_pipe(int fd, char * buf, int count) {
     }
 
     return count;
+}
+
+void pipe_on_process_killed(pid_t victim) {
+    PCB *victim_process = scheduler_get_process(victim);
+    if (victim_process == NULL) {
+        return;
+    }
+
+    int victim_read_fd = victim_process->read_fd;
+    int victim_write_fd = victim_process->write_fd;
+
+    for (int i = 0; i < MAX_PIPES; i++) {
+        pipe_t *pipe = pipes[i];
+        if (pipe == NULL) {
+            continue;
+        }
+
+        bool victim_is_reader = (victim_read_fd == pipe->read_fd);
+        bool victim_is_writer = (victim_write_fd == pipe->write_fd);
+
+        if (!victim_is_reader && !victim_is_writer) {
+            continue;
+        }
+
+        if (victim_is_reader) {
+            pid_t writer_pid = pipe_find_process_by_fd(pipe->write_fd, false);
+            if (writer_pid != NO_PID && writer_pid != victim && pipe_process_is_alive(writer_pid)) {
+                scheduler_kill_process(writer_pid);
+            }
+        }
+
+        if (victim_is_writer) {
+            pid_t reader_pid = pipe_find_process_by_fd(pipe->read_fd, true);
+            if (reader_pid != NO_PID && reader_pid != victim && pipe_process_is_alive(reader_pid)) {
+                scheduler_kill_process(reader_pid);
+            }
+        }
+
+        // Destruir el pipe después de matar al otro proceso
+        destroy_pipe(i);
+    }
 }
 
 
