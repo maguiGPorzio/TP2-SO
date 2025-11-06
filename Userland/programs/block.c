@@ -12,46 +12,12 @@ int block(int argc, char *argv[]) {
         return -1;
     }
 
-    process_info_t buffer[MAX_PROCESSES];
-    int count = sys_processes_info(buffer, MAX_PROCESSES);
-    
-    if (count <= 0) {
-        print("Error: Could not retrieve process information.\n");
+    int result = sys_block(pid);
+    if (result != 0) {
+        printf("Failed to block process with PID %d\n", pid);
         return -1;
     }
-    
-    int found = 0;
-    process_info_t *target = NULL;
-    
-    for (int i = 0; i < count; i++) {
-        if (buffer[i].pid == pid) {
-            target = &buffer[i];
-            found = 1;
-            break;
-        }
-    }
-    
-    if (!found) {
-        printf("Error: Process with PID %u not found.\n", (unsigned)pid);
-        return -1;
-    }
-    
-    if (target->status == PS_READY) {
-        printf(target->name);
-        int ret = sys_block(pid);
-        if (ret < 0) {
-            printf("Error: Failed to block process %u.\n", (unsigned)pid);
-            return -1;
-        }
-        printf("Process %u (%s) changed from READY to BLOCKED.\n", (unsigned)pid, target->name);
-        
-    } else if (target->status == PS_BLOCKED) {
-        printf("Process %u (%s) is already BLOCKED.\n", (unsigned)pid, target->name);
-        
-    } else {
-        printf("Error: Process %u is %s, cannot change state.\n", (unsigned)pid, target->status == PS_RUNNING ? "RUNNING" : "TERMINATED");
-        return -1;
-    }
+    printf("Process with PID %d blocked successfully.\n", pid);
     
     return 0;
 }

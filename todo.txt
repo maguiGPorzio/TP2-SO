@@ -45,6 +45,8 @@ que no se le pueda hacer & a red por ejemplo
 
 cambiar los -1 por error en los programas que hizo magui x lo menos
 
+agregar en block y unblock para pedir el pid de la syscall actual y que si es el actual no se bloquee
+
 
 
 -- ESTILO
