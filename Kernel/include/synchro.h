@@ -10,6 +10,8 @@ typedef int lock_t;
 
 extern void acquire_lock(lock_t *lock);
 extern void release_lock(lock_t *lock);
+extern void _cli(void);
+extern void _sti(void);
 
 //Inicializa el sistema de semáforos al arrancar el kernel.
 void init_semaphore_manager(void);

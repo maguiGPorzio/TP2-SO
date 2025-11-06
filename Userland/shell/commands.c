@@ -40,10 +40,17 @@ static ExternalProgram programs[] = {
     { "date", "prints system date to STDOUT", &date_main },
     { "ps", "prints to STDOUT information about current processes", &ps_main },
     { "printa", "prints the letter 'a' indefinitely to STDOUT", &print_a_main },
+<<<<<<< HEAD
     { "printb", "prints the letter 'b' indefinitely to STDOUT", &print_b_main },
     { "loop", "runs an infinite loop printing dots to STDOUT", &loop_main },
     { "nice", "changes the priority of a process", &nice_main },
     //{ "wc", "falta ver que hace", &wc_main },
+=======
+    { "mem", "prints memory usage information", &mem},
+    { "block", "blocks a running process", &block}, 
+    { "unblock", "unblocks a blocked process", &unblock},
+    { "filter", "filters out vowels from input until '-' is encountered", &filter},
+>>>>>>> magui-userland
     { "test_mm", "runs an mm test", &test_mm},
     { "test_prio", "runs a priority test", &test_prio},
     { "test_processes", "runs an process test", &test_processes},

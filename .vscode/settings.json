@@ -15,6 +15,7 @@
         "process.h": "c",
         "syscalls.h": "c",
         "fds.h": "c",
-        "variant": "c"
+        "variant": "c",
+        "stddef.h": "c"
     }
 }
