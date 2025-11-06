@@ -43,11 +43,12 @@ static ExternalProgram programs[] = {
     { "printb", "prints the letter 'b' indefinitely to STDOUT", &print_b_main },
     { "loop", "runs an infinite loop printing dots to STDOUT", &loop_main },
     { "nice", "changes the priority of a process", &nice_main },
-    //{ "wc", "falta ver que hace", &wc_main },
+    { "wc", "counts the amount of lines of the input", &wc_main },
     { "test_mm", "runs an mm test", &test_mm},
     { "test_prio", "runs a priority test", &test_prio},
     { "test_processes", "runs an process test", &test_processes},
     { "test_sync", "runs a sync test", &test_sync},
+    { "mvar", "tests multi-variable synchronization", &mvar_main},
     { NULL, NULL }
 };
 
