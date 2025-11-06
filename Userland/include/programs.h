@@ -11,5 +11,6 @@ int date_main(int argc, char *argv[]);
 int ps_main(int argc, char *argv[]);
 int rainbow_main(int argc, char *argv[]);
 int loop_main(int argc, char *argv[]);
+int nice_main(int argc, char *argv[]);
 
 #endif

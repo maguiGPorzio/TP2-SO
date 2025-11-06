@@ -43,7 +43,7 @@ static ExternalProgram programs[] = {
     { "printb", "prints the letter 'b' indefinitely to STDOUT", &print_b_main },
     //{ "mem", "prints memory status to STDOUT", &mem_main },
     { "loop", "runs an infinite loop printing dots to STDOUT", &loop_main },
-    //{ "nice", "changes the priority of a process", &nice_main },
+    { "nice", "changes the priority of a process", &nice_main },
     //{ "block", "blocks a process by PID", &block_main },
     //{ "wc", "counts lines, words, and characters from STDIN", &wc_main },
     //{ "filter", "filters input from STDIN based on a keyword", &filter_main },
