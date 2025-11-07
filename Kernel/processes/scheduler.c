@@ -7,7 +7,7 @@
 #include "videoDriver.h"
 #include <stddef.h>
 
-//extern void timer_tick();
+extern void timer_tick();
 
 #define SHELL_ADDRESS ((void *) 0x400000)      // TODO: Esto ver si lo movemos a otro archivo (tipo memoryMap.h)
 
@@ -387,6 +387,8 @@ int scheduler_kill_process(pid_t pid) {
 
     reparent_children_to_init(killed_process->pid);
 
+    remove_process_from_all_semaphore_queues(killed_process->pid);
+
     if (pid == foreground_process_pid) {
         foreground_process_pid = SHELL_PID;
     }
@@ -559,6 +561,7 @@ void scheduler_exit_process(int64_t ret_value) {
     if (current_pid == foreground_process_pid) {
         foreground_process_pid = SHELL_PID;
     }
+    remove_process_from_all_semaphore_queues(current_process->pid);
 
     if(current_process->parent_pid == INIT_PID) { // si el padre es init, no hace falta mantener su pcb para guardarnos ret_value pues nadie le va a hacer waitpid
         scheduler_remove_process(current_process->pid); 

@@ -17,7 +17,7 @@ GLOBAL _irq128Handler
 GLOBAL _exception0Handler
 GLOBAL _exception6Handler
 
-GLOBAL getPressedKey
+GLOBAL get_pressed_key
 GLOBAL reg_array ; array donde se almacenan los registros cunado se toco ctrl
 
 GLOBAL setup_initial_stack 
@@ -33,7 +33,7 @@ EXTERN exceptionDispatcher
 EXTERN syscalls
 EXTERN current_kernel_rsp
 EXTERN switch_to_rsp
-EXTERN printRegisters
+EXTERN print_registers
 EXTERN getStackBase
 EXTERN main
 
@@ -94,7 +94,7 @@ SECTION .text
 %macro exceptionHandler 1
 	pushState
 
-	call printRegisters
+	call print_registers
 
 	mov rdi, %1 ; pasaje de parametro
 	call exceptionDispatcher
@@ -107,7 +107,7 @@ SECTION .text
 	iretq
 %endmacro
 
-getPressedKey:
+get_pressed_key:
 	mov rax, [pressed_key]
 	ret
 

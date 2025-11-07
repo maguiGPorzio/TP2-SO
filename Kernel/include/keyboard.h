@@ -17,20 +17,20 @@
 #define BUFFER_LENGTH 256
 #define LETTERS 26
 
-extern char getPressedKey();
+extern char get_pressed_key();
 extern uint64_t reg_array[]; 
 
 void init_keyboard_sem();
-void printRegisters();
+void print_registers();
 void clear_buffer();
-uint8_t getCharFromBuffer();
+uint8_t get_char_from_buffer();
 uint64_t read_keyboard_buffer(char * buff_copy, uint64_t count);
-void handlePressedKey();
-void storeSnapshot();
-uint64_t copyRegisters(char * copy);
-uint32_t uint64ToRegisterFormat(uint64_t value, char *dest);
+void handle_pressed_key();
+void store_snapshot();
+uint64_t copy_registers(char * copy);
+uint32_t uint64_to_register_format(uint64_t value, char *dest);
 uint8_t is_pressed_key(char c);
-void writeStringToBuffer(const char *str);
+void write_string_in_buffer(const char *str);
 
 #endif
 

@@ -40,21 +40,20 @@ static ExternalProgram programs[] = {
     { "date", "prints system date to STDOUT", &date_main },
     { "ps", "prints to STDOUT information about current processes", &ps_main },
     { "printa", "prints the letter 'a' indefinitely to STDOUT", &print_a_main },
-<<<<<<< HEAD
     { "printb", "prints the letter 'b' indefinitely to STDOUT", &print_b_main },
+    { "text", "lo puse para probar wc", &text_main },
     { "loop", "runs an infinite loop printing dots to STDOUT", &loop_main },
     { "nice", "changes the priority of a process", &nice_main },
-    //{ "wc", "falta ver que hace", &wc_main },
-=======
+    { "wc", "counts the amount of lines of the input", &wc_main },
     { "mem", "prints memory usage information", &mem},
     { "block", "blocks a running process", &block}, 
     { "unblock", "unblocks a blocked process", &unblock},
     { "filter", "filters out vowels from input until '-' is encountered", &filter},
->>>>>>> magui-userland
     { "test_mm", "runs an mm test", &test_mm},
     { "test_prio", "runs a priority test", &test_prio},
     { "test_processes", "runs an process test", &test_processes},
     { "test_sync", "runs a sync test", &test_sync},
+    { "mvar", "tests multi-variable synchronization", &mvar_main},
     { NULL, NULL }
 };
 
@@ -213,21 +212,9 @@ static int execute_piped_commands(char **left_tokens, int left_count,
     fds_right[1] = STDOUT;        // Escribe a STDOUT
     
     // Crear ambos procesos
-    int pid_left = sys_create_process(
-        left_entry,
-        left_argc,
-        (const char **)left_argv,
-        left_cmd,
-        fds_left
-    );
+    int pid_left = sys_create_process(left_entry, left_argc, (const char **)left_argv, left_cmd, fds_left);
     
-    int pid_right = sys_create_process(
-        right_entry,
-        right_argc,
-        (const char **)right_argv,
-        right_cmd,
-        fds_right
-    );
+    int pid_right = sys_create_process(right_entry, right_argc, (const char **)right_argv, right_cmd, fds_right);
     
     if (pid_left < 0 || pid_right < 0) {
         print_err("Failed to create piped processes\n");

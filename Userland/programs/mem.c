@@ -64,5 +64,5 @@ int mem(int argc, char *argv[]) {
 
     printf("Allocated blocks: %u\n", (unsigned)info.allocated_blocks);
 
-    return 0;
+    return OK;
 }

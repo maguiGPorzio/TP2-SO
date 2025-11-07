@@ -1,4 +1,4 @@
-GLOBAL printRegisters
+GLOBAL print_registers
 GLOBAL returnToUserland
 EXTERN print
 EXTERN printRegisterFormat
@@ -7,11 +7,11 @@ EXTERN main
 EXTERN getStackBase
 EXTERN vdSetTextSize
 EXTERN vdPrint
-EXTERN uint64ToRegisterFormat
+EXTERN uint64_to_register_format
 section .text
 
 
-printRegisters:
+print_registers:
     push rbp
     mov rbp, rsp
 
@@ -29,7 +29,7 @@ printRegisters:
     add r10, 8 ; avanza al siguiente índice
     mov rdi, [rbp+r10+8] ; valor del registro sacado del stack. Los registros están almacenados en el stack automáticamente cuando ocurre una excepción
     mov rsi, buffReg
-    call uint64ToRegisterFormat ; deja en buffReg el valor del registro en el formato correcto
+    call uint64_to_register_format ; deja en buffReg el valor del registro en el formato correcto
 
     mov rdi, buffReg
     mov rsi, 0xFF0000 

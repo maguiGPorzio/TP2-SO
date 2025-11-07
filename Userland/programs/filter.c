@@ -9,7 +9,7 @@ static int is_vowel(char c) {
 int filter(int argc, char *argv[]) {
     if (argc != 0) {
         fprint(STDERR, "Filter requires no arguments\n");
-        return -1;
+        return ERROR;
     }
 
    char c;
@@ -20,5 +20,5 @@ int filter(int argc, char *argv[]) {
         }
     }
 
-    return 0;
+    return OK;
 }

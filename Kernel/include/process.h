@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "queue.h"
 
 #define MAX_PROCESSES 64
 #define MAX_NAME_LENGTH 32
@@ -58,6 +59,10 @@ typedef struct PCB {
     int read_fd;
     int write_fd;
     bool killable;                   // si false, el proceso no puede ser matado (init/shell)
+
+    // queues 
+    queue_t memory_blocks_allocated; // lista de bloques de memoria asignados al proceso
+    queue_t semaphore;           // lista de pipes abiertos por el proceso
 } PCB;
 
 

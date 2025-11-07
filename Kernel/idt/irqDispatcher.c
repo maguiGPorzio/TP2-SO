@@ -22,5 +22,5 @@ uint64_t int_20(uint64_t rsp) {
 }
 
 void int_21() {
-	handlePressedKey();
+	handle_pressed_key();
 }

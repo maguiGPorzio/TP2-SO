@@ -6,5 +6,5 @@ int red_main(int argc, char * argv[]) {
         sys_write(STDERR, &c, 1);
     }
 
-    return 0;
+    return OK;
 }

@@ -73,7 +73,7 @@ void * syscalls[] = {
 };
 
 static uint64_t sys_regs(char * buffer) {
-    return copyRegisters(buffer);
+    return copy_registers(buffer);
 }
 
 // devuelve cuantos chars escribió

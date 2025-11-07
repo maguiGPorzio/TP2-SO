@@ -12,7 +12,7 @@
 typedef int pid_t;  
 
 #define MIN_PRIORITY 1
-#define MAX_PRIORITY 5
+#define MAX_PRIORITY 10
 #define DEFAULT_PRIORITY 3
 
 // ============================================

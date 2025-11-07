@@ -1,15 +1,15 @@
 GLOBAL cpuVendor
 GLOBAL getTime
-; GLOBAL getPressedKey
+; GLOBAL get_pressed_key
 GLOBAL snapshot
 GLOBAL port_reader
 GLOBAL port_writer
-GLOBAL getDayOfMonth
-GLOBAL getMonth
-GLOBAL getYear
-GLOBAL getSeconds
-GLOBAL getMinutes
-GLOBAL getHour
+GLOBAL get_day
+GLOBAL get_month
+GLOBAL get_year
+GLOBAL get_seconds
+GLOBAL get_minutes
+GLOBAL get_hour
 GLOBAL setTimerFreq
 
 extern store_snapshot
@@ -57,37 +57,37 @@ setTimerFreq:
     pop rbp
     ret
 
-getSeconds:
+get_seconds:
 	mov al, 0
 	out 0x70, al
 	in al, 0x71
 	ret
 
-getMinutes:
+get_minutes:
 	mov al, 2
 	out 0x70, al
 	in al, 0x71
 	ret
 
-getHour:
+get_hour:
 	mov al, 4
 	out 0x70, al
 	in al, 0x71
 	ret
 
-getDayOfMonth:
+get_day:
 	mov al, 7
 	out 0x70, al
 	in al, 0x71
 	ret
 
-getMonth:
+get_month:
 	mov al, 8
 	out 0x70, al
 	in al, 0x71
 	ret
 
-getYear:
+get_year:
 	mov al, 9
 	out 0x70, al
 	in al, 0x71
