@@ -23,7 +23,7 @@ uint16_t buffer_current_size = 0; // cantidad de caracteres en el buffer actual 
 static uint8_t buffer[BUFFER_LENGTH];
 static char reg_buff[800]; // ACA FIJARNOS QUÉ TAMAÑO NOS CONVIENE
 
-static void writeBuffer(unsigned char c);
+static void write_buffer(unsigned char c);
 
 static const char lower_keys[] = {
       0,   27, '1', '2', '3', '4', '5', '6', '7', '8', '9',  '0', '-', '=',
@@ -54,7 +54,7 @@ void init_keyboard_sem() {
     sem_open(KEYBOARD_SEM_NAME, 0);  // Empieza en 0 (sin caracteres disponibles)
 }
 // Static porque no queremos que se pueda acceder desde otro archivo
-static void writeBuffer(unsigned char c) {
+static void write_buffer(unsigned char c) {
     buffer[buffer_end] = c;
     buffer_end = (buffer_end + 1) % BUFFER_LENGTH; // si hay buffer overflow, se pisa lo del principio (jodete usuario)
     buffer_current_size = (buffer_current_size + 1) % BUFFER_LENGTH;
@@ -71,7 +71,7 @@ void clear_buffer() {
     sem_open(KEYBOARD_SEM_NAME, 0);
 }
 
-uint8_t getCharFromBuffer() {
+uint8_t get_char_from_buffer() {
 	if(buffer_current_size == 0){
 		return -1;
 	}
@@ -94,13 +94,13 @@ uint64_t read_keyboard_buffer (char * buff_copy, uint64_t count) {
 
     for (int i = 0; i < count; i++) {
         sem_wait(KEYBOARD_SEM_NAME);  // Bloquea hasta que haya un carácter disponible
-        buff_copy[i] = getCharFromBuffer();
+        buff_copy[i] = get_char_from_buffer();
     }
     return count;
 }
 
 
-void handlePressedKey() {
+void handle_pressed_key() {
     unsigned char scancode = getPressedKey(); // this function retrieves the pressed key's scancode
 
     if (scancode == LEFT_SHIFT || scancode == RIGHT_SHIFT){ 
@@ -113,7 +113,7 @@ void handlePressedKey() {
         control = 0;
     } else if (scancode == SNAPSHOT_KEY) {  // Usa la variable global
         copied_registers = 1;
-        storeSnapshot();
+        store_snapshot();
         return; 
     } else if (scancode == CAPS_LOCK) {
         caps_lock = (caps_lock+1)%2;
@@ -148,7 +148,7 @@ void handlePressedKey() {
                 PCB * fg_process = scheduler_get_process(fg_pid);
                 if (fg_process){
                     if(fg_process->read_fd == STDIN) {
-                    writeBuffer(EOF);
+                    write_buffer(EOF);
                     } else{
                         char c = EOF;
                         write_pipe(fg_process->read_fd + 1, &c, 1);
@@ -167,16 +167,16 @@ void handlePressedKey() {
             index = shift;                      
         }
 
-        writeBuffer(scancode_to_ascii[index][scancode]);
+        write_buffer(scancode_to_ascii[index][scancode]);
 		// vdPutChar(scancode_to_ascii[index][scancode], 0xffffff);
     }
 
     return;
 }
 
-void writeStringToBuffer(const char *str) {
+void write_string_in_buffer(const char *str) {
     while (*str) {
-        writeBuffer((unsigned char)*str);
+        write_buffer((unsigned char)*str);
         str++;
     }
 }
@@ -189,7 +189,7 @@ uint8_t is_pressed_key(char c) {
     return 0; // Si el char es inválido, retornamos 0
 }
 
-void storeSnapshot(){
+void store_snapshot(){
   char * reg_labels[] = {"RAX:    0x", "RBX:    0x", "RCX:    0x", "RDI:    0x", "RBP:    0x", "RDI:    0x", "RSI:    0x",  
     "R8:     0x", "R9:     0x", "R10:    0x", "R11:    0x", "R12:    0x", "R13:    0x", "R14:    0x", "R15:    0x","RIP:    0x","CS:     0x","RFLAGS: 0x","RSP:    0x", "SS:     0x", 0};
   uint32_t j = 0; //índice de reg_buff
@@ -201,15 +201,15 @@ void storeSnapshot(){
     }
 
     //Agregamos el nro al buffer. Quiero que todos me queden con 16 dígitos hexadecimales
-    j += uint64ToRegisterFormat(reg_array[i], reg_buff + j);
+    j += uint64_to_register_format(reg_array[i], reg_buff + j);
     reg_buff[j++] = '\n';
   }
   reg_buff[j] = 0;
-  // printRegisters();
+  // print_registers();
 }
 
 // devuelve la cantidad de caracteres escritos
-uint32_t uint64ToRegisterFormat(uint64_t value, char *dest) {
+uint32_t uint64_to_register_format(uint64_t value, char *dest) {
     int64_t zeros_to_pad = 16;
     uint64_t aux = value;
 
@@ -237,7 +237,7 @@ uint32_t uint64ToRegisterFormat(uint64_t value, char *dest) {
 
 //devuelve 1 si ya se llamo a ctrl s y 0 si todavia no se llamo
 //dejamos en copy un string con el nombre del registro y su valor (cada registro separado por un n)
-uint64_t copyRegisters(char * copy){
+uint64_t copy_registers(char * copy){
     if (!copied_registers){
         return 0;
     }
@@ -249,7 +249,7 @@ uint64_t copyRegisters(char * copy){
     return 1;
 }
 
-// void printRegisters() {
+// void print_registers() {
 //     ncClear();
 //     for (int i = 0; reg_buff[i] != 0; i++) {
 //         ncPrintChar(reg_buff[i]);

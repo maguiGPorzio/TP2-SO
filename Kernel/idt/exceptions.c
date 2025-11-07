@@ -27,7 +27,7 @@ static void excepHandler(char * msg){
 	_sti();
 	do{
 		_hlt();	
-	} while((c=getCharFromBuffer()) != '\n');
+	} while((c=get_char_from_buffer()) != '\n');
 	vdClear();
 }
 

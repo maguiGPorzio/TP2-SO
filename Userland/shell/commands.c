@@ -212,21 +212,9 @@ static int execute_piped_commands(char **left_tokens, int left_count,
     fds_right[1] = STDOUT;        // Escribe a STDOUT
     
     // Crear ambos procesos
-    int pid_left = sys_create_process(
-        left_entry,
-        left_argc,
-        (const char **)left_argv,
-        left_cmd,
-        fds_left
-    );
+    int pid_left = sys_create_process(left_entry, left_argc, (const char **)left_argv, left_cmd, fds_left);
     
-    int pid_right = sys_create_process(
-        right_entry,
-        right_argc,
-        (const char **)right_argv,
-        right_cmd,
-        fds_right
-    );
+    int pid_right = sys_create_process(right_entry, right_argc, (const char **)right_argv, right_cmd, fds_right);
     
     if (pid_left < 0 || pid_right < 0) {
         print_err("Failed to create piped processes\n");

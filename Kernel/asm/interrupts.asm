@@ -33,7 +33,7 @@ EXTERN exceptionDispatcher
 EXTERN syscalls
 EXTERN current_kernel_rsp
 EXTERN switch_to_rsp
-EXTERN printRegisters
+EXTERN print_registers
 EXTERN getStackBase
 EXTERN main
 
@@ -94,7 +94,7 @@ SECTION .text
 %macro exceptionHandler 1
 	pushState
 
-	call printRegisters
+	call print_registers
 
 	mov rdi, %1 ; pasaje de parametro
 	call exceptionDispatcher
