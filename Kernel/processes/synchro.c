@@ -50,7 +50,7 @@ static uint64_t pop_from_queue(semaphore_t *sem);
 static int add_to_queue(semaphore_t *sem, uint32_t pid);
 static semaphore_t *get_sem_by_name(const char *name);
 static int get_idx_by_name(const char *name);
-static int remove_process_from_queue(semaphore_t *sem, uint32_t pid);
+static int64_t sem_close_by_pid(char *name, uint32_t pid);
 
 static int pid_present_in_semaphore(semaphore_t *sem, uint32_t pid) {
     return sem->owner_pids[pid];
@@ -241,10 +241,10 @@ int remove_process_from_all_semaphore_queues(uint32_t pid) {
         if (sem == NULL) {
             continue;
         }
-        
-        acquire_lock(&sem->lock);
-        remove_process_from_queue(sem, pid);
-        release_lock(&sem->lock);
+
+        if (sem->owner_pids[pid]==1){
+            sem_close_by_pid(sem->name, pid);
+        }
     }
     
     return 0;
@@ -305,38 +305,34 @@ static semaphore_t *get_sem_by_name(const char *name) {
     return sem_manager->semaphores[idx];
 }
 
-static int remove_process_from_queue(semaphore_t *sem, uint32_t pid) {
-    if (sem->queue.size == 0) {
+static int64_t sem_close_by_pid(char *name, uint32_t pid) {
+    if (sem_manager == NULL || name == NULL) {
         return -1;
     }
     
-    uint32_t i = sem->queue.read_index;
-    uint32_t j = 0;
-    int found = -1;
-    
-    // Buscar el proceso en la cola
-    while (j < sem->queue.size) {
-        if (sem->queue.pids[i] == pid) {
-            found = i;
-            break;
-        }
-        i = (i + 1) % MAX_PROCESSES;
-        j++;
+    int idx = get_idx_by_name(name);
+    if (idx == -1) {
+        return -1;
     }
     
-    if (found == -1) {
-        return -1;  // No encontrado
+    semaphore_t *sem = sem_manager->semaphores[idx];
+    
+    acquire_lock(&sem->lock);
+    
+    if (sem->ref_count > 1) {
+        sem->ref_count--;
+        sem->owner_pids[pid] = 0;
+        release_lock(&sem->lock);
+        return 0;
     }
     
-    // Desplazar elementos para llenar el hueco
-    for (uint32_t k = found; k != sem->queue.write_index; k = (k + 1) % MAX_PROCESSES) {
-        uint32_t next = (k + 1) % MAX_PROCESSES;
-        sem->queue.pids[k] = sem->queue.pids[next];
-    }
-
-    //Es un truco matemático para evitar números negativos al retroceder en aritmética circular.
-    sem->queue.write_index = (sem->queue.write_index + MAX_PROCESSES - 1) % MAX_PROCESSES;
-    sem->queue.size--;
+    release_lock(&sem->lock);
+    
+    // Ultimo proceso usando el semaforo, destruirlo
+    MemoryManagerADT mm = get_kernel_memory_manager();
+    free_memory(mm, sem);
+    sem_manager->semaphores[idx] = NULL;
+    sem_manager->semaphore_count--;
     
     return 0;
 }
