@@ -2,12 +2,12 @@
 #include "videoDriver.h"
 #include "scheduler.h"
 
-extern uint8_t getHour();
-extern uint8_t getMinutes();
-extern uint8_t getSeconds();
-uint8_t getDayOfMonth();
-uint8_t getMonth();    
-uint8_t getYear();
+extern uint8_t get_hour();
+extern uint8_t get_minutes();
+extern uint8_t get_seconds();
+uint8_t get_day();
+uint8_t get_month();    
+uint8_t get_year();
 
 static uint64_t ticks = 0;
 
@@ -35,13 +35,13 @@ void sleep(int miliseconds) { // normaliza a 10 ms
 }
 
 void get_date(uint8_t * buffer){
-	buffer[0]=getDayOfMonth();
-	buffer[1]=getMonth();
-	buffer[2]=getYear();
+	buffer[0]=get_day();
+	buffer[1]=get_month();
+	buffer[2]=get_year();
 }
 
 void get_time(uint8_t * buffer){
-	buffer[0]=getHour();
-	buffer[1]=getMinutes();
-	buffer[2]=getSeconds();
+	buffer[0]=get_hour();
+	buffer[1]=get_minutes();
+	buffer[2]=get_seconds();
 }

@@ -9,7 +9,7 @@
 #define KEYBOARD_SEM_NAME "keyboard"
 
 // Variable global exportada para que ASM pueda accederla
-const uint8_t SNAPSHOT_KEY = LEFT_CONTROL;
+const uint8_t SNAPSHOT_KEY = LEFT_CONTROL; // TODO: cambiarlo por otra
 
 static int shift = 0 ;
 static int caps_lock = 0;
@@ -101,7 +101,7 @@ uint64_t read_keyboard_buffer (char * buff_copy, uint64_t count) {
 
 
 void handle_pressed_key() {
-    unsigned char scancode = getPressedKey(); // this function retrieves the pressed key's scancode
+    unsigned char scancode = get_pressed_key(); // this function retrieves the pressed key's scancode
 
     if (scancode == LEFT_SHIFT || scancode == RIGHT_SHIFT){ 
         shift = 1;

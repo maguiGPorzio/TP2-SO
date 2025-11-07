@@ -17,7 +17,7 @@ GLOBAL _irq128Handler
 GLOBAL _exception0Handler
 GLOBAL _exception6Handler
 
-GLOBAL getPressedKey
+GLOBAL get_pressed_key
 GLOBAL reg_array ; array donde se almacenan los registros cunado se toco ctrl
 
 GLOBAL setup_initial_stack 
@@ -107,7 +107,7 @@ SECTION .text
 	iretq
 %endmacro
 
-getPressedKey:
+get_pressed_key:
 	mov rax, [pressed_key]
 	ret
 

@@ -17,7 +17,7 @@
 #define BUFFER_LENGTH 256
 #define LETTERS 26
 
-extern char getPressedKey();
+extern char get_pressed_key();
 extern uint64_t reg_array[]; 
 
 void init_keyboard_sem();
