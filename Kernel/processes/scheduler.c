@@ -530,7 +530,7 @@ int scheduler_get_processes(process_info_t *buffer, int max_count) {
         PCB *p = processes[i];
         if (p) {
             buffer[count].pid = p->pid;
-            strncpy(buffer[count].name, p->name, MAX_NAME_LENGTH);
+            strncpy(buffer[count].name, p->name, MAX_PROCESS_NAME_LENGTH);
             buffer[count].status = p->status;
             buffer[count].priority = p->priority;
             buffer[count].parent_pid = p->parent_pid;
