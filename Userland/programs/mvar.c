@@ -1,6 +1,6 @@
 #include "usrlib.h"
 
-#define SEM_NAME_MAX 64
+#define MAX_SEM_NAME_LENGTH 64 // TODO: se comparte con Kernel
 #define SEM_PREFIX "mvar_"
 #define SEM_EMPTY_SUFFIX "empty_"
 #define SEM_FULL_SUFFIX  "full_"
@@ -13,10 +13,10 @@
 #define SLEEP_JITTER_MS 30
 
 static volatile char mvar_value = 0;
-static char sem_empty_name[SEM_NAME_MAX];
-static char sem_full_name[SEM_NAME_MAX];
+static char sem_empty_name[MAX_SEM_NAME_LENGTH];
+static char sem_full_name[MAX_SEM_NAME_LENGTH];
 
-static const int color_fds[COLOR_COUNT] = {STDGREEN, STDBLUE, STDMAGENTA, STDYELLOW};
+static const int color_fds[COLOR_COUNT] = {STDOUT, STDGREEN, STDBLUE, STDMAGENTA, STDYELLOW};
 
 static void build_sem_name(char *target, const char *suffix, uint64_t pid);
 static void setup_sem_names(void);
@@ -75,16 +75,16 @@ static void build_sem_name(char *target, const char *suffix, uint64_t pid) {
     int idx = 0;
     const char *prefix = SEM_PREFIX;
 
-    while (prefix[idx] != 0 && idx < SEM_NAME_MAX - 1) {
+    while (prefix[idx] != 0 && idx < MAX_SEM_NAME_LENGTH - 1) {
         target[idx] = prefix[idx];
         idx++;
     }
 
-    for (int i = 0; suffix[i] != 0 && idx < SEM_NAME_MAX - 1; i++) {
+    for (int i = 0; suffix[i] != 0 && idx < MAX_SEM_NAME_LENGTH - 1; i++) {
         target[idx++] = suffix[i];
     }
 
-    for (int i = 0; pid_buf[i] != 0 && idx < SEM_NAME_MAX - 1; i++) {
+    for (int i = 0; pid_buf[i] != 0 && idx < MAX_SEM_NAME_LENGTH - 1; i++) {
         target[idx++] = pid_buf[i];
     }
 
