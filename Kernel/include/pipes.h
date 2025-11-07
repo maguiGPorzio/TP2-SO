@@ -8,6 +8,7 @@
 
 #define PIPE_BUFFER_SIZE 1024
 #define MAX_PIPES 32
+#define MAX_PIPE_NAME_LENGTH 32
 #define SEM_NAME_SIZE 32
 #define EOF -1
 
@@ -25,6 +26,19 @@ int write_pipe(int fd, char * buf, int count);
 
 // libera los recursos del pipe
 void destroy_pipe(int idx); 
+
+// open para un pipe con nombre, si no existe lo crea y devuelve ambos fds
+// retorna -1 si el pipe existe pero ya cerró todos sus writers (protección EOF)
+int open_pipe(char * name, int fds[2]);
+
+// agrega al pipe un reader / writer segun el fd
+// retorna -1 si es write_fd y writer_count ya llegó a 0 (protección EOF)
+int open_fd(int fd);
+
+// sacar un reader / writer
+// si writer_count llega a 0, hace posts para despertar readers bloqueados
+// si ambos counts llegan a 0, destruye el pipe automáticamente
+int close_fd(int fd);
 
 void pipe_on_process_killed(pid_t victim);
 

@@ -1,15 +1,19 @@
 #include <stdbool.h>
 #include "pipes.h"
+#include "scheduler.h"
 #include "lib.h"
 #include "synchro.h"
 #include "queue.h"
 
 typedef struct pipe {
     char buffer[PIPE_BUFFER_SIZE]; // buffer circular
+    char name[MAX_PIPE_NAME_LENGTH];
     int read_fd;
     int write_fd;
     int read_idx;
     int write_idx;
+    int reader_count;
+    int writer_count;
     char read_sem[SEM_NAME_SIZE];
     char write_sem[SEM_NAME_SIZE];
 } pipe_t;
@@ -17,30 +21,6 @@ typedef struct pipe {
 
 static pipe_t * pipes[MAX_PIPES] = {NULL};
 static queue_t free_indexes = NULL;
-
-static bool pipe_process_is_alive(pid_t pid) {
-    PCB *process = scheduler_get_process(pid);
-    return process != NULL && process->status != PS_TERMINATED;
-}
-
-static pid_t pipe_find_process_by_fd(int fd, bool match_read_fd) {
-    for (pid_t pid = 0; pid <= MAX_PID; pid++) {
-        PCB *process = scheduler_get_process(pid);
-        if (process == NULL || process->status == PS_TERMINATED) {
-            continue;
-        }
-
-        if (match_read_fd) {
-            if (process->read_fd == fd) {
-                return pid;
-            }
-        } else if (process->write_fd == fd) {
-            return pid;
-        }
-    }
-    return NO_PID;
-}
-
 
 static int get_free_idx() {
     return q_poll(free_indexes);
@@ -97,6 +77,9 @@ int create_pipe(int fds[2]) {
 
     pipe->read_idx = 0;
     pipe->write_idx = 0;
+    pipe->reader_count = 1;
+    pipe->writer_count = 1;
+    pipe->name[0] = '\0';  // Pipe anónimo (sin nombre)
     
     // Asignar los FDs usando la nueva función
     pipe->read_fd = get_fd_from_idx(idx);      // FD par (lectura)
@@ -124,7 +107,139 @@ int create_pipe(int fds[2]) {
     }
 
     return idx;
+}
+
+// Busca un pipe por nombre, retorna su índice o -1 si no existe
+static int find_pipe_by_name(const char *name) {
+    if (name == NULL || name[0] == '\0') {
+        return -1;
+    }
     
+    for (int i = 0; i < MAX_PIPES; i++) {
+        if (pipes[i] != NULL && strcmp(pipes[i]->name, name) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+int open_pipe(char *name, int fds[2]) {
+    if (name == NULL || name[0] == '\0') {
+        return -1;  // Nombre inválido
+    }
+    
+    // Buscar si ya existe un pipe con ese nombre
+    int idx = find_pipe_by_name(name);
+    
+    if (idx >= 0) {
+        // Pipe ya existe, devolver sus FDs
+        pipe_t *pipe = pipes[idx];
+        
+        // Si el pipe ya cerró todos sus writers, no permitir reabrirlo
+        // (los readers pueden haber visto EOF)
+        if (pipe->writer_count == 0) {
+            return -1;
+        }
+        
+        fds[0] = pipe->read_fd;
+        fds[1] = pipe->write_fd;
+        pipe->reader_count++;
+        pipe->writer_count++;
+        return idx;
+    }
+    
+    // No existe, crear uno nuevo
+    idx = create_pipe(fds);
+    if (idx < 0) {
+        return -1;
+    }
+    
+    // Asignarle el nombre
+    pipe_t *pipe = pipes[idx];
+    strncpy(pipe->name, name, MAX_PIPE_NAME_LENGTH - 1);
+    pipe->name[MAX_PIPE_NAME_LENGTH - 1] = '\0';
+    
+    return idx;
+}
+
+int open_fd(int fd) {
+    int idx = get_idx_from_fd(fd);
+    if (idx < 0) {
+        return -1;
+    }
+    
+    pipe_t *pipe = pipes[idx];
+    if (pipe == NULL) {
+        return -1;
+    }
+
+    if (fd == pipe->read_fd) {
+        pipe->reader_count++;
+        return 1;
+    }
+
+    if (fd == pipe->write_fd) {
+        // Si ya no hay writers (llegó a 0), no permitir nuevos writers
+        // Esto evita problemas con EOF: ya se hicieron posts para despertar readers
+        // y permitir un nuevo writer podría causar inconsistencias
+        if (pipe->writer_count == 0) {
+            return -1;  // No se pueden agregar writers después de que todos cerraron
+        }
+        pipe->writer_count++;
+        return 1;
+    }
+    
+    return 0;
+}
+
+int close_fd(int fd) {
+    int idx = get_idx_from_fd(fd);
+    if (idx < 0) {
+        return -1;
+    }
+    
+    pipe_t *pipe = pipes[idx];
+    if (pipe == NULL) {
+        return -1;
+    }
+
+    if (fd == pipe->read_fd) {
+        if (pipe->reader_count > 0) {
+            pipe->reader_count--;
+        }
+        
+        // Si no quedan readers ni writers, destruir el pipe
+        if (pipe->reader_count == 0 && pipe->writer_count == 0) {
+            destroy_pipe(idx);
+        }
+        return 1;
+    }
+
+    if (fd == pipe->write_fd) {
+        if (pipe->writer_count > 0) {
+            pipe->writer_count--;
+            
+            // Si era el último writer, despertar a los readers bloqueados
+            // Les damos un "token" para que puedan despertar y verificar EOF
+            // Si hay datos en el buffer, estos posts se usarán para leer esos datos
+            // Si no hay datos, el reader verá EOF inmediatamente
+            if (pipe->writer_count == 0) {
+                // Despertar a todos los readers que puedan estar bloqueados
+                // Usamos reader_count como estimación de cuántos pueden estar esperando
+                for (int i = 0; i < pipe->reader_count; i++) {
+                    sem_post(pipe->read_sem);
+                }
+            }
+        }
+        
+        // Si no quedan readers ni writers, destruir el pipe
+        if (pipe->reader_count == 0 && pipe->writer_count == 0) {
+            destroy_pipe(idx);
+        }
+        return 1;
+    }
+    
+    return 0;
 }
 
 int read_pipe(int fd, char * buf, int count) {
@@ -141,16 +256,32 @@ int read_pipe(int fd, char * buf, int count) {
     if (fd == pipe->write_fd) { // no se puede leer en el extremo de escritura
         return -1;
     }
+    
+    // TODO: Validar que el proceso actual tenga este FD abierto
+    // Requiere implementar open_fds[] en el PCB
 
     for (int i = 0; i < count; i++) {
+        // Primero verificar EOF sin bloquear: si no hay writers y buffer vacío
+        if (pipe->writer_count == 0 && pipe->read_idx == pipe->write_idx) {
+            return i;  // EOF: retornar cuántos bytes se leyeron hasta ahora
+        }
+        
+        // Si hay writers o hay datos, intentar leer (puede bloquear)
         sem_wait(pipe->read_sem);
+        
+        // Re-verificar EOF después de despertar (por si el último writer cerró mientras esperábamos)
+        if (pipe->writer_count == 0 && pipe->read_idx == pipe->write_idx) {
+            // Re-post para que otros readers también puedan ver el EOF
+            sem_post(pipe->read_sem);
+            return i;  // EOF: retornar cuántos bytes se leyeron antes del EOF
+        }
+        
         buf[i] = pipe->buffer[pipe->read_idx];
         pipe->read_idx = (pipe->read_idx + 1) % PIPE_BUFFER_SIZE;
         sem_post(pipe->write_sem);
     }
 
     return count;
-
 }
 
 int write_pipe(int fd, char * buf, int count) {
@@ -167,6 +298,15 @@ int write_pipe(int fd, char * buf, int count) {
     if (fd == pipe->read_fd) { // no se puede escribir en el extremo de lectura
         return -1;
     }
+    
+    // Si no hay readers, retornar error (equivalente a SIGPIPE en UNIX)
+    if (pipe->reader_count == 0) {
+        return -1;
+    }
+    
+    // TODO: Validar que el proceso actual tenga este FD abierto
+    // Requiere implementar open_fds[] en el PCB
+    // Por ahora confiamos en que el proceso no intente escribir después de close_fd
 
     for (int i = 0; i < count; i++) {
         sem_wait(pipe->write_sem);
@@ -187,35 +327,14 @@ void pipe_on_process_killed(pid_t victim) {
     int victim_read_fd = victim_process->read_fd;
     int victim_write_fd = victim_process->write_fd;
 
-    for (int i = 0; i < MAX_PIPES; i++) {
-        pipe_t *pipe = pipes[i];
-        if (pipe == NULL) {
-            continue;
-        }
-
-        bool victim_is_reader = (victim_read_fd == pipe->read_fd);
-        bool victim_is_writer = (victim_write_fd == pipe->write_fd);
-
-        if (!victim_is_reader && !victim_is_writer) {
-            continue;
-        }
-
-        if (victim_is_reader) {
-            pid_t writer_pid = pipe_find_process_by_fd(pipe->write_fd, false);
-            if (writer_pid != NO_PID && writer_pid != victim && pipe_process_is_alive(writer_pid)) {
-                scheduler_kill_process(writer_pid);
-            }
-        }
-
-        if (victim_is_writer) {
-            pid_t reader_pid = pipe_find_process_by_fd(pipe->read_fd, true);
-            if (reader_pid != NO_PID && reader_pid != victim && pipe_process_is_alive(reader_pid)) {
-                scheduler_kill_process(reader_pid);
-            }
-        }
-
-        // Destruir el pipe después de matar al otro proceso
-        destroy_pipe(i);
+    // Cerrar los FDs que tenía abiertos la víctima
+    // close_fd() ya maneja la lógica de decrementar contadores y destruir si es necesario
+    if (victim_read_fd >= FIRST_FREE_FD) {
+        close_fd(victim_read_fd);
+    }
+    
+    if (victim_write_fd >= FIRST_FREE_FD) {
+        close_fd(victim_write_fd);
     }
 }
 
