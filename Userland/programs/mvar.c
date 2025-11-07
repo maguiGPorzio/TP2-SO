@@ -148,15 +148,12 @@ static int writer_process(int argc, char *argv[]) {
     }
 
     int idx = (int)satoi(argv[0]);
-    if (idx < 0 || idx >= (int)LETTER_POOL_SIZE) {
-        idx = 0;
-    }
+
     char letter = letter_for_writer(idx);
 
     while (1) {
         random_pause();
         sys_sem_wait(sem_empty_name);
-        /* No mutex used: write directly to the single mvar */
         mvar_value = letter;
         sys_sem_post(sem_full_name);
     }
@@ -174,16 +171,13 @@ static int reader_process(int argc, char *argv[]) {
     }
 
     int idx = (int)satoi(argv[0]);
-    if (idx < 0) {
-        idx = 0;
-    }
+    
     int color = color_fds[idx % COLOR_COUNT];
 
     while (1) {
         random_pause();
         sys_sem_wait(sem_full_name);
 
-        /* No mutex used: read and clear mvar directly */
         char c = mvar_value;
         mvar_value = 0;
 
