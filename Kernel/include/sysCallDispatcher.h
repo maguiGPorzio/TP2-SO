@@ -7,8 +7,8 @@
 #include "process.h"
 
 // pueden recibir hasta 3 argumentos
-static uint64_t sys_write(uint64_t fd, const char * buf, uint64_t count);
-static uint64_t sys_read(int fd, char * buf, uint64_t count);
+static int sys_write(uint64_t fd, const char * buf, uint64_t count);
+static int sys_read(int fd, char * buf, uint64_t count);
 static void sys_date(uint8_t * buffer);
 static void sys_time(uint8_t * buffer);
 static uint64_t sys_regs(char * buffer);

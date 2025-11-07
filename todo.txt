@@ -6,13 +6,10 @@ revisar lo que esta comentado en el test de memoria
 
 -- PROCESOS
 
-que init y la shell no se puedan matar (me parece lo mas simple)
-
-hacer lo de los processos en foreground / background
-
-ctrl+c y ctrl+d
-
 agregar al read de teclado validador de que el proceso que quiere leer sea el que este en foreground
+!!!!!!!!
+como esta implementado ahora hace que ande mal red & porque no esta devolviendo el eof
+!!!!!!!!
 
 limpieza de pipes abiertos cuando un proceso hace exit / lo matan -> ver con Rodri antes de implementar
 

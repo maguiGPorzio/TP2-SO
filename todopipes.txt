@@ -1,0 +1,28 @@
+-- pipes
+
+completar el struct
+
+open para pipes con nombre
+
+close de fds
+
+open de fds para kernel
+
+
+
+-- procesos
+
+agregar open fds al pcb
+
+agregar el tema de limpieza de recursos
+
+
+
+-- syscalls
+
+open para pipe con nombre
+
+close de un fd (me tengo que fijar que lo tenga abierto)
+
+
+

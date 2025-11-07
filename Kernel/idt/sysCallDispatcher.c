@@ -77,7 +77,7 @@ static uint64_t sys_regs(char * buffer) {
 }
 
 // devuelve cuantos chars escribió
-static uint64_t sys_write(uint64_t fd, const char * buffer, uint64_t count) {
+static int sys_write(uint64_t fd, const char * buffer, uint64_t count) {
 
     if (fd == STDOUT) { // que es para este tipo stdout?
         int pid = scheduler_get_current_pid();
@@ -102,7 +102,7 @@ static uint64_t sys_write(uint64_t fd, const char * buffer, uint64_t count) {
 }
 
 // leo hasta count
-static uint64_t sys_read(int fd, char * buffer, uint64_t count) {
+static int sys_read(int fd, char * buffer, uint64_t count) {
     if (fd == STDIN) { // que es para este tipo stdin?
         int pid = scheduler_get_current_pid();
         PCB * p = scheduler_get_process(pid);
