@@ -8,7 +8,7 @@ int date_main(int argc, char *argv[]) {
     char output_buf[10]; // dd/mm/yy\n\0
     
     for (int i = 0; i < 3; i++) {
-        uint64_t digits = num_to_str(buf[i], number_buf, 16);
+        uint64_t digits = num_to_str_base(buf[i], number_buf, 16);
         if (digits == 1) {
             output_buf[3*i] = '0';
             output_buf[3*i + 1] = number_buf[0];

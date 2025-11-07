@@ -1,6 +1,6 @@
 #include "usrlib.h"
 
-uint64_t num_to_str(uint64_t value, char * buffer, uint32_t base) {
+uint64_t num_to_str_base(uint64_t value, char * buffer, uint32_t base) {
 	char *p = buffer;
 	char *p1, *p2;
 	uint64_t digits = 0;

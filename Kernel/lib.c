@@ -118,7 +118,7 @@ char strlen(const char *str) {
 	return res;
 }
 
-uint64_t num_to_str(uint64_t value, char * buffer) {
+uint64_t decimal_to_str(uint64_t value, char * buffer) {
 	char *p = buffer;
 	char *p1, *p2;
 	uint64_t digits = 0;

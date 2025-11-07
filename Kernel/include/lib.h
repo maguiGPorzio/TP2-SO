@@ -14,7 +14,7 @@ char *strncpy(char *dst, const char *src, int n);
 char strlen(const char *str);
 int strcmp(const char *s1, const char *s2);
 
-uint64_t num_to_str(uint64_t value, char * buffer);
+uint64_t decimal_to_str(uint64_t value, char * buffer);
 int strcat(char *dest, const char *src);
 
 #endif

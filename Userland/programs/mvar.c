@@ -8,11 +8,11 @@
 #define LETTER_POOL "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 #define LETTER_POOL_SIZE (sizeof(LETTER_POOL) - 1)
 
-#define COLOR_COUNT 4
+#define COLOR_COUNT 5
 #define MIN_SLEEP_MS 10
 #define SLEEP_JITTER_MS 30
 
-static volatile char mvar_value = 0;
+static char mvar_value = 0;
 static char sem_empty_name[MAX_SEM_NAME_LENGTH];
 static char sem_full_name[MAX_SEM_NAME_LENGTH];
 
@@ -70,7 +70,7 @@ int mvar_main(int argc, char *argv[]) {
 
 static void build_sem_name(char *target, const char *suffix, uint64_t pid) {
     char pid_buf[DECIMAL_BUFFER_SIZE];
-    num_to_str(pid, pid_buf, 10);
+    num_to_str_base(pid, pid_buf, 10);
 
     int idx = 0;
     const char *prefix = SEM_PREFIX;
@@ -121,7 +121,7 @@ static char letter_for_writer(int index) {
 
 static int spawn_writer(int index) {
     char idx_buf[DECIMAL_BUFFER_SIZE];
-    num_to_str((uint64_t)index, idx_buf, 10);
+    num_to_str_base((uint64_t)index, idx_buf, 10);
     char *writer_argv[] = {idx_buf, NULL};
 
     int pid = (int)sys_create_process(&writer_process, 1, (const char **)writer_argv, "mvar_writer", NULL);
@@ -130,7 +130,7 @@ static int spawn_writer(int index) {
 
 static int spawn_reader(int index) {
     char idx_buf[DECIMAL_BUFFER_SIZE];
-    num_to_str((uint64_t)index, idx_buf, 10);
+    num_to_str_base((uint64_t)index, idx_buf, 10);
     char *reader_argv[] = {idx_buf, NULL};
 
     int pid = (int)sys_create_process(&reader_process, 1, (const char **)reader_argv, "mvar_reader", NULL);
