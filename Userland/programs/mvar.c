@@ -9,10 +9,10 @@
 #define LETTER_POOL_SIZE (sizeof(LETTER_POOL) - 1)
 
 #define COLOR_COUNT 5
-#define MIN_SLEEP_MS 10
-#define SLEEP_JITTER_MS 30
+#define MIN_SLEEP_MS 100
+#define SLEEP_JITTER_MS 250
 
-static char mvar_value = 0;
+static char volatile mvar_value = 0;
 static char sem_empty_name[MAX_SEM_NAME_LENGTH];
 static char sem_full_name[MAX_SEM_NAME_LENGTH];
 
