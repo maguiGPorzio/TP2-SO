@@ -10,5 +10,6 @@ void queue_array_destroy(queue_t queue_array[], int size);
 bool queue_array_add(queue_t queue_array[], int size, int index, int value);
 int queue_array_poll(queue_t queue_array[], int size, int index);
 bool queue_array_is_empty(queue_t queue_array[], int size, int index);
+int queue_array_remove(queue_t queue_array[], int size, int index, int value);
 
 #endif

@@ -44,3 +44,10 @@ bool queue_array_is_empty(queue_t queue_array[], int size, int index){
     return q_is_empty(queue_array[index]);
 }
 
+int queue_array_remove(queue_t queue_array[], int size, int index, int value){
+    if(INDEX_OUT_OF_RANGE(index, size)){
+        return -1;
+    }
+    return q_remove(queue_array[index], value);
+}
+
