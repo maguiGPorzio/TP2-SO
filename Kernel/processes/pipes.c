@@ -323,10 +323,8 @@ int write_pipe(int fd, char * buf, int count) {
         return -1;
     }
     
-    // Si no hay readers, retornar error (equivalente a SIGPIPE en UNIX)
-    if (pipe->reader_count == 0) {
-        return -1;
-    }
+    // Permitir escritura aunque no haya readers todavía
+    // Los datos quedarán en el buffer esperando a que lleguen
     
     // TODO: Validar que el proceso actual tenga este FD abierto
     // Requiere implementar open_fds[] en el PCB
