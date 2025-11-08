@@ -35,3 +35,10 @@ int queue_array_poll(queue_t queue_array[], int size, int index){
     return q_poll(queue_array[index]);
 }
 
+bool queue_array_is_empty(queue_t queue_array[], int size, int index){
+    if(index < 0 || index >= size){
+        return true;
+    }
+    return q_is_empty(queue_array[index]);
+}
+
