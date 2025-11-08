@@ -72,7 +72,8 @@ void * syscalls[] = {
     &sys_get_foreground_process,  // 44
 
     &sys_open_named_pipe, // 45
-    &sys_close_fd         // 46
+    &sys_close_fd,        // 46
+    &sys_list_pipes       // 47
 
 };
 
@@ -336,7 +337,23 @@ static int sys_adopt_init_as_parent(int pid) {
 }
 
 static int sys_open_named_pipe(char * name, int fds[2]) {
-    return open_pipe(name, fds);
+    int pipe_id = open_pipe(name, fds);
+    if (pipe_id < 0) {
+        return pipe_id;
+    }
+    
+    pid_t pid = scheduler_get_current_pid();
+    PCB * p = scheduler_get_process(pid);
+    
+    // Agregar ambos FDs a la lista de open_fds del proceso
+    if (!q_contains(p->open_fds, fds[0])) {
+        q_add(p->open_fds, fds[0]);
+    }
+    if (!q_contains(p->open_fds, fds[1])) {
+        q_add(p->open_fds, fds[1]);
+    }
+    
+    return pipe_id;
 }
 
 static int sys_close_fd(int fd) {
@@ -347,5 +364,9 @@ static int sys_close_fd(int fd) {
     }
 
     return 0; // no lo tenia abierto
+}
+
+static void sys_list_pipes(void) {
+    list_pipes();
 }
 

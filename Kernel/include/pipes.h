@@ -42,4 +42,7 @@ int close_fd(int fd);
 
 void pipe_on_process_killed(pid_t victim);
 
+// lista todos los pipes activos con su información
+void list_pipes(void);
+
 #endif

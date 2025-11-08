@@ -4,6 +4,7 @@
 #include "lib.h"
 #include "synchro.h"
 #include "queue.h"
+#include "videoDriver.h"
 
 typedef struct pipe {
     char buffer[PIPE_BUFFER_SIZE]; // buffer circular
@@ -402,4 +403,74 @@ void destroy_pipe(int idx) {
     
     // Devolver el índice a la cola de libres
     q_add(free_indexes, idx);
+}
+
+void list_pipes(void) {
+    vdPrint("\n=== PIPES ACTIVOS ===\n", 0x00ffff);
+    
+    int active_count = 0;
+    char debug_str[20];
+    
+    for (int i = 0; i < MAX_PIPES; i++) {
+        pipe_t *pipe = pipes[i];
+        if (pipe == NULL) {
+            continue;
+        }
+        
+        active_count++;
+        
+        vdPrint("Pipe #", 0x00ffff);
+        decimal_to_str(i, debug_str);
+        vdPrint(debug_str, 0x00ffff);
+        vdPrint(": ", 0x00ffff);
+        
+        // Nombre del pipe (anónimo si no tiene)
+        if (pipe->name[0] == '\0') {
+            vdPrint("[anonymous]", 0x00ffff);
+        } else {
+            vdPrint("\"", 0x00ffff);
+            vdPrint(pipe->name, 0x00ffff);
+            vdPrint("\"", 0x00ffff);
+        }
+        
+        // FDs
+        vdPrint(" read_fd=", 0x00ffff);
+        decimal_to_str(pipe->read_fd, debug_str);
+        vdPrint(debug_str, 0x00ffff);
+        vdPrint(" write_fd=", 0x00ffff);
+        decimal_to_str(pipe->write_fd, debug_str);
+        vdPrint(debug_str, 0x00ffff);
+        
+        // Contadores
+        vdPrint(" readers=", 0x00ffff);
+        decimal_to_str(pipe->reader_count, debug_str);
+        vdPrint(debug_str, 0x00ffff);
+        vdPrint(" writers=", 0x00ffff);
+        decimal_to_str(pipe->writer_count, debug_str);
+        vdPrint(debug_str, 0x00ffff);
+        
+        // Estado del buffer
+        vdPrint(" buffered=", 0x00ffff);
+        int buffered = (pipe->write_idx - pipe->read_idx + PIPE_BUFFER_SIZE) % PIPE_BUFFER_SIZE;
+        decimal_to_str(buffered, debug_str);
+        vdPrint(debug_str, 0x00ffff);
+        vdPrint("/", 0x00ffff);
+        decimal_to_str(PIPE_BUFFER_SIZE, debug_str);
+        vdPrint(debug_str, 0x00ffff);
+        
+        vdPrint("\n", 0x00ffff);
+    }
+    
+    vdPrint("Total: ", 0x00ffff);
+    decimal_to_str(active_count, debug_str);
+    vdPrint(debug_str, 0x00ffff);
+    vdPrint(" pipe", 0x00ffff);
+    if (active_count != 1) {
+        vdPrint("s", 0x00ffff);
+    }
+    vdPrint(" activo", 0x00ffff);
+    if (active_count != 1) {
+        vdPrint("s", 0x00ffff);
+    }
+    vdPrint("\n\n", 0x00ffff);
 }

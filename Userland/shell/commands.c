@@ -14,6 +14,7 @@
 
 static void cls(int argc, char * argv[]);
 static void help(int argc, char * argv[]);
+static void list_pipes(int argc, char * argv[]);
 static void kill_process(int argc, char * argv[]);
 
 static bool is_cmd_background(char *line);
@@ -21,6 +22,7 @@ static bool is_cmd_background(char *line);
 static BuiltinCommand builtins[] = {
     { "clear", "clears the screen", &cls },
     { "help", "provides information about available commands", &help },
+    { "pipes", "lists active pipes information", &list_pipes },
     { "kill", "kills a process by PID", &kill_process },
 
     { NULL, NULL, NULL }
@@ -54,6 +56,7 @@ static ExternalProgram programs[] = {
     { "test_prio", "runs a priority test", &test_prio},
     { "test_processes", "runs an process test", &test_processes},
     { "test_sync", "runs a sync test", &test_sync},
+    { "test_pipes", "runs a piptes test", &test_pipes},
     { "mvar", "tests multi-variable synchronization", &mvar_main},
     { NULL, NULL }
 };
@@ -357,6 +360,10 @@ static void help(int argc, char * argv[]) {
     }
 
     putchar('\n');
+}
+
+static void list_pipes(int argc, char * argv[]) {
+    sys_list_pipes();
 }
 
 static void kill_process(int argc, char * argv[]) {

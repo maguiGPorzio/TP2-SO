@@ -68,6 +68,7 @@ static int sys_get_foreground_process(void);
 // mas syscalls de pipes
 static int sys_open_named_pipe(char * name, int fds[2]);
 static int sys_close_fd(int fd);
+static void sys_list_pipes(void);
 
 
 

@@ -114,5 +114,6 @@ extern int sys_get_foreground_process(void);
 // mas syscalls de pipes
 extern int sys_open_named_pipe(char * name, int fds[2]);
 extern int sys_close_fd(int fd);
+extern void sys_list_pipes(void);
 
 #endif
