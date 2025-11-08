@@ -94,26 +94,26 @@ int64_t sem_open(char *name, int initial_value) {
     if (sem != NULL) {
         // Ya existe, solo incrementar contador si no es un proceso que ya lo creo
         if (pid_present_in_semaphore(sem, scheduler_get_current_pid())) {
-            return -1; // El proceso ya posee este semáforo
+            return ERROR; // El proceso ya posee este semáforo
         }
         acquire_lock(&sem->lock);
         sem->owner_pids[scheduler_get_current_pid()] = 1;
         sem->ref_count++;
         release_lock(&sem->lock);
-        return 0;
+        return OK;
     }
     
     // Buscar slot libre
     int64_t id = get_free_id();
     if (id == -1) {
-        return -1;
+        return ERROR;
     }
     
     // Crear nuevo semáforo
     MemoryManagerADT mm = get_kernel_memory_manager();
     sem = alloc_memory(mm, sizeof(semaphore_t));
     if (sem == NULL) {
-        return -1;
+        return ERROR;
     }
     
     // Inicializar
@@ -126,24 +126,24 @@ int64_t sem_open(char *name, int initial_value) {
     sem->lock = 1;  // Spinlock desbloqueado
     sem->ref_count = 1;
     for (int i=0 ; i<MAX_PROCESSES ; i++) {
-        sem->owner_pids[i] = 0;
+        sem->owner_pids[i] = FREE;
     }
-    sem->owner_pids[scheduler_get_current_pid()] = 1;
+    sem->owner_pids[scheduler_get_current_pid()] = OCCUPIED;
     
     sem_manager->semaphores[id] = sem;
     sem_manager->semaphore_count++;
     
-    return 0;
+    return OK;
 }
 
 int64_t sem_close(char *name) {
     if (sem_manager == NULL || name == NULL) {
-        return -1;
+        return ERROR;
     }
     
     int idx = get_idx_by_name(name);
-    if (idx == -1) {
-        return -1;
+    if (idx == ERROR) {
+        return ERROR;
     }
     
     semaphore_t *sem = sem_manager->semaphores[idx];
@@ -152,9 +152,9 @@ int64_t sem_close(char *name) {
     
     if (sem->ref_count > 1) {
         sem->ref_count--;
-        sem->owner_pids[scheduler_get_current_pid()] = 0;
+        sem->owner_pids[scheduler_get_current_pid()] = FREE;
         release_lock(&sem->lock);
-        return 0;
+        return OK;
     }
     
     release_lock(&sem->lock);
@@ -165,17 +165,17 @@ int64_t sem_close(char *name) {
     sem_manager->semaphores[idx] = NULL;
     sem_manager->semaphore_count--;
     
-    return 0;
+    return OK;
 }
 
 int64_t sem_wait(char *name) {
     if (sem_manager == NULL || name == NULL) {
-        return -1;
+        return ERROR;
     }
     
     semaphore_t *sem = get_sem_by_name(name);
     if (sem == NULL) {
-        return -1;
+        return ERROR;
     }
     
     acquire_lock(&sem->lock);
@@ -183,15 +183,15 @@ int64_t sem_wait(char *name) {
     if (sem->value > 0) {
         sem->value--;
         release_lock(&sem->lock);
-        return 0;
+        return OK;
     }
     
     // No hay recursos disponibles, bloquear proceso
     int pid = scheduler_get_current_pid();
     
-    if (add_to_queue(sem, pid) == -1) {
+    if (add_to_queue(sem, pid) == ERROR) {
         release_lock(&sem->lock);
-        return -1;
+        return ERROR;
     }
 
     _cli(); //deshabilitar interrupciones
@@ -208,12 +208,12 @@ int64_t sem_wait(char *name) {
 
 int64_t sem_post(char *name) {
     if (sem_manager == NULL || name == NULL) {
-        return -1;
+        return ERROR;
     }
     
     semaphore_t *sem = get_sem_by_name(name);
     if (sem == NULL) {
-        return -1;
+        return ERROR;
     }
     
     acquire_lock(&sem->lock);
@@ -231,12 +231,12 @@ int64_t sem_post(char *name) {
         release_lock(&sem->lock);
     }
     
-    return 0;
+    return OK;
 }
 
 int remove_process_from_all_semaphore_queues(uint32_t pid) {
     if (sem_manager == NULL) {
-        return -1;
+        return ERROR;
     }
     
     for (int i = 0; i < MAX_SEMAPHORES; i++) {
@@ -245,7 +245,7 @@ int remove_process_from_all_semaphore_queues(uint32_t pid) {
             continue;
         }
 
-        if (sem->owner_pids[pid]==1){
+        if (sem->owner_pids[pid]==OCCUPIED){
             if (scheduler_get_process(pid)->status == PS_BLOCKED) {
                 acquire_lock(&sem->lock);
                 remove_process_from_queue(sem, pid);
@@ -255,7 +255,7 @@ int remove_process_from_all_semaphore_queues(uint32_t pid) {
         }
     }
     
-    return 0;
+    return OK;
 }
 
 // ============================================
@@ -268,12 +268,12 @@ static int64_t get_free_id(void) {
             return i;
         }
     }
-    return -1;
+    return ERROR;
 }
 
 static uint64_t pop_from_queue(semaphore_t *sem) {
     if (sem->queue.size == 0) {
-        return -1;
+        return ERROR;
     }
     
     uint32_t pid = sem->queue.pids[sem->queue.read_index];
@@ -285,14 +285,14 @@ static uint64_t pop_from_queue(semaphore_t *sem) {
 
 static int add_to_queue(semaphore_t *sem, uint32_t pid) {
     if (sem->queue.size >= MAX_PROCESSES) {
-        return -1;
+        return ERROR;
     }
     
     sem->queue.pids[sem->queue.write_index] = pid;
     sem->queue.write_index = (sem->queue.write_index + 1) % MAX_PROCESSES;
     sem->queue.size++;
     
-    return 0;
+    return OK;
 }
 
 static int get_idx_by_name(const char *name) {
@@ -302,12 +302,12 @@ static int get_idx_by_name(const char *name) {
             return i;
         }
     }
-    return -1;
+    return ERROR;
 }
 
 static semaphore_t *get_sem_by_name(const char *name) {
     int idx = get_idx_by_name(name);
-    if (idx == -1) {
+    if (idx == ERROR) {
         return NULL;
     }
     return sem_manager->semaphores[idx];
@@ -315,12 +315,12 @@ static semaphore_t *get_sem_by_name(const char *name) {
 
 static int remove_process_from_queue(semaphore_t *sem, uint32_t pid) {
     if (sem->queue.size == 0) {
-        return -1;
+        return ERROR;
     }
     
     uint32_t i = sem->queue.read_index;
     uint32_t j = 0;
-    int found = -1;
+    int found = ERROR;
     
     // Buscar el proceso en la cola
     while (j < sem->queue.size) {
@@ -332,8 +332,8 @@ static int remove_process_from_queue(semaphore_t *sem, uint32_t pid) {
         j++;
     }
     
-    if (found == -1) {
-        return -1;  // No encontrado
+    if (found == ERROR) {
+        return ERROR;  // No encontrado
     }
     
     // Desplazar elementos para llenar el hueco
@@ -346,17 +346,17 @@ static int remove_process_from_queue(semaphore_t *sem, uint32_t pid) {
     sem->queue.write_index = (sem->queue.write_index + MAX_PROCESSES - 1) % MAX_PROCESSES;
     sem->queue.size--;
     
-    return 0;
+    return OK;
 }
 
 static int64_t sem_close_by_pid(char *name, uint32_t pid) {
     if (sem_manager == NULL || name == NULL) {
-        return -1;
+        return ERROR;
     }
     
     int idx = get_idx_by_name(name);
-    if (idx == -1) {
-        return -1;
+    if (idx == ERROR) {
+        return ERROR;
     }
     
     semaphore_t *sem = sem_manager->semaphores[idx];
@@ -365,9 +365,9 @@ static int64_t sem_close_by_pid(char *name, uint32_t pid) {
     
     if (sem->ref_count > 1) {
         sem->ref_count--;
-        sem->owner_pids[pid] = 0;
+        sem->owner_pids[pid] = FREE;
         release_lock(&sem->lock);
-        return 0;
+        return OK;
     }
     
     release_lock(&sem->lock);
@@ -378,5 +378,5 @@ static int64_t sem_close_by_pid(char *name, uint32_t pid) {
     sem_manager->semaphores[idx] = NULL;
     sem_manager->semaphore_count--;
     
-    return 0;
+    return OK;
 }

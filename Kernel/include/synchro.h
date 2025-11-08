@@ -6,6 +6,9 @@
 #define MAX_SEMAPHORES 256
 #define MAX_SEM_NAME_LENGTH 64
 
+#define FREE 0
+#define OCCUPIED 1
+
 typedef int lock_t;
 
 extern void acquire_lock(lock_t *lock);

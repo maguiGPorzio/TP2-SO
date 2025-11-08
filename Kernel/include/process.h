@@ -15,6 +15,9 @@
 #define SHELL_PID 1
 #define NO_PID -1
 
+#define OK 0
+#define ERROR -1
+
 // ============================================
 //           TIPOS Y ESTRUCTURAS
 // ============================================
