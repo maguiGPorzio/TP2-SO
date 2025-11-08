@@ -19,9 +19,8 @@ int main(void) {
 
     while (1) {
         print(' ');
-        print(initial_input);
-        print(USERNAME);
-        sys_write(STDGREEN, PROMPT, sizeof(PROMPT));
+        fprint(STDCYAN, initial_input);
+        print(PROMPT);
         read_line(current_input, INPUT_MAX-1);
         putchar('\n');
         process_line(current_input);
@@ -37,12 +36,12 @@ int main(void) {
 /*-- FUNCIONES AUXILIARES --*/
 static void print_initial_message(){
     sys_increase_fontsize();
-    sys_write(STDERR, INITIAL_MESSAGE_1, sizeof(INITIAL_MESSAGE_1));
+    fprint(STDMAGENTA, INITIAL_MESSAGE_1);
     putchar('\n');
     print(INITIAL_MESSAGE_2);
-    read_line(initial_input, INPUT_MAX-1);
+    read_line(initial_input, USERNAME_MAX_LENGTH);
     putchar('\n');
-    sys_write(STDGREEN, HELP_MESSAGE, sizeof(HELP_MESSAGE));
+    fprint(STDMAGENTA, HELP_MESSAGE);
     putchar('\n');
     sys_decrease_fontsize();
 }
@@ -90,9 +89,8 @@ void incfont()  {
     sys_clear();
     // Imprimir prompt sin cursor (usar print directamente)
     print(' ');
-    print(initial_input);
-    print(USERNAME);
-    sys_write(STDGREEN, PROMPT, sizeof(PROMPT));
+    fprint(STDCYAN, initial_input);
+    print(PROMPT);
     // Imprimir el input actual
     for (int i = 0; current_input[i] != '\0' && i < INPUT_MAX; i++) {
         putchar(current_input[i]);
@@ -106,9 +104,8 @@ void decfont()  {
     sys_clear();
     // Imprimir prompt sin cursor (usar print directamente)
     print(' ');
-    print(initial_input);
-    print(USERNAME);
-    sys_write(STDGREEN, PROMPT, sizeof(PROMPT));
+    fprint(STDCYAN, initial_input);
+    print(PROMPT);
     // Imprimir el input actual
     for (int i = 0; current_input[i] != '\0' && i < INPUT_MAX; i++) {
         putchar(current_input[i]);

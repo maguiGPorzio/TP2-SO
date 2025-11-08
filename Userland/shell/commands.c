@@ -49,11 +49,11 @@ static ExternalProgram programs[] = {
     { "block", "blocks a running process", &block}, 
     { "unblock", "unblocks a blocked process", &unblock},
     { "filter", "filters out vowels from input until '-' is encountered", &filter},
-    { "mvar <amount_writers> <amount_readers>", "tests multi-variable synchronization", &mvar_main},
+    { "mvar", "tests multi-variable synchronization. Run mvar <amount_writers> <amount_readers>", &mvar_main},
     { "test_mm", "runs an mm test", &test_mm},
     { "test_prio", "runs a priority test", &test_prio},
     { "test_processes", "runs an process test", &test_processes},
-    { "test_sync <number_increments/decrements_per_process> <use_semaphore>", "runs a sync test\n                                                                         to use semaphores write 1 in <use_semaphore> else 0", &test_sync},
+    { "test_sync", "runs a sync test.\n              run test_sync <number_increments/decrements_per_process> <use_semaphore>.\n              to use semaphores write 1 in <use_semaphore> else 0", &test_sync},
     { NULL, NULL }
 };
 
