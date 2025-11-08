@@ -2,6 +2,7 @@
 #include "process.h" 
 #include "lib.h"
 #include "queue.h"
+#include "queue_array.h"
 #include "pipes.h"
 #include "interrupts.h" // lo incluí para usar _hlt()
 #include "videoDriver.h"
@@ -17,7 +18,10 @@ extern void timer_tick();
 // ============================================
 
 static PCB *processes[MAX_PROCESSES];       // Array para acceso por PID
-static queue_t ready_queue = NULL;              // Cola de PIDs listos para correr
+static queue_t ready_queue = NULL;                 // Cola global de PIDs listos para correr
+//static queue_t ready_queues_array[NUM_PRIORITIES] = NULL;          // Array de colas de PIDs listos para correr
+static int current_priority = MAX_PRIORITY; // Índice de la cola de prioridad actual
+static int remaining_iterations = 0;      // Iteraciones restantes en la cola actual
 static pid_t current_pid = NO_PID;                // PID del proceso actual
 static uint8_t process_count = 0;               // Cantidad total de procesos
 static uint64_t total_cpu_ticks = 0;            // Total de ticks de CPU

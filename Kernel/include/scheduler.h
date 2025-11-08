@@ -13,7 +13,8 @@ typedef int pid_t;
 
 #define MIN_PRIORITY 1
 #define MAX_PRIORITY 10
-#define DEFAULT_PRIORITY 3
+#define DEFAULT_PRIORITY (MAX_PRIORITY + MIN_PRIORITY ) / 2
+#define NUM_PRIORITIES (MAX_PRIORITY - MIN_PRIORITY + 1)
 
 // ============================================
 //           FUNCIONES PÚBLICAS
