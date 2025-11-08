@@ -3,6 +3,8 @@
 // Buffer para el comando actual y el anterior
 static char current_input[INPUT_MAX];
 static char previous_input[INPUT_MAX];
+static char initial_input[INPUT_MAX];
+static void print_initial_message();
 
 int main(void) {
     sys_enable_textmode();
@@ -10,8 +12,16 @@ int main(void) {
     // Limpiar buffer de teclado y resetear semáforo antes de empezar
     sys_clear_input_buffer();
 
+    print_initial_message();
+
+    // Limpiar buffer de teclado y resetear semáforo antes de empezar
+    sys_clear_input_buffer();
+
     while (1) {
-        print(PROMPT);
+        print(' ');
+        print(initial_input);
+        print(USERNAME);
+        sys_write(STDGREEN, PROMPT, sizeof(PROMPT));
         read_line(current_input, INPUT_MAX-1);
         putchar('\n');
         process_line(current_input);
@@ -25,6 +35,18 @@ int main(void) {
 
 
 /*-- FUNCIONES AUXILIARES --*/
+static void print_initial_message(){
+    sys_increase_fontsize();
+    sys_write(STDERR, INITIAL_MESSAGE_1, sizeof(INITIAL_MESSAGE_1));
+    putchar('\n');
+    print(INITIAL_MESSAGE_2);
+    read_line(initial_input, INPUT_MAX-1);
+    putchar('\n');
+    sys_write(STDGREEN, HELP_MESSAGE, sizeof(HELP_MESSAGE));
+    putchar('\n');
+    sys_decrease_fontsize();
+}
+
 void read_line(char * buf, uint64_t max) {
     char c;
     uint32_t idx = 0;
@@ -67,7 +89,10 @@ void incfont()  {
     sys_increase_fontsize(); 
     sys_clear();
     // Imprimir prompt sin cursor (usar print directamente)
-    print(PROMPT);
+    print(' ');
+    print(initial_input);
+    print(USERNAME);
+    sys_write(STDGREEN, PROMPT, sizeof(PROMPT));
     // Imprimir el input actual
     for (int i = 0; current_input[i] != '\0' && i < INPUT_MAX; i++) {
         putchar(current_input[i]);
@@ -80,7 +105,10 @@ void decfont()  {
     sys_decrease_fontsize(); 
     sys_clear();
     // Imprimir prompt sin cursor (usar print directamente)
-    print(PROMPT);
+    print(' ');
+    print(initial_input);
+    print(USERNAME);
+    sys_write(STDGREEN, PROMPT, sizeof(PROMPT));
     // Imprimir el input actual
     for (int i = 0; current_input[i] != '\0' && i < INPUT_MAX; i++) {
         putchar(current_input[i]);
