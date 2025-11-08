@@ -45,7 +45,7 @@ static ExternalProgram programs[] = {
     { "text", "lo puse para probar wc", &text_main },
     { "loop", "runs an infinite loop printing dots to STDOUT", &loop_main },
     { "nice", "changes the priority of a process", &nice_main },
-    { "wc", "counts the amount of lines of the input", &wc_main },
+    { "wc", "counts the number of lines, words and characters from STDIN", &wc_main },
     { "mem", "prints memory usage information", &mem},
     { "block", "blocks a running process", &block}, 
     { "unblock", "unblocks a blocked process", &unblock},
