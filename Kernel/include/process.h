@@ -61,8 +61,7 @@ typedef struct PCB {
     bool killable;                   // si false, el proceso no puede ser matado (init/shell)
 
     // queues 
-    queue_t memory_blocks_allocated; // lista de bloques de memoria asignados al proceso
-    queue_t semaphore;           // lista de pipes abiertos por el proceso
+    queue_t open_fds; // lista de fds abiertos
 } PCB;
 
 

@@ -1,11 +1,4 @@
-refactor del cat / echo
 
-ver si puedo mejor hacer lo del cursor en el video driver en lugar de la shell
-
-
--- pipes
-
-chequear la logica
 
 -- procesos
 

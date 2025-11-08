@@ -69,7 +69,11 @@ void * syscalls[] = {
 
     &sys_set_foreground_process, // 42
     &sys_adopt_init_as_parent,   // 43
-    &sys_get_foreground_process  // 44
+    &sys_get_foreground_process,  // 44
+
+    &sys_open_named_pipe, // 45
+    &sys_close_fd         // 46
+
 };
 
 static uint64_t sys_regs(char * buffer) {
@@ -299,12 +303,22 @@ static void sys_sem_post(const char *name) {
 }
 
 
-static int sys_create_pipe(int fds[2]) {
-   return create_pipe(fds);
+static int sys_create_pipe(int fds[2]) { // tengo que agregar 
+    int pipe_id = create_pipe(fds);
+    if (pipe_id < 0) {
+        return pipe_id;
+    }
+
+    pid_t pid = scheduler_get_current_pid();
+    PCB * p = scheduler_get_process(pid);
+    q_add(p->open_fds, fds[0]);
+    q_add(p->open_fds, fds[1]);
+    return pipe_id;
+    
 }
 
-static void sys_destroy_pipe(int fd) {
-    destroy_pipe(fd);
+static void sys_destroy_pipe(int id) {
+    destroy_pipe(id);
 }
 
 static int sys_set_foreground_process(int pid) {
@@ -319,5 +333,19 @@ static int sys_get_foreground_process(void) {
 
 static int sys_adopt_init_as_parent(int pid) {
     return adopt_init_as_parent((pid_t)pid);
+}
+
+static int sys_open_named_pipe(char * name, int fds[2]) {
+    return open_pipe(name, fds);
+}
+
+static int sys_close_fd(int fd) {
+    pid_t pid = scheduler_get_current_pid();
+    PCB * p = scheduler_get_process(pid);
+    if(q_remove(p->open_fds, fd)) {
+        return close_fd(fd);
+    }
+
+    return 0; // no lo tenia abierto
 }
 

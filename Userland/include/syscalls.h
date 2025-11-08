@@ -111,4 +111,8 @@ extern int sys_set_foreground_process(int pid);
 extern int sys_adopt_init_as_parent(int pid);
 extern int sys_get_foreground_process(void);
 
+// mas syscalls de pipes
+extern int sys_open_named_pipe(char * name, int fds[2]);
+extern int sys_close_fd(int fd);
+
 #endif

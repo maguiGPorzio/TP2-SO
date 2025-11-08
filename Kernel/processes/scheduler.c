@@ -391,16 +391,28 @@ int scheduler_kill_process(pid_t pid) {
 
     if (pid == foreground_process_pid) {
         foreground_process_pid = SHELL_PID;
+        pipe_on_process_killed(killed_process->pid); // matamos el foreground group si estaba pipeado
     }
 
     killed_process->status = PS_TERMINATED;
     killed_process->return_value = KILLED_RET_VALUE;
 
-    pipe_on_process_killed(killed_process->pid);
+    // limpiamos los recursos
+    vdPrint("[KILL] Closing open FDs for process ", 0xFFFFFF);
+    char debug_str[20];
+    decimal_to_str(pid, debug_str);
+    vdPrint(debug_str, 0xFFFFFF);
+    vdPrint("\n", 0xFFFFFF);
+    
+    int fd;
+    while ((fd = q_poll(killed_process->open_fds)) > 0) {
+        close_fd(fd);
+    }
+
 
     if(killed_process->parent_pid == INIT_PID) {
         scheduler_remove_process(killed_process->pid); 
-    } else{ // si el padre no es init, no vamos a eliminarlo porque su padre podria hacerle un wait
+    } else { // si el padre no es init, no vamos a eliminarlo porque su padre podria hacerle un wait
         // Lo sacamos de la cola de procesos ready para que no vuelva a correr PERO NO  del array de procesos (para que el padre pueda acceder a su ret_value)
         if (killed_process->status == PS_READY || killed_process->status == PS_RUNNING) {
             if (ready_queue != NULL) {
