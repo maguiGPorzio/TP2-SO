@@ -50,6 +50,7 @@ static uint64_t pop_from_queue(semaphore_t *sem);
 static int add_to_queue(semaphore_t *sem, uint32_t pid);
 static semaphore_t *get_sem_by_name(const char *name);
 static int get_idx_by_name(const char *name);
+static int remove_process_from_queue(semaphore_t *sem, uint32_t pid);
 static int64_t sem_close_by_pid(char *name, uint32_t pid);
 
 static int pid_present_in_semaphore(semaphore_t *sem, uint32_t pid) {
@@ -243,6 +244,11 @@ int remove_process_from_all_semaphore_queues(uint32_t pid) {
         }
 
         if (sem->owner_pids[pid]==1){
+            if (scheduler_get_process(pid)->status == PS_BLOCKED) {
+                acquire_lock(&sem->lock);
+                remove_process_from_queue(sem, pid);
+                release_lock(&sem->lock);
+            }
             sem_close_by_pid(sem->name, pid);
         }
     }
@@ -303,6 +309,42 @@ static semaphore_t *get_sem_by_name(const char *name) {
         return NULL;
     }
     return sem_manager->semaphores[idx];
+}
+
+static int remove_process_from_queue(semaphore_t *sem, uint32_t pid) {
+    if (sem->queue.size == 0) {
+        return -1;
+    }
+    
+    uint32_t i = sem->queue.read_index;
+    uint32_t j = 0;
+    int found = -1;
+    
+    // Buscar el proceso en la cola
+    while (j < sem->queue.size) {
+        if (sem->queue.pids[i] == pid) {
+            found = i;
+            break;
+        }
+        i = (i + 1) % MAX_PROCESSES;
+        j++;
+    }
+    
+    if (found == -1) {
+        return -1;  // No encontrado
+    }
+    
+    // Desplazar elementos para llenar el hueco
+    for (uint32_t k = found; k != sem->queue.write_index; k = (k + 1) % MAX_PROCESSES) {
+        uint32_t next = (k + 1) % MAX_PROCESSES;
+        sem->queue.pids[k] = sem->queue.pids[next];
+    }
+
+    //Es un truco matemático para evitar números negativos al retroceder en aritmética circular.
+    sem->queue.write_index = (sem->queue.write_index + MAX_PROCESSES - 1) % MAX_PROCESSES;
+    sem->queue.size--;
+    
+    return 0;
 }
 
 static int64_t sem_close_by_pid(char *name, uint32_t pid) {
