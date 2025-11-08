@@ -53,7 +53,7 @@ static ExternalProgram programs[] = {
     { "test_mm", "runs an mm test", &test_mm},
     { "test_prio", "runs a priority test", &test_prio},
     { "test_processes", "runs an process test", &test_processes},
-    { "test_sync <number_increments/decrements_per_process> <use_semaphore>", "runs a sync test\n to use sempahores write 1 in <use_semaphore> else 0", &test_sync},
+    { "test_sync <number_increments/decrements_per_process> <use_semaphore>", "runs a sync test\n                                                                         to use semaphores write 1 in <use_semaphore> else 0", &test_sync},
     { NULL, NULL }
 };
 
@@ -345,7 +345,7 @@ static void help(int argc, char * argv[]) {
     putchar('\n');
     
     print("\nExternal programs:\n");
-    print("--Type <program_name> & to run in background--\n");
+    print("--Type <program_name> & to run in background, else it runs in foreground--\n");
     for (int i = 0; programs[i].name != NULL; i++) {
         print("  ");
         print(programs[i].name);
