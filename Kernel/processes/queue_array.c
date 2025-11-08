@@ -28,3 +28,10 @@ bool queue_array_add(queue_t queue_array[], int size, int index, int value){
     return q_add(queue_array[index], value);
 }
 
+int queue_array_poll(queue_t queue_array[], int size, int index){
+    if(index < 0 || index >= size){
+        return -1;
+    }
+    return q_poll(queue_array[index]);
+}
+
