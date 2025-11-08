@@ -221,8 +221,10 @@ int64_t sem_post(char *name) {
     if (sem->queue.size > 0) {
         // Hay procesos esperando, desbloquear uno
         uint32_t pid = pop_from_queue(sem);
+         _cli(); //deshabilitar interrupciones
         release_lock(&sem->lock);
         scheduler_unblock_process(pid);
+        _sti(); //habilitar interrupciones
     } else {
         // No hay procesos esperando, incrementar contador
         sem->value++;
