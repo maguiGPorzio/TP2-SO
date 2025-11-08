@@ -6,14 +6,6 @@ revisar lo que esta comentado en el test de memoria
 
 -- PROCESOS
 
-que init y la shell no se puedan matar (me parece lo mas simple)
-
-hacer lo de los processos en foreground / background
-
-ctrl+c y ctrl+d
-
-agregar al read de teclado validador de que el proceso que quiere leer sea el que este en foreground
-
 limpieza de pipes abiertos cuando un proceso hace exit / lo matan -> ver con Rodri antes de implementar
 
 
@@ -24,24 +16,16 @@ resolver los warnings en la medida de lo posible
 lo del cli y sti
 
 
+
 -- PIPES
 
-ver el tema del cierre del pipe
-
-que onda con esta oracion del enunciado: "El sistema también deberá permitir que procesos no relacionados puedan
-compartirlos acordando un identificador a priori" -> pipes con nombre?
+el refactor que esta haciendo Rodri que la rompe toda
 
 
 
 -- APLICACIONES DE USUARIO
 
-agregar implementacion del & en la shell
-
-hacer todas las aplicaciones de usuario que pide el enunciado
-
 ponerle flechita para arriba guardando el ultimo comando
-
-que no se le pueda hacer & a red por ejemplo
 
 cambiar los -1 por error en los programas que hizo magui x lo menos
 

@@ -14,6 +14,7 @@
 
 static void cls(int argc, char * argv[]);
 static void help(int argc, char * argv[]);
+static void list_pipes(int argc, char * argv[]);
 static void kill_process(int argc, char * argv[]);
 
 static bool is_cmd_background(char *line);
@@ -21,6 +22,7 @@ static bool is_cmd_background(char *line);
 static BuiltinCommand builtins[] = {
     { "clear", "clears the screen", &cls },
     { "help", "provides information about available commands", &help },
+    { "pipes", "lists active pipes information", &list_pipes },
     { "kill", "kills a process by PID", &kill_process },
 
     { NULL, NULL, NULL }
@@ -33,7 +35,8 @@ static BuiltinCommand builtins[] = {
 
 
 static ExternalProgram programs[] = {
-    { "cat", "prints to STDOUT its params", &cat_main },
+    { "echo", "prints to STDOUT its params", &echo_main },
+    { "cat", "reads from STDIN and prints it to STDOUT", &cat_main },
     { "red", "reads from STDIN and prints it to STDERR", &red_main },
     { "rainbow", "reads from STDIN and prints one char to each color fd", &rainbow_main},
     { "time", "prints system time to STDOUT", &time_main },
@@ -44,7 +47,7 @@ static ExternalProgram programs[] = {
     { "text", "lo puse para probar wc", &text_main },
     { "loop", "runs an infinite loop printing dots to STDOUT", &loop_main },
     { "nice", "changes the priority of a process", &nice_main },
-    { "wc", "counts the amount of lines of the input", &wc_main },
+    { "wc", "counts the number of lines, words and characters from STDIN", &wc_main },
     { "mem", "prints memory usage information", &mem},
     { "block", "blocks a running process", &block}, 
     { "unblock", "unblocks a blocked process", &unblock},
@@ -54,6 +57,8 @@ static ExternalProgram programs[] = {
     { "test_prio", "runs a priority test", &test_prio},
     { "test_processes", "runs an process test", &test_processes},
     { "test_sync", "runs a sync test.\n              run test_sync <number_increments/decrements_per_process> <use_semaphore>.\n              to use semaphores write 1 in <use_semaphore> else 0", &test_sync},
+    { "test_pipes", "runs a piptes test", &test_pipes},
+    { "mvar", "tests multi-variable synchronization", &mvar_main},
     { NULL, NULL }
 };
 
@@ -215,6 +220,9 @@ static int execute_piped_commands(char **left_tokens, int left_count,
     int pid_left = sys_create_process(left_entry, left_argc, (const char **)left_argv, left_cmd, fds_left);
     
     int pid_right = sys_create_process(right_entry, right_argc, (const char **)right_argv, right_cmd, fds_right);
+
+    sys_close_fd(fds_pipe[0]);
+    sys_close_fd(fds_pipe[1]);
     
     if (pid_left < 0 || pid_right < 0) {
         print_err("Failed to create piped processes\n");
@@ -243,7 +251,7 @@ static int execute_piped_commands(char **left_tokens, int left_count,
     return 1;
 }
 
-static bool is_cmd_background(char *line){
+static bool is_cmd_background(char *line) {
     bool background = false;
 
     int len = strlen(line);
@@ -355,6 +363,10 @@ static void help(int argc, char * argv[]) {
     }
 
     putchar('\n');
+}
+
+static void list_pipes(int argc, char * argv[]) {
+    sys_list_pipes();
 }
 
 static void kill_process(int argc, char * argv[]) {

@@ -18,6 +18,9 @@ int q_poll(queue_t q);
 // elemina la primer aparicion de value
 int q_remove(queue_t q, int value);
 
+// devuelve 1 si el value esta en la queue, 0 sino
+int q_contains(queue_t q, int value);
+
 // devuelve 1 si esta vacia, 0 sino
 int q_is_empty(queue_t q);
 

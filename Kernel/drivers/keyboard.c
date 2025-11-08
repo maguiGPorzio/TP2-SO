@@ -89,7 +89,7 @@ uint64_t read_keyboard_buffer (char * buff_copy, uint64_t count) {
     
     // Solo el proceso en foreground puede leer del teclado
     if (current_pid != foreground_pid) {
-        return -1;  // Error: proceso no está en foreground
+        return EOF;  // Error: proceso no está en foreground
     }
 
     for (int i = 0; i < count; i++) {

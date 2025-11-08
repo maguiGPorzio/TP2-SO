@@ -37,8 +37,8 @@ PCB* proc_create(int pid, process_entry_t entry, int argc, const char **argv,
     // ============================
     p->pid = pid;
     p->parent_pid = scheduler_get_current_pid();
-    strncpy(p->name, name, MAX_NAME_LENGTH - 1);
-    p->name[MAX_NAME_LENGTH - 1] = '\0';
+    strncpy(p->name, name, MAX_PROCESS_NAME_LENGTH - 1);
+    p->name[MAX_PROCESS_NAME_LENGTH - 1] = '\0';
     p->entry = entry;
     p->return_value = 0; // TODO: FIJARSE COMO INCIIALIZARLO
     p->waiting_on = NO_PID;
@@ -72,12 +72,25 @@ PCB* proc_create(int pid, process_entry_t entry, int argc, const char **argv,
     }
 
     // file descriptors
+    p->open_fds = q_init();
+
+
     if (fds == NULL) {
         p->read_fd = STDIN;
         p->write_fd = STDOUT;
     } else {
         p->read_fd = fds[0];
+        if (fds[0] >= FIRST_FREE_FD) {
+            open_fd(fds[0]);
+            q_add(p->open_fds, fds[0]);
+        }
         p->write_fd = fds[1];
+        if (fds[1] >= FIRST_FREE_FD) {
+            open_fd(fds[1]);
+            q_add(p->open_fds, fds[1]);
+        }
+        
+
     }
 
     return p;

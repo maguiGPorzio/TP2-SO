@@ -37,9 +37,17 @@ static inline bool pid_is_valid(pid_t pid);
 static void cleanup_all_processes(void);
 static int create_shell();
 static inline bool pid_is_valid(pid_t pid) ;
+static void cleanup_resources(PCB * p);
 
 static inline bool pid_is_valid(pid_t pid) {
     return pid >= 0 && pid <= MAX_PID;
+}
+
+static void cleanup_resources(PCB * p) {
+    while (!q_is_empty(p->open_fds)) {
+        int fd = q_poll(p->open_fds);
+        close_fd(fd);
+    }
 }
 
 // Proceso init: arranca la shell y se queda haciendo halt para no consumir CPU. Se lo elige siempre que no haya otro proceso para correr!!!!
@@ -391,16 +399,19 @@ int scheduler_kill_process(pid_t pid) {
 
     if (pid == foreground_process_pid) {
         foreground_process_pid = SHELL_PID;
+        pipe_on_process_killed(killed_process->pid); // matamos el foreground group si estaba pipeado
     }
 
     killed_process->status = PS_TERMINATED;
     killed_process->return_value = KILLED_RET_VALUE;
+    
+    // cierra los fds abiertos
+    cleanup_resources(killed_process);
 
-    pipe_on_process_killed(killed_process->pid);
 
     if(killed_process->parent_pid == INIT_PID) {
         scheduler_remove_process(killed_process->pid); 
-    } else{ // si el padre no es init, no vamos a eliminarlo porque su padre podria hacerle un wait
+    } else { // si el padre no es init, no vamos a eliminarlo porque su padre podria hacerle un wait
         // Lo sacamos de la cola de procesos ready para que no vuelva a correr PERO NO  del array de procesos (para que el padre pueda acceder a su ret_value)
         if (killed_process->status == PS_READY || killed_process->status == PS_RUNNING) {
             if (ready_queue != NULL) {
@@ -530,7 +541,7 @@ int scheduler_get_processes(process_info_t *buffer, int max_count) {
         PCB *p = processes[i];
         if (p) {
             buffer[count].pid = p->pid;
-            strncpy(buffer[count].name, p->name, MAX_NAME_LENGTH);
+            strncpy(buffer[count].name, p->name, MAX_PROCESS_NAME_LENGTH);
             buffer[count].status = p->status;
             buffer[count].priority = p->priority;
             buffer[count].parent_pid = p->parent_pid;
@@ -562,6 +573,9 @@ void scheduler_exit_process(int64_t ret_value) {
         foreground_process_pid = SHELL_PID;
     }
     remove_process_from_all_semaphore_queues(current_process->pid);
+    
+    // limpia los fds abiertos
+    cleanup_resources(current_process);
 
     if(current_process->parent_pid == INIT_PID) { // si el padre es init, no hace falta mantener su pcb para guardarnos ret_value pues nadie le va a hacer waitpid
         scheduler_remove_process(current_process->pid); 

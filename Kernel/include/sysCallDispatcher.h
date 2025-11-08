@@ -6,9 +6,11 @@
 #include "memoryManager.h"
 #include "process.h"
 
-// pueden recibir hasta 3 argumentos
-static uint64_t sys_write(uint64_t fd, const char * buf, uint64_t count);
-static uint64_t sys_read(int fd, char * buf, uint64_t count);
+// TODO: reordenar las syscalls para que tengan un orden mas logico
+
+// syscalls de arqui
+static int sys_write(uint64_t fd, const char * buf, uint64_t count);
+static int sys_read(int fd, char * buf, uint64_t count);
 static void sys_date(uint8_t * buffer);
 static void sys_time(uint8_t * buffer);
 static uint64_t sys_regs(char * buffer);
@@ -56,9 +58,18 @@ static void sys_sem_post(const char *name);
 
 // pipes syscalls
 static int sys_create_pipe(int fds[2]);
-static void sys_destroy_pipe(int fd);
+static void sys_destroy_pipe(int id);
 
+// syscalls para foreground processes
 static int sys_set_foreground_process(int pid);
 static int sys_adopt_init_as_parent(int pid);
 static int sys_get_foreground_process(void);
+
+// mas syscalls de pipes
+static int sys_open_named_pipe(char * name, int fds[2]);
+static int sys_close_fd(int fd);
+static void sys_list_pipes(void);
+
+
+
 #endif

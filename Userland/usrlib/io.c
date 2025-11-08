@@ -31,7 +31,9 @@ uint64_t putchar(char c) {
 
 char getchar(){
     char c;
-    sys_read(STDIN, &c, 1);
+    if(sys_read(STDIN, &c, 1) <= 0) {
+        return EOF;
+    }
     return c;
 }
 

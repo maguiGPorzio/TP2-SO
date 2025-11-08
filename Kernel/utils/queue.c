@@ -97,6 +97,23 @@ int q_remove(queue_t q, int value) {
 
 }
 
+// devuelve 1 si el value esta en la queue, 0 sino
+int q_contains(queue_t q, int value) {
+    if (q_is_empty(q)) {
+        return 0;
+    }
+    
+    node_t *current = q->first;
+    while (current != NULL) {
+        if (current->value == value) {
+            return 1;
+        }
+        current = current->next;
+    }
+    
+    return 0;
+}
+
 // devuelve 1 si esta vacia, 0 sino
 int q_is_empty(queue_t q) {
     return q->first == NULL;
