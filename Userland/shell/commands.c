@@ -243,7 +243,7 @@ static int execute_piped_commands(char **left_tokens, int left_count,
     return 1;
 }
 
-static bool is_cmd_background(char *line){
+static bool is_cmd_background(char *line) {
     bool background = false;
 
     int len = strlen(line);
