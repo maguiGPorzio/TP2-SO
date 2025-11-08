@@ -21,3 +21,10 @@ void queue_array_destroy(queue_t queue_array[], int size){
     }
 }
 
+bool queue_array_add(queue_t queue_array[], int size, int index, int value){
+    if(index < 0 || index >= size){
+        return false;
+    }
+    return q_add(queue_array[index], value);
+}
+
