@@ -33,7 +33,8 @@ static BuiltinCommand builtins[] = {
 
 
 static ExternalProgram programs[] = {
-    { "cat", "prints to STDOUT its params", &cat_main },
+    { "echo", "prints to STDOUT its params", &echo_main },
+    { "cat", "reads from STDIN and prints it to STDOUT", &cat_main },
     { "red", "reads from STDIN and prints it to STDERR", &red_main },
     { "rainbow", "reads from STDIN and prints one char to each color fd", &rainbow_main},
     { "time", "prints system time to STDOUT", &time_main },
