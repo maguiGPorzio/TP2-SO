@@ -363,7 +363,29 @@ int scheduler_set_priority(pid_t pid, uint8_t new_priority) {
         return -1;
     }
 
-    processes[pid]->priority = new_priority;
+    PCB *process = processes[pid];
+    int current_priority_level = process->priority;
+
+    if (current_priority_level == new_priority) {
+        return 0;
+    }
+
+    bool was_ready = (process->status == PS_READY);
+    if (was_ready) {
+        queue_array_remove(ready_queues_array, NUM_PRIORITIES, current_priority_level, pid);
+    }
+
+    process->priority = new_priority;
+
+    if (was_ready) {
+        if (!queue_array_add(ready_queues_array, NUM_PRIORITIES, new_priority, pid)) {
+            // rollback to previous priority if enqueue fails
+            process->priority = current_priority_level;
+            queue_array_add(ready_queues_array, NUM_PRIORITIES, current_priority_level, pid);
+            return -1;
+        }
+    }
+
     return 0;
 }
 

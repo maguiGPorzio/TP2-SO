@@ -1,4 +1,5 @@
 #include "usrlib.h"
+#include "test_util.h"
 
 #define MAX_SEM_NAME_LENGTH 64 // TODO: se comparte con Kernel
 #define SEM_PREFIX "mvar_"
@@ -9,8 +10,7 @@
 #define LETTER_POOL_SIZE (sizeof(LETTER_POOL) - 1)
 
 #define COLOR_COUNT 5
-#define MIN_SLEEP_MS 100
-#define SLEEP_JITTER_MS 250
+#define MAX_BUSSY_WAIT 10
 
 static char volatile mvar_value = 0;
 static char sem_empty_name[MAX_SEM_NAME_LENGTH];
@@ -108,8 +108,7 @@ static int attach_to_sync_objects(void) {
 }
 
 static void random_pause(void) {
-    uint64_t delay = MIN_SLEEP_MS + GetUniform(SLEEP_JITTER_MS);
-    sys_sleep(delay);
+    bussy_wait(MAX_BUSSY_WAIT);
 }
 
 static char letter_for_writer(int index) {
