@@ -28,7 +28,6 @@ static int remaining_iterations = MAX_PRIORITY;      // Iteraciones restantes en
 static pid_t current_pid = NO_PID;                // PID del proceso actual
 static uint8_t process_count = 0;               // Cantidad total de procesos
 static uint64_t total_cpu_ticks = 0;            // Total de ticks de CPU
-static bool force_reschedule = false;           // Flag para forzar cambio de proceso
 static bool scheduler_initialized = false;
 static pid_t foreground_process_pid = NO_PID;                  // PID  del proceso que está corriendo en foreground
 
@@ -164,7 +163,6 @@ int init_scheduler(void) {
    
     process_count = 0;
     total_cpu_ticks = 0;
-    force_reschedule = false;
     current_pid = NO_PID; // NO le pongo INIT_PID porque el que lo tiene que elegir es el schedule la primera vez que se llama. 
     //Sino, la primera llamada a scheudule va a tratar a init como current y va a pisar su stack_pointer con prev_rsp
 
@@ -197,13 +195,14 @@ void *schedule(void *prev_rsp) {
         current->cpu_ticks++;
         total_cpu_ticks++;
 
-        if (current->status == PS_RUNNING) current->status = PS_READY;
+        if (current->status == PS_RUNNING) { 
+            current->status = PS_READY;
+        }
 
         if (current->status == PS_READY && current->pid != INIT_PID) {
             // índice == prioridad (1..MAX_PRIORITY)
             if (!queue_array_add(ready_queues_array, NUM_PRIORITIES, current->priority, current->pid)) {
                 current->status = PS_RUNNING;
-                force_reschedule = false;
                 return prev_rsp;
             }
         }
@@ -216,24 +215,9 @@ void *schedule(void *prev_rsp) {
 
     current_pid = next->pid;
     next->status = PS_RUNNING;
-    force_reschedule = false;
     return next->stack_pointer;
 }
 
-// ============================================
-//    RR ponderado por prioridad (sin pidx)
-//    - current_priority arranca en MAX_PRIORITY
-//    - remaining_iterations arranca en MAX_PRIORITY
-// ============================================
-
-static inline void normalize_priority_window(void) {
-    if (current_priority < MIN_PRIORITY || current_priority > MAX_PRIORITY) {
-        current_priority = MAX_PRIORITY;
-    }
-    if (remaining_iterations <= 0) {
-        remaining_iterations = SLOTS_FOR_PRIORITY(current_priority); // advance_priority_window();
-    }
-}
 
 static inline void advance_priority_window(void) {
     if (--current_priority < MIN_PRIORITY) {
@@ -246,8 +230,6 @@ static PCB *pick_next_process(void) {
     if (!scheduler_initialized || process_count == 0) {
         return NULL;
     }
-
-    //normalize_priority_window();
 
     int visited_levels = 0;
 
@@ -276,9 +258,7 @@ static PCB *pick_next_process(void) {
             }
             return candidate;
         }
-        // PID inválido: seguir probando en la misma prioridad sin consumir cupo
     }
-
     return NULL;
 }
 
@@ -402,8 +382,7 @@ int scheduler_get_priority(pid_t pid) {
 
 void scheduler_force_reschedule(void) {
     if (scheduler_initialized) {
-        force_reschedule = true;
-        timer_tick();
+        timer_tick(); // llama de nuevo a schedule
     }
 
 }
@@ -545,7 +524,6 @@ static void cleanup_all_processes(void) {
 static void reset_scheduler_state(void) {
     process_count = 0;
     total_cpu_ticks = 0;
-    force_reschedule = false;
     current_pid = NO_PID;
     scheduler_initialized = false;
 }
