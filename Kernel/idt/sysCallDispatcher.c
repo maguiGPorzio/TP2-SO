@@ -1,4 +1,6 @@
-// Clean implementation with process syscalls added
+// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
+
 #include <stddef.h>
 #include <stdint.h>
 #include "videoDriver.h"
