@@ -10,7 +10,7 @@
 #define LETTER_POOL_SIZE (sizeof(LETTER_POOL) - 1)
 
 #define COLOR_COUNT 5
-#define BUSSY_WAIT 999999
+#define BUSSY_WAIT 9999999
 
 static char volatile mvar_value = 0;
 static char sem_empty_name[MAX_SEM_NAME_LENGTH];

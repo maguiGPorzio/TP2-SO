@@ -566,6 +566,20 @@ int scheduler_get_processes(process_info_t *buffer, int max_count) {
     int count = 0;
     for (int i = 0; i < MAX_PROCESSES && count < max_count; i++) {
         PCB *p = processes[i];
+        Mirando el código de scheduler_get_processes():
+        
+        La respuesta corta: NO se bloquea.
+        
+        Razones:
+        
+        ✅ No hay locks/mutexes - el código accede directamente a processes[] sin sincronización
+        ✅ No hay syscalls bloqueantes - solo lee memoria local
+        ✅ No hay loops infinitos - itera MAX_PROCESSES veces como máximo
+        ✅ No hay calls a funciones bloqueantes - strncpy() es rápido
+        El ÚNICO problema potencial: Race condition, NO bloqueo
+        Escenario:
+        
+        
         if (p) {
             buffer[count].pid = p->pid;
             strncpy(buffer[count].name, p->name, MAX_PROCESS_NAME_LENGTH);
