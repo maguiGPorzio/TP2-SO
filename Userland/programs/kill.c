@@ -2,37 +2,46 @@
 
 int kill_main(int argc, char * argv[]) {
     if (argc == 0) {
-        print_err("Error: kill requires a PID\n");
-        print_err("Usage: kill <pid>\n");
-        return;
+        print_err("Usage: kill <pid1> [pid2] [pid3] ...\n");
+        return ERROR;
     }
     
-    if (argc > 1) {
-        print_err("Error: kill takes exactly one argument\n");
-        print_err("Usage: kill <pid>\n");
-        return;
+    int errors = 0;
+    
+    for (int i = 0; i < argc; i++) {
+        int pid = satoi(argv[i]);
+        
+        if (pid < 0) {
+            printf("Invalid PID: %s\n", argv[i]);
+            errors++;
+            continue;
+        }
+        
+        int result = sys_kill(pid);
+        
+        if (result == 0) {
+            printf("Process %d killed successfully\n", pid);
+        } else {
+            switch (result) {
+                case -1:
+                    printf("Error: Scheduler not initialized\n");
+                    break;
+                case -2:
+                    printf("Error: Invalid PID %d\n", pid);
+                    break;
+                case -3:
+                    printf("Error: Process %d not found\n", pid);
+                    break;
+                case -4:
+                    printf("Error: Cannot kill PID %d (protected process)\n", pid);
+                    break;
+                default:
+                    printf("Error: Failed to kill process %d\n", pid);
+                    break;
+            }
+            errors++;
+        }
     }
     
-    // Parsear el PID desde el string usando satoi
-    char *pid_str = argv[0];
-    int pid = satoi(pid_str);
-    
-    // Llamar la syscall para matar el proceso
-    int result = sys_kill(pid);
-
-    // Imprimir mensajes específicos según el código de error
-    switch (result) {
-        case -1:
-            print_err("[ERROR] Scheduler not initialized\n");
-            break;
-        case -2:
-            print_err("[ERROR] Invalid PID\n");
-            break;
-        case -3:
-            print_err("[ERROR] No process found with that PID\n");
-            break;
-        case -4:
-            print_err("[ERROR] Cannot kill process: protected process (init or shell)\n");
-            break;
-    }
+    return (errors == 0) ? OK : ERROR;
 }
