@@ -73,7 +73,7 @@ void ncPrintChar(char character){
 		*currentVideo = 0;
 		break;
 	case '\n':
-		ncNewline();
+		ncnewline();
 		break;
 	default:
 		*currentVideo = character;
@@ -85,7 +85,7 @@ void ncPrintChar(char character){
 
 }
 
-void ncNewline(){
+void ncnewline(){
 	do{
 		ncPrintChar(' ');
 	}

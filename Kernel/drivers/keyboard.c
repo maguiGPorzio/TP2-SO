@@ -171,7 +171,7 @@ void handle_pressed_key() {
         }
 
         write_buffer(scancode_to_ascii[index][scancode]);
-		// vdPutChar(scancode_to_ascii[index][scancode], 0xffffff);
+		// vd_put_char(scancode_to_ascii[index][scancode], 0xffffff);
     }
 
     return;

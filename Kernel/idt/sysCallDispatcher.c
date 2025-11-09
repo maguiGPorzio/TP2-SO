@@ -36,7 +36,7 @@ void * syscalls[] = {
     &sys_speaker_stop,       // 15
     &sys_textmode,           // 16
     &sys_videomode,          // 17
-    &sys_putpixel,           // 18
+    &sys_put_pixel,           // 18
     &sys_key_status,         // 19
     &sys_sleep,              // 20
     &sys_clear_input_buffer, // 21
@@ -99,7 +99,7 @@ static int sys_write(uint64_t fd, const char * buffer, uint64_t count) {
     if (fd < FIRST_FREE_FD) {
         uint32_t color = fd_colors[fd];
         for (int i = 0; i < count; i++) {
-            vdPutChar(buffer[i], color);
+            vd_put_char(buffer[i], color);
         }
 
         return count;
@@ -148,15 +148,15 @@ static void sys_time(uint8_t * buffer){
 
 // limpia la shell y pone el cursor en el principio
 static void sys_clear(){
-    vdClear();
+    vd_clear();
 }
 
 static void sys_increase_fontsize(){
-    vdIncreaseTextSize();
+    vd_increase_text_size();
 }
 
 static void sys_decrease_fontsize() {
-    vdDecreaseTextSize();
+    vd_decrease_text_size();
 }
 
 // Ruido para el juego
@@ -190,12 +190,12 @@ static void sys_rectangle(uint64_t fill, uint64_t * info, uint32_t color) {
 
 // info: [x0, y0, x1, y1]
 static void sys_draw_line(uint64_t * info, uint32_t color) {
-    drawLine(info[0], info[1], info[2], info[3], color);
+    vd_draw_line(info[0], info[1], info[2], info[3], color);
 }
 
 // info: [x0, y0, size]
 static void sys_draw_string(const char * buf, uint64_t * info, uint32_t color) {
-    drawString(buf, info[0], info[1], color, info[2]);
+    vd_draw_string(buf, info[0], info[1], color, info[2]);
 }
 
 static void sys_speaker_start(uint32_t freq_hz){
@@ -207,15 +207,15 @@ static void sys_speaker_stop(){
 }
 
 static void sys_textmode() {
-    enableTextMode();
+    enable_text_mode();
 }
 
 static void sys_videomode() {
-    disableTextMode();
+    disable_text_mode();
 }
 
-static void sys_putpixel(uint32_t hexColor, uint64_t x, uint64_t y) {
-    putPixel(hexColor, x, y);
+static void sys_put_pixel(uint32_t hex_color, uint64_t x, uint64_t y) {
+    put_pixel(hex_color, x, y);
 }
 
 static uint64_t sys_key_status(char c) {

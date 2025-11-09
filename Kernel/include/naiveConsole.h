@@ -9,7 +9,7 @@ void ncPrintStyleCount(const char * buf, uint8_t style, uint64_t count);
 void ncPrintInPosition(uint8_t i, uint8_t j, char * string, const uint8_t style);
 void ncPrintInPositionNumber(uint8_t i, uint8_t j, uint64_t number);
 void ncPrintChar(char character);
-void ncNewline();
+void ncnewline();
 void ncSetCursor(uint8_t i, uint8_t j);
 void ncPrintDec(uint64_t value);
 void ncPrintHex(uint64_t value);

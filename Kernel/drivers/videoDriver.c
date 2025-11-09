@@ -5,7 +5,7 @@
 #include <font.h>
 #include "lib.h"
 
-#define abs(x) ((x) < 0 ? -(x) : (x))
+#define ABS(x) ((x) < 0 ? -(x) : (x))
 #define ENABLED 1
 #define DISABLED 0
 #define BKG_COLOR 0x000000 // cuidado si lo cambiamos hay que cambiar el clear implementando un memset custom
@@ -61,20 +61,20 @@ typedef struct vbe_mode_info_structure * VBEInfoPtr;
 
 VBEInfoPtr VBE_mode_info = (VBEInfoPtr) 0x0000000000005C00;
 
-static int isValid(uint64_t x, uint64_t y) {
+static int is_valid(uint64_t x, uint64_t y) {
     return x < VBE_mode_info->width && y < VBE_mode_info->height;
 }
 
-void putPixel(uint32_t hexColor, uint64_t x, uint64_t y) {
+void put_pixel(uint32_t hex_color, uint64_t x, uint64_t y) {
 	// agregamos chequeo de que el pixel este dentro de los limites de la pantalla
-	if (!isValid(x, y)) {
+	if (!is_valid(x, y)) {
 		return;
 	}
     uint8_t * framebuffer = (uint8_t *) VBE_mode_info->framebuffer;
     uint64_t offset = (x * ((VBE_mode_info->bpp)/8)) + (y * VBE_mode_info->pitch);
-    framebuffer[offset]     =  (hexColor) & 0xFF;
-    framebuffer[offset+1]   =  (hexColor >> 8) & 0xFF;
-    framebuffer[offset+2]   =  (hexColor >> 16) & 0xFF;
+    framebuffer[offset]     =  (hex_color) & 0xFF;
+    framebuffer[offset+1]   =  (hex_color >> 8) & 0xFF;
+    framebuffer[offset+2]   =  (hex_color >> 16) & 0xFF;
 }
 
 uint16_t getScreenHeight() {
@@ -95,32 +95,32 @@ static uint64_t cursor_x;
 static uint32_t cursor_y;
 static uint8_t text_size = 1;
 
-void enableTextMode() {
+void enable_text_mode() {
     if (text_mode) {
         return;
     }
     text_mode = ENABLED;
-    vdClear();
+    vd_clear();
 
 }
 
-void disableTextMode() {
+void disable_text_mode() {
     if (!text_mode) {
         return;
     }
-    vdClear();
+    vd_clear();
     text_mode = DISABLED;
 }
 
-void vdSetTextSize(uint8_t size) {
+void vd_set_text_size(uint8_t size) {
     text_size = size;
 }
 
-uint8_t vdGetTextSize() {
+uint8_t vd_get_text_size() {
     return text_size;
 }
 
-static void scrollUp() {
+static void scroll_up() {
     uint64_t line_height = text_size * FONT_HEIGHT;
     uint8_t * framebuffer = (uint8_t *) VBE_mode_info->framebuffer;
     
@@ -141,7 +141,7 @@ static void scrollUp() {
     fill_rectangle(0, last_line_start, VBE_mode_info->width, VBE_mode_info->height, BKG_COLOR);
 }
 
-void newLine() {
+void newline() {
     cursor_x = 0;
     uint64_t step_y = text_size * FONT_HEIGHT;
     
@@ -150,34 +150,34 @@ void newLine() {
         cursor_y += step_y;
         fill_rectangle(cursor_x, cursor_y, VBE_mode_info->width, cursor_y + FONT_HEIGHT*text_size, BKG_COLOR);
     } else {
-        scrollUp();
+        scroll_up();
         cursor_y = VBE_mode_info->height - step_y; // Posicionar cursor en la última línea
     }
 }
 
-static void updateCursor() {
-    if(!isValid(cursor_x + FONT_WIDTH*text_size, cursor_y + FONT_HEIGHT*text_size)) {
-        newLine();
+static void update_cursor() {
+    if(!is_valid(cursor_x + FONT_WIDTH*text_size, cursor_y + FONT_HEIGHT*text_size)) {
+        newline();
     }
 }
 
 
 
-static void moveCursorRight() {
-    uint64_t step_x = FONT_WIDTH*text_size;
-    if (cursor_x + 2*step_x <= VBE_mode_info->width) {
+static void move_cursor_right() {
+    uint64_t step_x = FONT_WIDTH * text_size;
+    if (cursor_x + 2 * step_x <= VBE_mode_info->width) {
         cursor_x += step_x;
     } else {
-        newLine();
+        newline();
     }
 }
 
-static void moveCursorLeft() {
-    uint64_t step_x = FONT_WIDTH*text_size;
+static void move_cursor_left() {
+    uint64_t step_x = FONT_WIDTH * text_size;
     if (cursor_x >= step_x) {
         cursor_x -= step_x;
     } else {
-        uint64_t step_y = FONT_HEIGHT*text_size;
+        uint64_t step_y = FONT_HEIGHT * text_size;
         if (cursor_y >= step_y) {
             cursor_y -= step_y;
             cursor_x = (VBE_mode_info->width / step_x - 1) * step_x;
@@ -185,29 +185,29 @@ static void moveCursorLeft() {
     }
 }
 
-static void deleteChar() {
-    moveCursorLeft();
+static void delete_char() {
+    move_cursor_left();
     for (int y = 0; y < FONT_HEIGHT*text_size; y++) {
         for (int x = 0; x < FONT_WIDTH*text_size; x++) {
-            putPixel(BKG_COLOR, cursor_x + x, cursor_y + y);
+            put_pixel(BKG_COLOR, cursor_x + x, cursor_y + y);
         }
     }
 }
 
-void vdPutChar(uint8_t ch, uint32_t color) {
+void vd_put_char(uint8_t ch, uint32_t color) {
     if (!text_mode) {
         return;
     }
     switch (ch) {
         case '\b':
-            deleteChar();
+            delete_char();
             break;
         case '\n':
-            newLine();
+            newline();
             break;
         default:
-            drawChar(ch, cursor_x, cursor_y, color, text_size);
-            moveCursorRight();
+            vd_draw_char(ch, cursor_x, cursor_y, color, text_size);
+            move_cursor_right();
             break;
 	}
 }
@@ -217,26 +217,26 @@ void vd_print(const char * str, uint32_t color) {
         return;
     }
     for (int i = 0; str[i] != 0; i++) {
-        vdPutChar(str[i], color);
+        vd_put_char(str[i], color);
     }
 }
 
 
-void vdIncreaseTextSize() {
+void vd_increase_text_size() {
     if (text_size < MAX_SIZE && text_mode) {
         text_size++;
     }
-    updateCursor();
+    update_cursor();
 }
 
-void vdDecreaseTextSize() {
+void vd_decrease_text_size() {
     if (text_size > 1 && text_mode) {
         text_size--;
     }
-    updateCursor();
+    update_cursor();
 }
 
-void vdClear() {
+void vd_clear() {
     if (!text_mode) {
         return;
     }
@@ -258,7 +258,7 @@ void vdClear() {
 */
 
 
-void drawChar(uint8_t ch, uint64_t x, uint64_t y, uint32_t color, uint64_t size) {
+void vd_draw_char(uint8_t ch, uint64_t x, uint64_t y, uint32_t color, uint64_t size) {
     if (ch >= 128) {
         return;
     }
@@ -274,7 +274,7 @@ void drawChar(uint8_t ch, uint64_t x, uint64_t y, uint32_t color, uint64_t size)
                 // dibuja un cuadrado de size × size pixels por cada bit
                 for (uint64_t dy = 0; dy < size; dy++) {
                     for (uint64_t dx = 0; dx < size; dx++) {
-                        putPixel(color, x + j*size + dx, y + i*size + dy);
+                        put_pixel(color, x + j*size + dx, y + i*size + dy);
                     }
                 }
             }
@@ -282,20 +282,20 @@ void drawChar(uint8_t ch, uint64_t x, uint64_t y, uint32_t color, uint64_t size)
     }
 }
 
-void drawString(const char * str, uint64_t x, uint64_t y, uint32_t color, uint64_t size) {
+void vd_draw_string(const char * str, uint64_t x, uint64_t y, uint32_t color, uint64_t size) {
     if (size == 0) {
         size = 1; // aseguramos minimo size de 1
     }
     
     for (int i = 0; str[i] != 0; i++) {
-        drawChar(str[i], x + (FONT_WIDTH*size)*i, y, color, size);
+        vd_draw_char(str[i], x + (FONT_WIDTH*size)*i, y, color, size);
     }
 }
 
-void drawLine(uint64_t x0, uint64_t y0, uint64_t x1, uint64_t y1, uint32_t color) {
+void vd_draw_line(uint64_t x0, uint64_t y0, uint64_t x1, uint64_t y1, uint32_t color) {
 	// algoritmo de Bresenham
-    int64_t dx = abs((int64_t)x1 - (int64_t)x0);
-    int64_t dy = abs((int64_t)y1 - (int64_t)y0);
+    int64_t dx = ABS((int64_t)x1 - (int64_t)x0);
+    int64_t dy = ABS((int64_t)y1 - (int64_t)y0);
 
     int64_t step_x = (x0 < x1) ? 1 : -1;
     int64_t step_y = (y0 < y1) ? 1 : -1;
@@ -304,9 +304,9 @@ void drawLine(uint64_t x0, uint64_t y0, uint64_t x1, uint64_t y1, uint32_t color
 	int done = 0;
 
     while (!done) {
-        putPixel(color, x0, y0);  
+        put_pixel(color, x0, y0);  
 
-		if ((x0 == x1 && y0 == y1) || !isValid(x0, y0)) { 
+		if ((x0 == x1 && y0 == y1) || !is_valid(x0, y0)) { 
 			done = 1;
 		} else {
 			int64_t error2 = 2 * error;
@@ -335,10 +335,10 @@ void draw_rectangle(uint64_t x0, uint64_t y0, uint64_t x1, uint64_t y1, uint32_t
 		return;
 	}
 	
-	drawLine(x0, y0, x1, y0, color);
-	drawLine(x0, y0, x0, y1, color);
-	drawLine(x1 ,y1, x0, y1, color);
-	drawLine(x1, y1, x1, y0, color);
+	vd_draw_line(x0, y0, x1, y0, color);
+	vd_draw_line(x0, y0, x0, y1, color);
+	vd_draw_line(x1 ,y1, x0, y1, color);
+	vd_draw_line(x1, y1, x1, y0, color);
 
 	
 }
@@ -353,7 +353,7 @@ void fill_rectangle(uint64_t x0, uint64_t y0, uint64_t x1, uint64_t y1, uint32_t
 	
 	for (int i = 0; i < dx; i++) {
 		for (int j = 0; j < dy; j++) {
-			putPixel(color, x0+i, y0+j);
+			put_pixel(color, x0+i, y0+j);
 		}
 	}
 	
@@ -366,14 +366,14 @@ void draw_circle(uint64_t x_center, uint64_t y_center, uint64_t radius, uint32_t
     int64_t err = 0;
 
     while (x >= y) {
-        putPixel(color, x_center + x, y_center + y);
-        putPixel(color, x_center + y, y_center + x);
-        putPixel(color, x_center - y, y_center + x);
-        putPixel(color, x_center - x, y_center + y);
-        putPixel(color, x_center - x, y_center - y);
-        putPixel(color, x_center - y, y_center - x);
-        putPixel(color, x_center + y, y_center - x);
-        putPixel(color, x_center + x, y_center - y);
+        put_pixel(color, x_center + x, y_center + y);
+        put_pixel(color, x_center + y, y_center + x);
+        put_pixel(color, x_center - y, y_center + x);
+        put_pixel(color, x_center - x, y_center + y);
+        put_pixel(color, x_center - x, y_center - y);
+        put_pixel(color, x_center - y, y_center - x);
+        put_pixel(color, x_center + y, y_center - x);
+        put_pixel(color, x_center + x, y_center - y);
 
         if (err <= 0) {
             y += 1;
@@ -397,7 +397,7 @@ void fill_circle(uint64_t x_center, uint64_t y_center, uint64_t radius, uint32_t
             int dx = x - x_center;
             int dy = y - y_center;
             if (dx*dx + dy*dy <= radius*radius) { // si esta adentro del circulo
-                putPixel(color, x, y);
+                put_pixel(color, x, y);
             }
         }
     }

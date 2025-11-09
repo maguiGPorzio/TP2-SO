@@ -27,7 +27,7 @@ static void sys_speaker_start(uint32_t freq_hz);
 static void sys_speaker_stop();
 static void sys_textmode();
 static void sys_videomode();
-static void sys_putpixel(uint32_t hexColor, uint64_t x, uint64_t y);
+static void sys_put_pixel(uint32_t hex_color, uint64_t x, uint64_t y);
 static uint64_t sys_key_status(char c);
 static void sys_sleep(uint64_t miliseconds);
 static void sys_clear_input_buffer();

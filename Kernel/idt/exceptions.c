@@ -24,14 +24,14 @@ void exceptionDispatcher(int exception) {
 
 static void excepHandler(char * msg){
 	vd_print(msg, 0xff0000);
-	newLine();
+	newline();
 	vd_print("Press enter to continue", 0xff0000);
 	int c;
 	_sti();
 	do{
 		_hlt();	
 	} while((c=get_char_from_buffer()) != '\n');
-	vdClear();
+	vd_clear();
 }
 
 static void zero_division() {

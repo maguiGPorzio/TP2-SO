@@ -15,7 +15,7 @@
 //              TIPOS DE DATOS
 // ============================================
 
-// TAD - Tipo abstracto de datos (estructura opaca)
+// TAD - Tipo ABStracto de datos (estructura opaca)
 typedef struct MemoryManagerCDT* MemoryManagerADT;
 
 // Estructura para estadísticas de memoria

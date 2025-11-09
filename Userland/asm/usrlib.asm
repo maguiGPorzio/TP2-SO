@@ -95,7 +95,7 @@ sys_enable_textmode:
 sys_disable_textmode:
 	SYSCALL 17
 
-; 18 - static void sys_putpixel(uint32_t hexColor, uint64_t x, uint64_t y)
+; 18 - static void sys_put_pixel(uint32_t hex_color, uint64_t x, uint64_t y)
 sys_put_pixel:
 	SYSCALL 18
 
