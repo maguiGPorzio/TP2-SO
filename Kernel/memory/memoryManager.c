@@ -48,7 +48,7 @@ static size_t align(size_t size) {
 }
 
 // Divide un bloque si es muy grande
-static void splitBlock(MemBlock* block, size_t size) {
+static void split_block(MemBlock* block, size_t size) {
     
     if (block->size >= size + sizeof(MemBlock) + MIN_BLOCK_SIZE) {
         // Crear nuevo bloque con el espacio restante
@@ -159,7 +159,7 @@ void* alloc_memory(memory_manager_ADT memory_manager, size_t size) {
     }
     
     // Dividir el bloque si es necesario
-    splitBlock(block, size);
+    split_block(block, size);
     
     // Marcar como ocupado
     block->free = false;
