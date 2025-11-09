@@ -15,19 +15,19 @@
 // ============================================
 
 // Header de cada bloque de memoria. Es una lista doblemente enlazada.
-typedef struct MemBlock {
+typedef struct mem_block {
     size_t size;                // Tamaño del bloque (sin incluir header)
-    struct MemBlock* next;      // Siguiente bloque en la lista
-    struct MemBlock* prev;      // Bloque anterior
+    struct mem_block* next;      // Siguiente bloque en la lista
+    struct mem_block* prev;      // Bloque anterior
     bool free;                  // true si está libre, false si está ocupado
     uint32_t magic;             // Número mágico para verificación.  Al liberar (free_memory) se verifica que block->magic == MAGIC_NUMBER antes de confiar en el puntero; si alguien pasó una dirección que no proviene del gestor (o fue sobrescrita), la comparación falla y se ignora la operación
-} MemBlock;
+} mem_block;
 
 // Estructura del Memory Manager (CDT)
 struct memory_manager_CDT {
     void* start_address;         // Dirección base de la memoria
     size_t total_size;           // Tamaño total
-    MemBlock* firstBlock;       // Primer bloque de la lista
+    mem_block* first_block;       // Primer bloque de la lista
     size_t allocated_blocks;     // Contador de bloques allocados
     size_t total_allocated;      // Total de bytes allocados
 };
@@ -48,12 +48,12 @@ static size_t align(size_t size) {
 }
 
 // Divide un bloque si es muy grande
-static void split_block(MemBlock* block, size_t size) {
+static void split_block(mem_block* block, size_t size) {
     
-    if (block->size >= size + sizeof(MemBlock) + MIN_BLOCK_SIZE) {
+    if (block->size >= size + sizeof(mem_block) + MIN_BLOCK_SIZE) {
         // Crear nuevo bloque con el espacio restante
-        MemBlock* newBlock = (MemBlock*)((char*)block + sizeof(MemBlock) + size);
-        newBlock->size = block->size - size - sizeof(MemBlock);
+        mem_block* newBlock = (mem_block*)((char*)block + sizeof(mem_block) + size);
+        newBlock->size = block->size - size - sizeof(mem_block);
         newBlock->free = true; // ACA
         newBlock->magic = MAGIC_NUMBER;
         newBlock->next = block->next;
@@ -68,11 +68,13 @@ static void split_block(MemBlock* block, size_t size) {
     }
 }
 
-static inline void coalesceNext(MemBlock* block) {
-    if (block == NULL) return;
-    MemBlock* next = block->next;
+static inline void coalesce_next(mem_block* block) {
+    if (block == NULL) {
+        return;
+    }
+    mem_block* next = block->next;
     if (next != NULL && next->free) {
-        block->size += sizeof(MemBlock) + next->size;
+        block->size += sizeof(mem_block) + next->size;
         block->next = next->next;
         if (block->next != NULL) {
             block->next->prev = block;
@@ -80,11 +82,11 @@ static inline void coalesceNext(MemBlock* block) {
     }
 }
 
-static inline void coalescePrev(MemBlock* block) {
+static inline void coalesce_prev(mem_block* block) {
     if (block == NULL) return;
-    MemBlock* prev = block->prev;
+    mem_block* prev = block->prev;
     if (prev != NULL && prev->free) {
-        prev->size += sizeof(MemBlock) + block->size;
+        prev->size += sizeof(mem_block) + block->size;
         prev->next = block->next;
         if (block->next != NULL) {
             block->next->prev = prev;
@@ -93,14 +95,14 @@ static inline void coalescePrev(MemBlock* block) {
 }
 
 // Fusiona bloques libres adyacentes usando funciones auxiliares. TIENEN QUE ESTAR EN ESE ORDEN!
-static void coalesceBlocks(MemBlock* block) {
-    coalesceNext(block);
-    coalescePrev(block);
+static void coalesce_blocks(mem_block* block) {
+    coalesce_next(block);
+    coalesce_prev(block);
 }
 
 // Busca el primer bloque libre que tenga el tamaño suficiente (First Fit)
-static MemBlock* findFreeBlock(memory_manager_ADT memory_manager, size_t size) {
-    MemBlock* current = memory_manager->firstBlock;
+static mem_block* find_free_block(memory_manager_ADT memory_manager, size_t size) {
+    mem_block* current = memory_manager->first_block;
     
     while (current != NULL) {
         if (current->free && current->size >= size && current->magic == MAGIC_NUMBER) {
@@ -118,7 +120,7 @@ static MemBlock* findFreeBlock(memory_manager_ADT memory_manager, size_t size) {
 
 memory_manager_ADT create_memory_manager(void* start_address, size_t size) {
     // Valida tamaño mínimo para el memory manager y al menos un bloque
-    if (start_address == NULL || size < sizeof(struct memory_manager_CDT) + sizeof(MemBlock) + MIN_BLOCK_SIZE) {
+    if (start_address == NULL || size < sizeof(struct memory_manager_CDT) + sizeof(mem_block) + MIN_BLOCK_SIZE) {
         return NULL;
     }
     
@@ -133,12 +135,12 @@ memory_manager_ADT create_memory_manager(void* start_address, size_t size) {
     memory_manager->total_allocated = 0;
     
     // Crear el primer bloque libre después del CDT
-    memory_manager->firstBlock = (MemBlock*)((char*)start_address + sizeof(struct memory_manager_CDT));
-    memory_manager->firstBlock->size = size - sizeof(struct memory_manager_CDT) - sizeof(MemBlock); // Resto del espacio del memory manager
-    memory_manager->firstBlock->free = true;
-    memory_manager->firstBlock->next = NULL;
-    memory_manager->firstBlock->prev = NULL;
-    memory_manager->firstBlock->magic = MAGIC_NUMBER;
+    memory_manager->first_block = (mem_block*)((char*)start_address + sizeof(struct memory_manager_CDT));
+    memory_manager->first_block->size = size - sizeof(struct memory_manager_CDT) - sizeof(mem_block); // Resto del espacio del memory manager
+    memory_manager->first_block->free = true;
+    memory_manager->first_block->next = NULL;
+    memory_manager->first_block->prev = NULL;
+    memory_manager->first_block->magic = MAGIC_NUMBER;
     
     return memory_manager;
 }
@@ -152,7 +154,7 @@ void* alloc_memory(memory_manager_ADT memory_manager, size_t size) {
     size = align(size);
     
     // Buscar un bloque libre
-    MemBlock* block = findFreeBlock(memory_manager, size);
+    mem_block* block = find_free_block(memory_manager, size);
     
     if (block == NULL) {
         return NULL; // No hay memoria disponible
@@ -167,7 +169,7 @@ void* alloc_memory(memory_manager_ADT memory_manager, size_t size) {
     memory_manager->total_allocated += block->size;
     
     // Retornar puntero después del header (donde arranca el espacio utilizable del bloque)
-    return (char*)block + sizeof(MemBlock);
+    return (char*)block + sizeof(mem_block);
 }
 
 void free_memory(memory_manager_ADT memory_manager, void* ptr) {
@@ -176,7 +178,7 @@ void free_memory(memory_manager_ADT memory_manager, void* ptr) {
     }
     
     // Obtener el bloque desde el puntero
-    MemBlock* block = (MemBlock*)((char*)ptr - sizeof(MemBlock));
+    mem_block* block = (mem_block*)((char*)ptr - sizeof(mem_block));
     
     // Verificar número mágico
     if (block->magic != MAGIC_NUMBER) {
@@ -195,7 +197,7 @@ void free_memory(memory_manager_ADT memory_manager, void* ptr) {
     memory_manager->total_allocated -= block->size;
 
     // Fusionar con bloques adyacentes
-    coalesceBlocks(block);
+    coalesce_blocks(block);
 }
 
 mem_info_t get_mem_status(memory_manager_ADT memory_manager) {
@@ -206,7 +208,7 @@ mem_info_t get_mem_status(memory_manager_ADT memory_manager) {
         status.used_memory = memory_manager->total_allocated;
         status.free_memory = status.total_memory - status.used_memory - 
                            sizeof(struct memory_manager_CDT) - 
-                           (memory_manager->allocated_blocks * sizeof(MemBlock));
+                           (memory_manager->allocated_blocks * sizeof(mem_block));
         status.allocated_blocks = memory_manager->allocated_blocks;
     }
     
