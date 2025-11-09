@@ -176,14 +176,14 @@ static void coalesce(memory_manager_ADT memory_manager, buddy_node_t* block) {
 //        IMPLEMENTACIÓN DE LA INTERFAZ
 // ============================================
 
-memory_manager_ADT createMemoryManager(void* startAddress, size_t size) {
-    if (startAddress == NULL || size < sizeof(struct memory_manager_CDT) + (1ULL << MIN_ORDER)) {
+memory_manager_ADT create_memory_manager(void* start_address, size_t size) {
+    if (start_address == NULL || size < sizeof(struct memory_manager_CDT) + (1ULL << MIN_ORDER)) {
         return NULL;
     }
     
     // Colocar el CDT al inicio
-    memory_manager_ADT memory_manager = (memory_manager_ADT)startAddress;
-    memory_manager->base_address = (char*)startAddress + sizeof(struct memory_manager_CDT);
+    memory_manager_ADT memory_manager = (memory_manager_ADT)start_address;
+    memory_manager->base_address = (char*)start_address + sizeof(struct memory_manager_CDT);
     memory_manager->total_size = size - sizeof(struct memory_manager_CDT);
     memory_manager->allocated_blocks = 0;
     memory_manager->total_allocated = 0;
@@ -194,26 +194,26 @@ memory_manager_ADT createMemoryManager(void* startAddress, size_t size) {
     }
     
     // Crear bloques iniciales con la memoria disponible
-    size_t remainingSize = memory_manager->total_size;
-    void* currentAddr = memory_manager->base_address;
+    size_t remaining_size = memory_manager->total_size;
+    void* current_address = memory_manager->base_address;
     
     // Dividir la memoria en bloques del máximo orden posible
-    while (remainingSize >= (1ULL << MIN_ORDER)) {
+    while (remaining_size >= (1ULL << MIN_ORDER)) {
         uint8_t order = MAX_ORDER;
         size_t block_size = order_to_size(order);
         
         // Encontrar el bloque más grande que cabe
-        while (block_size > remainingSize && order > MIN_ORDER) {
+        while (block_size > remaining_size && order > MIN_ORDER) {
             order--;
             block_size = order_to_size(order);
         }
         
         // Crear el bloque
-        buddy_node_t* node = (buddy_node_t*)currentAddr;
+        buddy_node_t* node = (buddy_node_t*)current_address;
         add_from_free_list(memory_manager, node, order);  // ← Ahora pasa memory_manager
         
-        currentAddr = (char*)currentAddr + block_size;
-        remainingSize -= block_size;
+        current_address = (char*)current_address + block_size;
+        remaining_size -= block_size;
     }
     
     return memory_manager;
@@ -292,7 +292,8 @@ mem_info_t get_mem_status(memory_manager_ADT memory_manager) {
     return status;
 }
 
-void printMemState(memory_manager_ADT memory_manager) {
+// TODO: esto no lo usamos
+void print_mem_state(memory_manager_ADT memory_manager) {
     if (memory_manager == NULL) {
         ncPrint("Buddy Memory Manager: NULL\n");
         return;
@@ -340,7 +341,7 @@ void printMemState(memory_manager_ADT memory_manager) {
 }
 
 void init_kernel_memory_manager(void) {
-    kernel_mm = createMemoryManager((void*)HEAP_START_ADDRESS, HEAP_SIZE);
+    kernel_mm = create_memory_manager((void*)HEAP_START_ADDRESS, HEAP_SIZE);
     
     if (kernel_mm == NULL) {
         ncPrint("KERNEL PANIC: Failed to initialize Buddy memory manager\n");

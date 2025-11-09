@@ -25,7 +25,7 @@ typedef struct MemBlock {
 
 // Estructura del Memory Manager (CDT)
 struct memory_manager_CDT {
-    void* startAddress;         // Dirección base de la memoria
+    void* start_address;         // Dirección base de la memoria
     size_t total_size;           // Tamaño total
     MemBlock* firstBlock;       // Primer bloque de la lista
     size_t allocated_blocks;     // Contador de bloques allocados
@@ -116,24 +116,24 @@ static MemBlock* findFreeBlock(memory_manager_ADT memory_manager, size_t size) {
 //        IMPLEMENTACIÓN DE LA INTERFAZ
 // ============================================
 
-memory_manager_ADT createMemoryManager(void* startAddress, size_t size) {
+memory_manager_ADT create_memory_manager(void* start_address, size_t size) {
     // Valida tamaño mínimo para el memory manager y al menos un bloque
-    if (startAddress == NULL || size < sizeof(struct memory_manager_CDT) + sizeof(MemBlock) + MIN_BLOCK_SIZE) {
+    if (start_address == NULL || size < sizeof(struct memory_manager_CDT) + sizeof(MemBlock) + MIN_BLOCK_SIZE) {
         return NULL;
     }
     
     // El memory manager se almacena al inicio del área de memoria
-    memory_manager_ADT memory_manager = (memory_manager_ADT)startAddress;
+    memory_manager_ADT memory_manager = (memory_manager_ADT)start_address;
     // El gestor guarda su propia estructura directamente en la memoria gestionada: el puntero apunta al inicio del heap y se interpreta como la estructura para poder escribir sus campos.
     
     // Inicializar estructura
-    memory_manager->startAddress = startAddress;
+    memory_manager->start_address = start_address;
     memory_manager->total_size = size;
     memory_manager->allocated_blocks = 0;
     memory_manager->total_allocated = 0;
     
     // Crear el primer bloque libre después del CDT
-    memory_manager->firstBlock = (MemBlock*)((char*)startAddress + sizeof(struct memory_manager_CDT));
+    memory_manager->firstBlock = (MemBlock*)((char*)start_address + sizeof(struct memory_manager_CDT));
     memory_manager->firstBlock->size = size - sizeof(struct memory_manager_CDT) - sizeof(MemBlock); // Resto del espacio del memory manager
     memory_manager->firstBlock->free = true;
     memory_manager->firstBlock->next = NULL;
@@ -214,7 +214,7 @@ mem_info_t get_mem_status(memory_manager_ADT memory_manager) {
 }
 
 void init_kernel_memory_manager(void) {
-    kernel_mm = createMemoryManager((void*)HEAP_START_ADDRESS, HEAP_SIZE);
+    kernel_mm = create_memory_manager((void*)HEAP_START_ADDRESS, HEAP_SIZE);
     
     if (kernel_mm == NULL) {
         // Kernel panic
