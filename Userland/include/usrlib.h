@@ -51,7 +51,7 @@ int64_t satoi(char *str);
 
 /*-- FUNCIONES DE MATEMATICAS --*/
 float inv_sqrt(float number);
-uint32_t GetUint();
-uint32_t GetUniform(uint32_t max);
+uint32_t get_uint();
+uint32_t get_uniform(uint32_t max);
 
 #endif 

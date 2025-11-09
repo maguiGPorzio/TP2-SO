@@ -111,7 +111,7 @@ static int attach_to_sync_objects(void) {
 }
 
 static void random_pause(void) {
-    uint64_t delay = MIN_SLEEP_MS + GetUniform(SLEEP_JITTER_MS);
+    uint64_t delay = MIN_SLEEP_MS + get_uniform(SLEEP_JITTER_MS);
     sys_sleep(delay);
 }
 
