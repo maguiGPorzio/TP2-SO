@@ -69,7 +69,7 @@ void init_semaphore_manager(void) {
         return;  // Ya inicializado
     }
     
-    MemoryManagerADT mm = get_kernel_memory_manager();
+    memory_manager_ADT mm = get_kernel_memory_manager();
     sem_manager = alloc_memory(mm, sizeof(semaphore_manager_t));
     
     if (sem_manager == NULL) {
@@ -113,7 +113,7 @@ int64_t sem_open(char *name, int initial_value) {
     }
     
     // Crear nuevo semáforo
-    MemoryManagerADT mm = get_kernel_memory_manager();
+    memory_manager_ADT mm = get_kernel_memory_manager();
     sem = alloc_memory(mm, sizeof(semaphore_t));
     if (sem == NULL) {
         return ERROR;
@@ -163,7 +163,7 @@ int64_t sem_close(char *name) {
     release_lock(&sem->lock);
     
     // Último proceso usando el semáforo, destruirlo
-    MemoryManagerADT mm = get_kernel_memory_manager();
+    memory_manager_ADT mm = get_kernel_memory_manager();
     free_memory(mm, sem);
     sem_manager->semaphores[idx] = NULL;
     sem_manager->semaphore_count--;
@@ -376,7 +376,7 @@ static int64_t sem_close_by_pid(char *name, uint32_t pid) {
     release_lock(&sem->lock);
     
     // Ultimo proceso usando el semaforo, destruirlo
-    MemoryManagerADT mm = get_kernel_memory_manager();
+    memory_manager_ADT mm = get_kernel_memory_manager();
     free_memory(mm, sem);
     sem_manager->semaphores[idx] = NULL;
     sem_manager->semaphore_count--;

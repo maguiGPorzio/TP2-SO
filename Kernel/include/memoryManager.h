@@ -16,7 +16,7 @@
 // ============================================
 
 // TAD - Tipo ABStracto de datos (estructura opaca)
-typedef struct MemoryManagerCDT* MemoryManagerADT;
+typedef struct memory_manager_CDT* memory_manager_ADT;
 
 // Estructura para estadísticas de memoria
 typedef struct {
@@ -32,21 +32,21 @@ typedef struct {
  * @param size Tamaño en bytes a reservar
  * @return Puntero al bloque reservado o NULL si no hay memoria
  */
-void* alloc_memory(MemoryManagerADT memManager, size_t size);
+void* alloc_memory(memory_manager_ADT memManager, size_t size);
 
 /**
  * @brief Libera un bloque de memoria previamente reservado
  * @param memManager Handler del memory manager
  * @param ptr Puntero al bloque a liberar
  */
-void free_memory(MemoryManagerADT memManager, void* ptr);
+void free_memory(memory_manager_ADT memManager, void* ptr);
 
 /**
  * @brief Obtiene estadísticas del estado de la memoria
  * @param memManager Handler del memory manager
  * @return Estructura con información de memoria
  */
-mem_info_t get_mem_status(MemoryManagerADT memManager);
+mem_info_t get_mem_status(memory_manager_ADT memManager);
 
 
 /**
@@ -55,6 +55,6 @@ mem_info_t get_mem_status(MemoryManagerADT memManager);
  */
 void init_kernel_memory_manager(void);
 
-MemoryManagerADT get_kernel_memory_manager(void);
+memory_manager_ADT get_kernel_memory_manager(void);
 
 #endif // MEMORY_MANAGER_ADT_H

@@ -14,7 +14,7 @@ extern void *setup_initial_stack(void *caller, int pid, void *stack_pointer, voi
 // ============================================
 //        DECLARACIONES AUXILIARES
 // ============================================
-static char **duplicateArgv(const char **argv, int argc, MemoryManagerADT mm);
+static char **duplicateArgv(const char **argv, int argc, memory_manager_ADT mm);
 static void process_caller(int pid);
 
 // ============================================
@@ -27,7 +27,7 @@ PCB* proc_create(int pid, process_entry_t entry, int argc, const char **argv,
         return NULL;
     }
 
-    MemoryManagerADT mm = get_kernel_memory_manager();
+    memory_manager_ADT mm = get_kernel_memory_manager();
 
     // Alocar PCB
     PCB *p = alloc_memory(mm, sizeof(PCB));
@@ -104,7 +104,7 @@ void free_process_resources(PCB * p) {
         return;
     }
 
-    MemoryManagerADT mm = get_kernel_memory_manager();
+    memory_manager_ADT mm = get_kernel_memory_manager();
 
     // Liberar argv y sus strings
     if (p->argv != NULL) {
@@ -132,7 +132,7 @@ void free_process_resources(PCB * p) {
 //        FUNCIONES AUXILIARES PRIVADAS
 // ============================================
 
-static char **duplicateArgv(const char **argv, int argc, MemoryManagerADT mm) {
+static char **duplicateArgv(const char **argv, int argc, memory_manager_ADT mm) {
     // Caso argv vacío o NULL: crear argv minimal con solo NULL
     if (argv == NULL || argc == 0 || (argc > 0 && argv[0] == NULL)) {
         char **new_argv = alloc_memory(mm, sizeof(char *));

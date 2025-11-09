@@ -94,7 +94,7 @@ int create_pipe(int fds[2]) {
         return -1;
     }
 
-    MemoryManagerADT mm = get_kernel_memory_manager();
+    memory_manager_ADT mm = get_kernel_memory_manager();
     pipe_t * pipe = alloc_memory(mm, sizeof(pipe_t));
     if (pipe == NULL) {
         return -1;
@@ -395,7 +395,7 @@ void destroy_pipe(int idx) {
         return;
     }
 
-    MemoryManagerADT mm = get_kernel_memory_manager();
+    memory_manager_ADT mm = get_kernel_memory_manager();
 
     sem_close(pipe->read_sem);
     sem_close(pipe->write_sem);
