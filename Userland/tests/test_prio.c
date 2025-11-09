@@ -3,18 +3,19 @@
 
 #define TOTAL_PROCESSES 3
 
-#define LOWEST 1  // TODO: Change as required
-#define MEDIUM 5 // TODO: Change as required
-#define HIGHEST 10 // TODO: Change as required
+#define LOWEST 2  // TODO: Change as required
+#define MEDIUM 1 // TODO: Change as required
+#define HIGHEST 0 // TODO: Change as required
 
 int64_t prio[TOTAL_PROCESSES] = {LOWEST, MEDIUM, HIGHEST};
 
 uint64_t max_value = 0;
 
 void zero_to_max() {
+  uint64_t local_max = max_value;  // Copia local para evitar lecturas repetidas
   uint64_t value = 0; 
 
-  while (value++ != max_value);
+  while (value++ != local_max);
 
   printf("PROCESS %d DONE!\n", sys_getpid());
 }

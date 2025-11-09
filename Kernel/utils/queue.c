@@ -9,6 +9,8 @@ typedef struct node {
 typedef struct queue_cdt {
     node_t * first;
     node_t * last;
+    node_t * current;      // Para iterador: nodo actual
+    node_t * prev_current; // Para iterador: nodo previo al actual (para poder remover)
 } queue_cdt;
 
 
@@ -22,6 +24,8 @@ queue_t q_init() {
     }
     q->first = NULL;
     q->last = NULL;
+    q->current = NULL;
+    q->prev_current = NULL;
     return q;
 }
 
@@ -133,4 +137,85 @@ void q_destroy(queue_t q) {
         current = next;
     }
     free_memory(mm, q);
+}
+
+// ============================================
+//             ITERADOR
+// ============================================
+
+// Inicializa el iterador al comienzo de la queue
+void q_to_begin(queue_t q) {
+    if (q == NULL) {
+        return;
+    }
+    q->current = q->first;
+    q->prev_current = NULL;
+}
+
+// Devuelve 1 si hay un siguiente elemento, 0 sino
+int q_has_next(queue_t q) {
+    if (q == NULL) {
+        return 0;
+    }
+    return q->current != NULL;
+}
+
+// Devuelve el elemento actual y avanza al siguiente
+// Si no hay siguiente, retorna -1
+int q_next(queue_t q) {
+    if (!q_has_next(q)) {
+        return -1;
+    }
+    
+    int value = q->current->value;
+    q->prev_current = q->current;
+    q->current = q->current->next;
+    
+    return value;
+}
+
+// Remueve el elemento actual del iterador (el último retornado por q_next)
+// Devuelve 1 si lo removió, 0 si no había elemento actual
+int q_remove_current(queue_t q) {
+    if (q == NULL || q->prev_current == NULL) {
+        return 0;
+    }
+    
+    MemoryManagerADT mm = get_kernel_memory_manager();
+    node_t * to_remove = q->prev_current;
+    
+    // Caso 1: el nodo a remover es el primero
+    if (to_remove == q->first) {
+        q->first = to_remove->next;
+        if (q->first == NULL) {
+            q->last = NULL;
+        }
+        free_memory(mm, to_remove);
+        q->prev_current = NULL;
+        return 1;
+    }
+    
+    // Caso 2: el nodo a remover no es el primero
+    // Necesitamos encontrar el nodo anterior a to_remove
+    node_t * prev = q->first;
+    while (prev != NULL && prev->next != to_remove) {
+        prev = prev->next;
+    }
+    
+    if (prev == NULL) {
+        // No debería pasar si el iterador está bien usado
+        return 0;
+    }
+    
+    prev->next = to_remove->next;
+    
+    // Si removimos el último, actualizar last
+    if (to_remove == q->last) {
+        q->last = prev;
+    }
+    
+    free_memory(mm, to_remove);
+    q->prev_current = NULL;
+    
+    return 1;
 }

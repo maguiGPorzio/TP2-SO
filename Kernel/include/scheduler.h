@@ -11,9 +11,14 @@
 
 typedef int pid_t;  
 
-#define MIN_PRIORITY 1
-#define MAX_PRIORITY 10
-#define DEFAULT_PRIORITY 3
+#define MAX_PRIORITY 0
+#define DEFAULT_PRIORITY 1
+#define MIN_PRIORITY 2
+#define PRIORITY_COUNT 3
+
+// Aging constants
+#define AGING_CHECK_INTERVAL 10   // Cada cuántos ticks aplicar aging
+#define AGING_THRESHOLD 50        // Ticks sin correr para ser promovido
 
 // ============================================
 //           FUNCIONES PÚBLICAS

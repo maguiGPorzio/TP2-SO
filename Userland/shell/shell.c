@@ -18,7 +18,6 @@ int main(void) {
     sys_clear_input_buffer();
 
     while (1) {
-        print(' ');
         fprint(STDCYAN, initial_input);
         print(PROMPT);
         read_line(current_input, INPUT_MAX-1);
@@ -88,7 +87,6 @@ void incfont()  {
     sys_increase_fontsize(); 
     sys_clear();
     // Imprimir prompt sin cursor (usar print directamente)
-    print(' ');
     fprint(STDCYAN, initial_input);
     print(PROMPT);
     // Imprimir el input actual
@@ -103,7 +101,6 @@ void decfont()  {
     sys_decrease_fontsize(); 
     sys_clear();
     // Imprimir prompt sin cursor (usar print directamente)
-    print(' ');
     fprint(STDCYAN, initial_input);
     print(PROMPT);
     // Imprimir el input actual
