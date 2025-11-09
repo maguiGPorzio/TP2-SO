@@ -63,7 +63,7 @@ static int reader_process(int argc, char *argv[]) {
         int bytes = sys_read(fds[0], buffer, sizeof(buffer) - 1);
         
         if (bytes <= 0) {
-            printf("Reader: Got EOF or error (%d bytes)\n", bytes);
+            printf("Reader: Got EOF (%d bytes)\n", bytes);
             break;
         }
         

@@ -84,9 +84,10 @@ static uint64_t sys_regs(char * buffer) {
 // devuelve cuantos chars escribió
 static int sys_write(uint64_t fd, const char * buffer, uint64_t count) {
 
+    int pid = scheduler_get_current_pid();
+    PCB * p = scheduler_get_process(pid);
+
     if (fd == STDOUT) { // que es para este tipo stdout?
-        int pid = scheduler_get_current_pid();
-        PCB * p = scheduler_get_process(pid);
         fd = p->write_fd;
     }
 
@@ -103,14 +104,19 @@ static int sys_write(uint64_t fd, const char * buffer, uint64_t count) {
     }
 
     // es un pipe
+    if (!q_contains(p->open_fds, fd)) {
+        return -1;
+    }
+
     return write_pipe(fd, buffer, count);
 }
 
 // leo hasta count
 static int sys_read(int fd, char * buffer, uint64_t count) {
+    int pid = scheduler_get_current_pid();
+    PCB * p = scheduler_get_process(pid);
+    
     if (fd == STDIN) { // que es para este tipo stdin?
-        int pid = scheduler_get_current_pid();
-        PCB * p = scheduler_get_process(pid);
         fd = p->read_fd;
     }
     if (fd == STDOUT || fd == STDERR) { // no puede leer de ahi
@@ -122,6 +128,10 @@ static int sys_read(int fd, char * buffer, uint64_t count) {
     }
 
     // es un pipe
+    if (!q_contains(p->open_fds, fd)) {
+        return -1;
+    }
+
     return read_pipe(fd, buffer, count);
 
 }

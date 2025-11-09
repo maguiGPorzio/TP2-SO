@@ -1,25 +1,33 @@
+-- AZU
+
+que la shell no tenga builtins, que sean todos procesos y ordenarlos facha con help facha
+
+kill, block, unblock que puedan recibir mas de un parametro 'kill 7 8 9'
+
+que memoria, procesos y pipes tengan una syscall de info (falta la de los pipes)
+y un proceso que imprima esta info
+
+ordenar las syscalls
+
+ver todos y comentarios 
+
+PVS
+
+README
+
+
+
+
+
+
+
+
+
+
 -- TESTS 
 
 
 revisar lo que esta comentado en el test de memoria
-
-
--- PROCESOS
-
-limpieza de pipes abiertos cuando un proceso hace exit / lo matan -> ver con Rodri antes de implementar
-
-
--- SYNCRO
-
-resolver los warnings en la medida de lo posible
-
-lo del cli y sti
-
-
-
--- PIPES
-
-el refactor que esta haciendo Rodri que la rompe toda
 
 
 
@@ -27,9 +35,7 @@ el refactor que esta haciendo Rodri que la rompe toda
 
 ponerle flechita para arriba guardando el ultimo comando
 
-cambiar los -1 por error en los programas que hizo magui x lo menos
 
-agregar en block y unblock para pedir el pid de la syscall actual y que si es el actual no se bloquee
 
 
 
