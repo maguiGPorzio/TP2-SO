@@ -23,9 +23,9 @@ void exceptionDispatcher(int exception) {
 }
 
 static void excepHandler(char * msg){
-	vdPrint(msg, 0xff0000);
+	vd_print(msg, 0xff0000);
 	newLine();
-	vdPrint("Press enter to continue", 0xff0000);
+	vd_print("Press enter to continue", 0xff0000);
 	int c;
 	_sti();
 	do{

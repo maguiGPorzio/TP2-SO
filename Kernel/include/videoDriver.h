@@ -16,7 +16,7 @@ uint8_t vdGetTextSize();
 void vdIncreaseTextSize();
 void vdDecreaseTextSize();
 void vdPutChar(uint8_t ch, uint32_t color);
-void vdPrint(const char * str, uint32_t color);
+void vd_print(const char * str, uint32_t color);
 void vdClear();
 void newLine();
 

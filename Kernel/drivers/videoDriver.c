@@ -212,7 +212,7 @@ void vdPutChar(uint8_t ch, uint32_t color) {
 	}
 }
 
-void vdPrint(const char * str, uint32_t color) {
+void vd_print(const char * str, uint32_t color) {
     if (!text_mode) {
         return;
     }

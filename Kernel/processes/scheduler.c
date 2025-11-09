@@ -246,8 +246,8 @@ void * schedule(void * prev_rsp) {
     // if (next->pid >= 3 && next->pid <= 5) {
     //     char debug_msg[10];
     //     decimal_to_str(next->pid, debug_msg);
-    //     vdPrint(debug_msg, 0x00ff00);
-    //     vdPrint(" ", 0x00ff00);
+    //     vd_print(debug_msg, 0x00ff00);
+    //     vd_print(" ", 0x00ff00);
     // }
 
     current_pid = next->pid;
