@@ -1,6 +1,5 @@
 #include "usrlib.h"
 
-#include "usrlib.h"
 
 // Helper para imprimir número con padding (alineado a la derecha)
 static void print_padded_int(unsigned value, int width) {
@@ -26,7 +25,7 @@ static void print_padded_int(unsigned value, int width) {
     printf("%u", value);
 }
 
-int mem(int argc, char *argv[]) {
+int mem_main(int argc, char *argv[]) {
     if (argc != 0) {
         printf("mem: Invalid number of arguments.\n");
         return -1;

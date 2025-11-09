@@ -1,6 +1,6 @@
 #include "usrlib.h"
 
-int unblock(int argc, char *argv[]) {
+int unblock_main(int argc, char *argv[]) {
     if (argc != 1) {
         printf("Invalid arguments. Usage: unblock <pid>\n");
         return ERROR;

@@ -1,6 +1,6 @@
 #include "usrlib.h"
 
-int block(int argc, char *argv[]) {
+int block_main(int argc, char *argv[]) {
     if (argc != 1) {
         print("Invalid arguments. Usage: block <pid>\n");
         return ERROR;
