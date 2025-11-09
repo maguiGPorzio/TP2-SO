@@ -43,6 +43,7 @@ static void cleanup_all_processes(void);
 static int create_shell();
 static inline bool pid_is_valid(pid_t pid) ;
 static void cleanup_resources(PCB * p);
+static void reset_scheduler_state(void);
 
 static inline bool pid_is_valid(pid_t pid) {
     return pid >= 0 && pid <= MAX_PID;
@@ -183,7 +184,9 @@ int init_scheduler(void) {
 // ============================================
 
 void *schedule(void *prev_rsp) {
-    if (!scheduler_initialized) return prev_rsp;
+    if (!scheduler_initialized){
+        return prev_rsp;
+    } 
 
     PCB *current = (pid_is_valid(current_pid)) ? processes[current_pid] : NULL;
 
@@ -205,7 +208,9 @@ void *schedule(void *prev_rsp) {
     }
 
     PCB *next = pick_next_process();
-    if (!next) next = processes[INIT_PID];
+    if (!next) {
+        next = processes[INIT_PID];
+    }
 
     current_pid = next->pid;
     next->status = PS_RUNNING;
@@ -539,6 +544,14 @@ static void cleanup_all_processes(void) {
     }
 }
 
+static void reset_scheduler_state(void) {
+    process_count = 0;
+    total_cpu_ticks = 0;
+    force_reschedule = false;
+    current_pid = NO_PID;
+    scheduler_initialized = false;
+}
+
 void scheduler_destroy(void) {
     if (!scheduler_initialized) {
         return;
@@ -549,11 +562,7 @@ void scheduler_destroy(void) {
 
     cleanup_all_processes();
 
-    process_count = 0;
-    total_cpu_ticks = 0;
-    force_reschedule = false;
-    current_pid = NO_PID;
-    scheduler_initialized = false;
+    reset_scheduler_state();
 }
 
 // En scheduler.c

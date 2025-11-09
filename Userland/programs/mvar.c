@@ -10,7 +10,7 @@
 #define LETTER_POOL_SIZE (sizeof(LETTER_POOL) - 1)
 
 #define COLOR_COUNT 5
-#define MAX_BUSSY_WAIT 10
+#define BUSSY_WAIT 999999
 
 static char volatile mvar_value = 0;
 static char sem_empty_name[MAX_SEM_NAME_LENGTH];
@@ -108,7 +108,7 @@ static int attach_to_sync_objects(void) {
 }
 
 static void random_pause(void) {
-    bussy_wait(MAX_BUSSY_WAIT);
+    bussy_wait(BUSSY_WAIT);
 }
 
 static char letter_for_writer(int index) {
