@@ -217,18 +217,6 @@ mem_info_t get_mem_status(memory_manager_ADT memory_manager) {
 
 void init_kernel_memory_manager(void) {
     kernel_mm = create_memory_manager((void*)HEAP_START_ADDRESS, HEAP_SIZE);
-    
-    if (kernel_mm == NULL) {
-        // Kernel panic
-        ncPrint("KERNEL PANIC: Failed to initialize memory manager\n");
-        while(1); // Halt
-    }
-    
-    ncPrint("Memory Manager initialized at 0x");
-    ncPrintHex(HEAP_START_ADDRESS);
-    ncPrint(" with ");
-    ncPrintDec(HEAP_SIZE / (1024 * 1024));
-    ncPrint(" MB\n");
 }
 
 memory_manager_ADT get_kernel_memory_manager(void) {
