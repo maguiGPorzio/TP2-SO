@@ -500,6 +500,16 @@ int scheduler_unblock_process(pid_t pid) {
         process->status = PS_BLOCKED;
         return -1;
     }
+
+     // --- Wake-up preempt: si el desbloqueado es más prioritario, forzar cambio
+    PCB *running = PID_IS_VALID(current_pid) ? processes[current_pid] : NULL;
+
+    if (running && process->priority > running->priority) {
+        // para que elija ya esta prioridad
+        current_priority = process->priority;
+        remaining_iterations = SLOTS_FOR_PRIORITY(current_priority);
+        scheduler_force_reschedule();  
+    }
     
     return 0;
 }
