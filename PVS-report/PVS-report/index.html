@@ -1,0 +1,239 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>PVS-Studio HTML Report</title>
+<style type="text/css">
+   TABLE {
+    width: 100%;
+   }
+   #col_group, #col_level, #col_code, #col_cwe, #col_sast {
+    text-align: center;
+    white-space: nowrap;
+    width: 0;
+   }
+   #col_file, #col_info, #col_projects {
+    white-space: nowrap;
+    text-align: left;
+    width: 0;
+   }
+   #col_info {
+    width: 120px;
+   }
+   #col_message {
+    text-align: left;
+   }
+  </style>
+<link rel="stylesheet" href="style.css" />
+<script type="text/javascript" src="script.js"></script>
+<script type="text/javascript" src="toggle-cell.js"></script>
+</head>
+<body>
+  <div class="header">
+    <img src="images/logo.png" alt=""/>
+    <h1>PVS-Studio Analysis Results</h1>
+    <br class="clear">
+  </div>
+  <table cellpadding="0" cellspacing="0" border="0" class="infotopic">
+     <tr><th id="col_info">Date:</th><td>Sun Nov  9 23:34:39 2025</td></tr>
+     <tr><th id="col_info">PVS-Studio Version:</th><td>7.32.83291.394</td></tr>
+     <tr><th id="col_info">Command Line:</th><td>plog-converter -a GA\:1,2\;64 -t fullhtml -o /root/PVS-report /root/PVS-report.log </td></tr>
+     <tr><th id="col_info">Total Warnings (GA):</th><td>24</td></tr>
+     <tr><th id="col_info">Fails/Info:</th><td>1</td></tr>
+  </table>
+  <div class="toggle-box">
+    <label>
+      Show full paths
+    <input class="path-toggle toggle-button" type="checkbox" name="toggle-path" onclick="togglePathView()" />
+    </label>
+  </div>
+  <table cellpadding="0" cellspacing="0" border="0" class="sortable" id="sorter">
+    <tr>
+      <th class="gsort">Group</th>
+      <th>Location</th>
+      <th class="lsort">Level</th>
+      <th class="vsort">Code</th>
+      <th>Message</th>
+    </tr>
+    <tr>
+      <td id="col_group">Fail/Info</td>
+      <td id="col_file"><a target="_blank" class="file-link" href="sources/bmfs.c_0.html#ln1">bmfs.c:1</a><a target="_blank" class="file-link display-none" href="sources/bmfs.c_0.html#ln1">/root/Bootloader/BMFS/bmfs.c:1</a></td>
+      <td id="col_level" style="color:#000000"><b></b></td>
+      <td id="col_code"><a target="_blank" href="https://pvs-studio.com/en/docs/warnings/v009/">V009</td>
+      <td id="col_message">To use free version of PVS-Studio, source code files are required to start with a special comment.</td>
+    </tr>
+    <tr>
+      <td id="col_group">General Analysis</td>
+      <td id="col_file"><a target="_blank" class="file-link" href="sources/keyboard.c_1.html#ln117">keyboard.c:117</a><a target="_blank" class="file-link display-none" href="sources/keyboard.c_1.html#ln117">/root/Kernel/drivers/keyboard.c:117</a></td>
+      <td id="col_level" style="color:#FFA500"><b>Medium</b></td>
+      <td id="col_code"><a target="_blank" href="https://pvs-studio.com/en/docs/warnings/v547/">V547</td>
+      <td id="col_message">Expression 'scancode == SNAPSHOT_KEY' is always false.</td>
+    </tr>
+    <tr>
+      <td id="col_group">General Analysis</td>
+      <td id="col_file"><a target="_blank" class="file-link" href="sources/keyboard.c_1.html#ln137">keyboard.c:137</a><a target="_blank" class="file-link display-none" href="sources/keyboard.c_1.html#ln137">/root/Kernel/drivers/keyboard.c:137</a></td>
+      <td id="col_level" style="color:#FFA500"><b>Medium</b></td>
+      <td id="col_code"><a target="_blank" href="https://pvs-studio.com/en/docs/warnings/v557/">V557</td>
+      <td id="col_message">Array overrun is possible. The value of 'scancode' index could reach 128.</td>
+    </tr>
+    <tr>
+      <td id="col_group">General Analysis</td>
+      <td id="col_file"><a target="_blank" class="file-link" href="sources/keyboard.c_1.html#ln113">keyboard.c:113</a><a target="_blank" class="file-link display-none" href="sources/keyboard.c_1.html#ln113">/root/Kernel/drivers/keyboard.c:113</a></td>
+      <td id="col_level" style="color:#FFA500"><b>Medium</b></td>
+      <td id="col_code"><a target="_blank" href="https://pvs-studio.com/en/docs/warnings/v560/">V560</td>
+      <td id="col_message">A part of conditional expression is always false: scancode == 0xE01D. The value range of unsigned char type: [0, 255].</td>
+    </tr>
+    <tr>
+      <td id="col_group">General Analysis</td>
+      <td id="col_file"><a target="_blank" class="file-link" href="sources/keyboard.c_1.html#ln115">keyboard.c:115</a><a target="_blank" class="file-link display-none" href="sources/keyboard.c_1.html#ln115">/root/Kernel/drivers/keyboard.c:115</a></td>
+      <td id="col_level" style="color:#FFA500"><b>Medium</b></td>
+      <td id="col_code"><a target="_blank" href="https://pvs-studio.com/en/docs/warnings/v560/">V560</td>
+      <td id="col_message">A part of conditional expression is always false: scancode == 0xE01D + 0x80. The value range of unsigned char type: [0, 255].</td>
+    </tr>
+    <tr>
+      <td id="col_group">General Analysis</td>
+      <td id="col_file"><a target="_blank" class="file-link" href="sources/keyboard.c_1.html#ln132">keyboard.c:132</a><a target="_blank" class="file-link display-none" href="sources/keyboard.c_1.html#ln132">/root/Kernel/drivers/keyboard.c:132</a></td>
+      <td id="col_level" style="color:#FFA500"><b>Medium</b></td>
+      <td id="col_code"><a target="_blank" href="https://pvs-studio.com/en/docs/warnings/v560/">V560</td>
+      <td id="col_message">A part of conditional expression is always false: scancode == 0.</td>
+    </tr>
+    <tr>
+      <td id="col_group">General Analysis</td>
+      <td id="col_file"><a target="_blank" class="file-link" href="sources/keyboard.c_1.html#ln189">keyboard.c:189</a><a target="_blank" class="file-link display-none" href="sources/keyboard.c_1.html#ln189">/root/Kernel/drivers/keyboard.c:189</a></td>
+      <td id="col_level" style="color:#FFA500"><b>Medium</b></td>
+      <td id="col_code"><a target="_blank" href="https://pvs-studio.com/en/docs/warnings/v560/">V560</td>
+      <td id="col_message">A part of conditional expression is always true: c &gt;= 'A'.</td>
+    </tr>
+    <tr>
+      <td id="col_group">General Analysis</td>
+      <td id="col_file"><a target="_blank" class="file-link" href="sources/lib.c_2.html#ln126">lib.c:126</a><a target="_blank" class="file-link display-none" href="sources/lib.c_2.html#ln126">/root/Kernel/lib.c:126</a></td>
+      <td id="col_level" style="color:#FF0000"><b>High</b></td>
+      <td id="col_code"><a target="_blank" href="https://pvs-studio.com/en/docs/warnings/v547/">V547</td>
+      <td id="col_message">Expression 'remainder &lt; 10' is always true.</td>
+    </tr>
+    <tr>
+      <td id="col_group">General Analysis</td>
+      <td id="col_file"><a target="_blank" class="file-link" href="sources/naiveConsole.c_3.html#ln8">naiveConsole.c:8</a><a target="_blank" class="file-link display-none" href="sources/naiveConsole.c_3.html#ln8">/root/Kernel/naiveConsole.c:8</a></td>
+      <td id="col_level" style="color:#FFA500"><b>Medium</b></td>
+      <td id="col_code"><a target="_blank" href="https://pvs-studio.com/en/docs/warnings/v1009/">V1009</td>
+      <td id="col_message">Check the array initialization. Only the first element is initialized explicitly. The rest elements are initialized with zeros.</td>
+    </tr>
+    <tr>
+      <td id="col_group">General Analysis</td>
+      <td id="col_file"><a target="_blank" class="file-link" href="sources/scheduler.c_4.html#ln363">scheduler.c:363</a><a target="_blank" class="file-link display-none" href="sources/scheduler.c_4.html#ln363">/root/Kernel/processes/scheduler.c:363</a></td>
+      <td id="col_level" style="color:#FFA500"><b>Medium</b></td>
+      <td id="col_code"><a target="_blank" href="https://pvs-studio.com/en/docs/warnings/v557/">V557</td>
+      <td id="col_message">Array underrun is possible. The value of 'pid' index could reach -1.</td>
+    </tr>
+    <tr>
+      <td id="col_group">General Analysis</td>
+      <td id="col_file"><a target="_blank" class="file-link" href="sources/scheduler.c_4.html#ln367">scheduler.c:367</a><a target="_blank" class="file-link display-none" href="sources/scheduler.c_4.html#ln367">/root/Kernel/processes/scheduler.c:367</a></td>
+      <td id="col_level" style="color:#FFA500"><b>Medium</b></td>
+      <td id="col_code"><a target="_blank" href="https://pvs-studio.com/en/docs/warnings/v557/">V557</td>
+      <td id="col_message">Array underrun is possible. The value of 'pid' index could reach -1.</td>
+    </tr>
+    <tr>
+      <td id="col_group">General Analysis</td>
+      <td id="col_file"><a target="_blank" class="file-link" href="sources/scheduler.c_4.html#ln499">scheduler.c:499</a><a target="_blank" class="file-link display-none" href="sources/scheduler.c_4.html#ln499">/root/Kernel/processes/scheduler.c:499</a></td>
+      <td id="col_level" style="color:#FFA500"><b>Medium</b></td>
+      <td id="col_code"><a target="_blank" href="https://pvs-studio.com/en/docs/warnings/v1031/">V1031</td>
+      <td id="col_message">The 'remove_process_from_all_semaphore_queues' function is not declared. Passing data to or from this function can be affected.</td>
+    </tr>
+    <tr>
+      <td id="col_group">General Analysis</td>
+      <td id="col_file"><a target="_blank" class="file-link" href="sources/scheduler.c_4.html#ln673">scheduler.c:673</a><a target="_blank" class="file-link display-none" href="sources/scheduler.c_4.html#ln673">/root/Kernel/processes/scheduler.c:673</a></td>
+      <td id="col_level" style="color:#FFA500"><b>Medium</b></td>
+      <td id="col_code"><a target="_blank" href="https://pvs-studio.com/en/docs/warnings/v1031/">V1031</td>
+      <td id="col_message">The 'remove_process_from_all_semaphore_queues' function is not declared. Passing data to or from this function can be affected.</td>
+    </tr>
+    <tr>
+      <td id="col_group">General Analysis</td>
+      <td id="col_file"><a target="_blank" class="file-link" href="sources/main.c_5.html#ln109">main.c:109</a><a target="_blank" class="file-link display-none" href="sources/main.c_5.html#ln109">/root/Toolchain/ModulePacker/main.c:109</a></td>
+      <td id="col_level" style="color:#FF0000"><b>High</b></td>
+      <td id="col_code"><a target="_blank" href="https://pvs-studio.com/en/docs/warnings/v591/">V591</td>
+      <td id="col_message">Non-void function should return a value.</td>
+    </tr>
+    <tr>
+      <td id="col_group">General Analysis</td>
+      <td id="col_file"><a target="_blank" class="file-link" href="sources/cat.c_6.html#ln8">cat.c:8</a><a target="_blank" class="file-link display-none" href="sources/cat.c_6.html#ln8">/root/Userland/programs/cat.c:8</a></td>
+      <td id="col_level" style="color:#FF0000"><b>High</b></td>
+      <td id="col_code"><a target="_blank" href="https://pvs-studio.com/en/docs/warnings/v739/">V739</td>
+      <td id="col_message">EOF should not be compared with a value of the 'char' type. The '(c = getchar())' should be of the 'int' type.</td>
+    </tr>
+    <tr>
+      <td id="col_group">General Analysis</td>
+      <td id="col_file"><a target="_blank" class="file-link" href="sources/help.c_7.html#ln8">help.c:8</a><a target="_blank" class="file-link display-none" href="sources/help.c_7.html#ln8">/root/Userland/programs/help.c:8</a></td>
+      <td id="col_level" style="color:#FF0000"><b>High</b></td>
+      <td id="col_code"><a target="_blank" href="https://pvs-studio.com/en/docs/warnings/v591/">V591</td>
+      <td id="col_message">Non-void function should return a value.</td>
+    </tr>
+    <tr>
+      <td id="col_group">General Analysis</td>
+      <td id="col_file"><a target="_blank" class="file-link" href="sources/kill.c_8.html#ln10">kill.c:10</a><a target="_blank" class="file-link display-none" href="sources/kill.c_8.html#ln10">/root/Userland/programs/kill.c:10</a></td>
+      <td id="col_level" style="color:#FFA500"><b>Medium</b></td>
+      <td id="col_code"><a target="_blank" href="https://pvs-studio.com/en/docs/warnings/v591/">V591</td>
+      <td id="col_message">Non-void function should return a value.</td>
+    </tr>
+    <tr>
+      <td id="col_group">General Analysis</td>
+      <td id="col_file"><a target="_blank" class="file-link" href="sources/kill.c_8.html#ln16">kill.c:16</a><a target="_blank" class="file-link display-none" href="sources/kill.c_8.html#ln16">/root/Userland/programs/kill.c:16</a></td>
+      <td id="col_level" style="color:#FFA500"><b>Medium</b></td>
+      <td id="col_code"><a target="_blank" href="https://pvs-studio.com/en/docs/warnings/v591/">V591</td>
+      <td id="col_message">Non-void function should return a value.</td>
+    </tr>
+    <tr>
+      <td id="col_group">General Analysis</td>
+      <td id="col_file"><a target="_blank" class="file-link" href="sources/mvar.c_9.html#ln81">mvar.c:81</a><a target="_blank" class="file-link display-none" href="sources/mvar.c_9.html#ln81">/root/Userland/programs/mvar.c:81</a></td>
+      <td id="col_level" style="color:#FF0000"><b>High</b></td>
+      <td id="col_code"><a target="_blank" href="https://pvs-studio.com/en/docs/warnings/v781/">V781</td>
+      <td id="col_message">The value of the 'idx' index is checked after it was used. Perhaps there is a mistake in program logic.</td>
+    </tr>
+    <tr>
+      <td id="col_group">General Analysis</td>
+      <td id="col_file"><a target="_blank" class="file-link" href="sources/mvar.c_9.html#ln82">mvar.c:82</a><a target="_blank" class="file-link display-none" href="sources/mvar.c_9.html#ln82">/root/Userland/programs/mvar.c:82</a></td>
+      <td id="col_level" style="color:#FFA500"><b>Medium</b></td>
+      <td id="col_code"><a target="_blank" href="https://pvs-studio.com/en/docs/warnings/v557/">V557</td>
+      <td id="col_message">Array overrun is possible. The value of 'idx' index could reach 62.</td>
+    </tr>
+    <tr>
+      <td id="col_group">General Analysis</td>
+      <td id="col_file"><a target="_blank" class="file-link" href="sources/rainbow.c_10.html#ln11">rainbow.c:11</a><a target="_blank" class="file-link display-none" href="sources/rainbow.c_10.html#ln11">/root/Userland/programs/rainbow.c:11</a></td>
+      <td id="col_level" style="color:#FF0000"><b>High</b></td>
+      <td id="col_code"><a target="_blank" href="https://pvs-studio.com/en/docs/warnings/v739/">V739</td>
+      <td id="col_message">EOF should not be compared with a value of the 'char' type. The '(c = getchar())' should be of the 'int' type.</td>
+    </tr>
+    <tr>
+      <td id="col_group">General Analysis</td>
+      <td id="col_file"><a target="_blank" class="file-link" href="sources/red.c_11.html#ln8">red.c:8</a><a target="_blank" class="file-link display-none" href="sources/red.c_11.html#ln8">/root/Userland/programs/red.c:8</a></td>
+      <td id="col_level" style="color:#FF0000"><b>High</b></td>
+      <td id="col_code"><a target="_blank" href="https://pvs-studio.com/en/docs/warnings/v739/">V739</td>
+      <td id="col_message">EOF should not be compared with a value of the 'char' type. The '(c = getchar())' should be of the 'int' type.</td>
+    </tr>
+    <tr>
+      <td id="col_group">General Analysis</td>
+      <td id="col_file"><a target="_blank" class="file-link" href="sources/wc.c_12.html#ln14">wc.c:14</a><a target="_blank" class="file-link display-none" href="sources/wc.c_12.html#ln14">/root/Userland/programs/wc.c:14</a></td>
+      <td id="col_level" style="color:#FF0000"><b>High</b></td>
+      <td id="col_code"><a target="_blank" href="https://pvs-studio.com/en/docs/warnings/v739/">V739</td>
+      <td id="col_message">EOF should not be compared with a value of the 'char' type. The '(c = getchar())' should be of the 'int' type.</td>
+    </tr>
+    <tr>
+      <td id="col_group">General Analysis</td>
+      <td id="col_file"><a target="_blank" class="file-link" href="sources/shell.c_13.html#ln96">shell.c:96</a><a target="_blank" class="file-link display-none" href="sources/shell.c_13.html#ln96">/root/Userland/shell/shell.c:96</a></td>
+      <td id="col_level" style="color:#FF0000"><b>High</b></td>
+      <td id="col_code"><a target="_blank" href="https://pvs-studio.com/en/docs/warnings/v781/">V781</td>
+      <td id="col_message">The value of the 'i' index is checked after it was used. Perhaps there is a mistake in program logic.</td>
+    </tr>
+    <tr>
+      <td id="col_group">General Analysis</td>
+      <td id="col_file"><a target="_blank" class="file-link" href="sources/shell.c_13.html#ln110">shell.c:110</a><a target="_blank" class="file-link display-none" href="sources/shell.c_13.html#ln110">/root/Userland/shell/shell.c:110</a></td>
+      <td id="col_level" style="color:#FF0000"><b>High</b></td>
+      <td id="col_code"><a target="_blank" href="https://pvs-studio.com/en/docs/warnings/v781/">V781</td>
+      <td id="col_message">The value of the 'i' index is checked after it was used. Perhaps there is a mistake in program logic.</td>
+    </tr>
+  </table>
+<script type="text/javascript">
+var sorter=new table.sorter("sorter");
+sorter.init("sorter",0);
+</script>
+</body>
+</html>

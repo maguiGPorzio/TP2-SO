@@ -45,14 +45,14 @@ int main(int argc, char *argv[]) {
 
 	array_t fileArray = {arguments.args, arguments.count};
 
-	if(!checkFiles(fileArray)) {
+	if(!check_files(fileArray)) {
 		return 1;
 	}	
 
-	return !buildImage(fileArray, arguments.output_file);
+	return !build_image(fileArray, arguments.output_file);
 }
 
-int buildImage(array_t fileArray, char *output_file) {
+int build_image(array_t fileArray, char *output_file) {
 
 	FILE *target;
 
@@ -88,7 +88,7 @@ int buildImage(array_t fileArray, char *output_file) {
 }
 
 
-int checkFiles(array_t fileArray) {
+int check_files(array_t fileArray) {
 
 	int i = 0;
 	for(; i < fileArray.length ; i++) {
