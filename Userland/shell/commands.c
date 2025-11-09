@@ -17,7 +17,6 @@
 
 static void cls(int argc, char * argv[]);
 static void help(int argc, char * argv[]);
-static void list_pipes(int argc, char * argv[]);
 static void username_cmd(int argc, char * argv[]);
 
 static bool is_cmd_background(char *line);
@@ -354,6 +353,7 @@ static void help(int argc, char * argv[]) {
     
     print("\nExternal programs:\n");
     print("--Type <program_name> & to run in background, else it runs in foreground--\n");
+    print("--Type <program_1> | <program_2> to pipe 2 programs--\n\n");
     for (int i = 0; programs[i].name != NULL; i++) {
         print("  ");
         print(programs[i].name);
