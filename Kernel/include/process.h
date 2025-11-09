@@ -41,7 +41,8 @@ typedef struct PCB {
     
     // Estado y scheduling
     ProcessStatus status;
-    uint8_t priority;                // 0-9 (0 = mayor prioridad)
+    uint8_t priority;                // Prioridad base (0-2, 0 = mayor prioridad)
+    uint8_t effective_priority;      // Prioridad efectiva (puede ser promovida por aging)
     uint64_t last_tick;
     
     // Contexto de ejecución
