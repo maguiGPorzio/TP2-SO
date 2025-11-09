@@ -18,7 +18,6 @@
 static void cls(int argc, char * argv[]);
 static void help(int argc, char * argv[]);
 static void list_pipes(int argc, char * argv[]);
-static void kill_process(int argc, char * argv[]);
 
 static bool is_cmd_background(char *line);
 
@@ -26,7 +25,6 @@ static BuiltinCommand builtins[] = {
     { "clear", "clears the screen", &cls },
     { "help", "provides information about available commands", &help },
     { "pipes", "lists active pipes information", &list_pipes },
-    { "kill", "kills a process by PID", &kill_process },
 
     { NULL, NULL, NULL }
 };
@@ -48,6 +46,8 @@ static ExternalProgram programs[] = {
     { "printa", "prints the letter 'a' indefinitely to STDOUT", &print_a_main },
     { "printb", "prints the letter 'b' indefinitely to STDOUT", &print_b_main },
     { "text", "lo puse para probar wc", &text_main },
+    //{ "sleep", "sleeps for a given number of milliseconds", &sleep_main },
+    {"kill", "kills a process by PID", &kill_main },
     { "loop", "runs an infinite loop printing dots to STDOUT", &loop_main },
     { "nice", "changes the priority of a process", &nice_main },
     { "wc", "counts the number of lines, words and characters from STDIN", &wc_main },
@@ -372,42 +372,6 @@ static void list_pipes(int argc, char * argv[]) {
     sys_list_pipes();
 }
 
-static void kill_process(int argc, char * argv[]) {
-    if (argc == 0) {
-        print_err("Error: kill requires a PID\n");
-        print_err("Usage: kill <pid>\n");
-        return;
-    }
-    
-    if (argc > 1) {
-        print_err("Error: kill takes exactly one argument\n");
-        print_err("Usage: kill <pid>\n");
-        return;
-    }
-    
-    // Parsear el PID desde el string usando satoi
-    char *pid_str = argv[0];
-    int pid = satoi(pid_str);
-    
-    // Llamar la syscall para matar el proceso
-    int result = sys_kill(pid);
-
-    // Imprimir mensajes específicos según el código de error
-    switch (result) {
-        case -1:
-            print_err("[ERROR] Scheduler not initialized\n");
-            break;
-        case -2:
-            print_err("[ERROR] Invalid PID\n");
-            break;
-        case -3:
-            print_err("[ERROR] No process found with that PID\n");
-            break;
-        case -4:
-            print_err("[ERROR] Cannot kill process: protected process (init or shell)\n");
-            break;
-    }
-}
 
 // static void print_test_use() {
 //     print("Use: test <test_name> [test_params]\n");
