@@ -56,7 +56,7 @@ static ExternalProgram programs[] = {
     { "test_mm", "runs an mm test", &test_mm},
     { "test_prio", "runs a priority test", &test_prio},
     { "test_processes", "runs an process test", &test_processes},
-    { "test_sync", "runs a sync test.\n              run test_sync <number_increments/decrements_per_process> <use_semaphore>.\n              to use semaphores write 1 in <use_semaphore> else 0", &test_sync},
+    { "test_sync", "runs a sync test\n              run test_sync <number_increments/decrements_per_process> <use_semaphore>\n", &test_sync},
     { "test_pipes", "runs a piptes test", &test_pipes},
     { "mvar", "tests multi-variable synchronization", &mvar_main},
     { NULL, NULL }

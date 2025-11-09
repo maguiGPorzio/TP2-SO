@@ -3,7 +3,7 @@
 // cuenta lineas, palabras y caracteres que recibe por stdin
 int wc_main(int argc, char *argv[]) {
     char c;
-    int lines = 0;
+    int lines = 1;
     int words = 0;
     int chars = 0;
     int in_word = 0;  // flag para saber si estamos dentro de una palabra
