@@ -29,7 +29,7 @@ GLOBAL _sti
 
 EXTERN SNAPSHOT_KEY
 EXTERN irqDispatcher
-EXTERN exceptionDispatcher
+EXTERN exception_dispatcher
 EXTERN syscalls
 EXTERN current_kernel_rsp
 EXTERN switch_to_rsp
@@ -97,7 +97,7 @@ SECTION .text
 	call print_registers
 
 	mov rdi, %1 ; pasaje de parametro
-	call exceptionDispatcher
+	call exception_dispatcher
 
 	popState ; vuelvo a tener en [rsp] los registros que me pusheo en el stack la interrupción
 	call getStackBase	        

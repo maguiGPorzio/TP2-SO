@@ -4,8 +4,8 @@
 typedef void (*Exception)(void);
 
 
-void exceptionDispatcher(int exception);
-static void excepHandler(char * msg);
+void exception_dispatcher(int exception);
+static void excep_handler(char * msg);
 static void zero_division();
 static void invalid_opcode();
 

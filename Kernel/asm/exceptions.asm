@@ -1,5 +1,5 @@
 GLOBAL print_registers
-GLOBAL returnToUserland
+GLOBAL return_to_userland
 EXTERN print
 EXTERN printRegisterFormat
 EXTERN newline
