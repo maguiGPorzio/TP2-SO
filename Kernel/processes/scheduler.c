@@ -5,6 +5,7 @@
 #include "pipes.h"
 #include "interrupts.h" // lo incluí para usar _hlt()
 #include "videoDriver.h"
+#include "../include/time.h"
 #include <stddef.h>
 
 extern void timer_tick();
@@ -17,7 +18,8 @@ extern void timer_tick();
 // ============================================
 
 static PCB *processes[MAX_PROCESSES];       // Array para acceso por PID
-static queue_t ready_queue = NULL;              // Cola de PIDs listos para correr
+static queue_t ready_queue[PRIORITY_COUNT] = {0};              // Array de queues
+
 static pid_t current_pid = NO_PID;                // PID del proceso actual
 static uint8_t process_count = 0;               // Cantidad total de procesos
 static uint64_t total_cpu_ticks = 0;            // Total de ticks de CPU
@@ -62,7 +64,8 @@ static int init(int argc, char **argv) {
     while (1) {
 		_hlt();
 	}
-    return 0;
+
+    return -1;
 }
 
 // Devuelve el PID del proceso en foreground o NO_PID si no está inicializado
@@ -103,10 +106,10 @@ static int create_shell(){
     pcb_shell->priority = MAX_PRIORITY;
     pcb_shell->status = PS_READY; 
     pcb_shell->cpu_ticks = 0;
-    pcb_shell->remaining_quantum = pcb_shell->priority;
+    pcb_shell->last_tick = ticks_elapsed();
     processes[SHELL_PID] = pcb_shell;
     process_count++;
-    if (ready_queue == NULL || !q_add(ready_queue, SHELL_PID)) {
+    if (!q_add(ready_queue[pcb_shell->priority], SHELL_PID)) {
         processes[SHELL_PID] = NULL;
         process_count--;
         free_process_resources(pcb_shell);
@@ -126,10 +129,10 @@ static int scheduler_add_init() {
         return -1;
     }
 
-    pcb_init->priority = MIN_PRIORITY;
+    pcb_init->priority = MIN_PRIORITY; // no importa pues no va a ninguna queue
     pcb_init->status = PS_READY; 
     pcb_init->cpu_ticks = 0;
-    pcb_init->remaining_quantum = pcb_init->priority;
+    pcb_init->last_tick = 0; // no importa pues no va a ninguna queue
 
     processes[INIT_PID] = pcb_init;
     process_count++;
@@ -149,11 +152,14 @@ int init_scheduler(void) {
         processes[i] = NULL;
     }
     
-    // Inicializar cola de procesos READY
-    ready_queue = q_init();
-    if (ready_queue == NULL) {
-        return -1;
+    // inicializamos las queues
+    for (int i = MAX_PRIORITY; i <= MIN_PRIORITY; i++) {
+        ready_queue[i] = q_init();
+        if (ready_queue[i] == NULL) {
+            return -1;
+        }
     }
+    
    
     process_count = 0;
     total_cpu_ticks = 0;
@@ -162,8 +168,10 @@ int init_scheduler(void) {
     //Sino, la primera llamada a scheudule va a tratar a init como current y va a pisar su stack_pointer con prev_rsp
 
     if(scheduler_add_init() != 0) {
-        q_destroy(ready_queue);
-        ready_queue = NULL;
+        for (int i = MAX_PRIORITY; i <= MIN_PRIORITY; i++) {
+        q_destroy(ready_queue[i]);
+    }
+
         return -1;
     }
 
@@ -188,21 +196,20 @@ void * schedule(void * prev_rsp) {
         current->cpu_ticks++; // cuantas veces interrumpimos este proceso que estuvo corrriendo hasta ahora
         total_cpu_ticks++;
 
-        if (current->status == PS_RUNNING && current->remaining_quantum > 0) { // si se lo interrumpió antes de que se termine su quantum y estaba corriendo
-            current->remaining_quantum--;
-        }
+        // Con quantum de 1 tick, siempre forzamos reschedule después de cada tick
+        // (a menos que el proceso ya no esté RUNNING por otra razón)
         
-        if(current->status == PS_RUNNING && current->remaining_quantum > 0 && !force_reschedule){ // si aún tiene quantum y no se forzó reschedule, seguimos corriendo el mismo
-            return prev_rsp;
-        }
-
-        if(current->status == PS_RUNNING){ // si no entró en el if anterior, es porque no tiene que seguir corriendo. Si su status es RUNNING, la razón no fue por haberse bloqueado, terminado o porque se le hizo kill, entonces hay que cambiar su status a READY. En el caso de que se lo hubiera bloqueado, matado o terminado, ya su status se cambió en otras funciones
+        if(current->status == PS_RUNNING){ 
+            // Si el status es RUNNING, cambiar a READY
+            // Si fue bloqueado, terminado o matado, el status ya se cambió en otras funciones
             current->status = PS_READY;
         }
+        
         if (current->status == PS_READY && current->pid != INIT_PID) {
-            if (ready_queue == NULL || !q_add(ready_queue, current->pid)) {
+            // Agregar a la cola correspondiente a su prioridad
+            queue_t target_queue = ready_queue[current->priority];
+            if (!q_add(target_queue, current->pid)) {
                 current->status = PS_RUNNING;
-                current->remaining_quantum = current->priority;
                 force_reschedule = false;
                 return prev_rsp;
             }
@@ -217,38 +224,51 @@ void * schedule(void * prev_rsp) {
         next = processes[INIT_PID];
     }
 
+    // TODO: borrar
+    // Debug: solo mostrar PID del proceso que corre
+    // if (next->pid >= 3 && next->pid <= 5) {
+    //     char debug_msg[10];
+    //     decimal_to_str(next->pid, debug_msg);
+    //     vdPrint(debug_msg, 0x00ff00);
+    //     vdPrint(" ", 0x00ff00);
+    // }
+
     current_pid = next->pid;
     next->status = PS_RUNNING;
-    next->remaining_quantum = next->priority; // reseteo del quantum
     force_reschedule = false;
     return next->stack_pointer;
 
 }
 
 // ============================================
-//    ALGORITMO: ROUND ROBIN CON PRIORIDADES
+//    ALGORITMO: MULTICOLA CON PRIORIDADES
 // ============================================
 
-// Devuelve null si no hay proceso listo para correr en la cola
+// Devuelve null si no hay proceso listo para correr en ninguna cola
+// Recorre las colas de mayor prioridad (0) a menor (PRIORITY_COUNT-1)
 static PCB *pick_next_process(void) {
     if (!scheduler_initialized || process_count == 0) {
         return NULL;
     }
 
-    if (ready_queue == NULL || q_is_empty(ready_queue)) {
-        return NULL;
-    }
-
-    while (!q_is_empty(ready_queue)) {
-        pid_t next_pid = (pid_t) q_poll(ready_queue);
-        if (!pid_is_valid(next_pid)) {
+    // Recorrer las colas por orden de prioridad
+    for (int priority = MAX_PRIORITY; priority <= MIN_PRIORITY; priority++) {
+        if (q_is_empty(ready_queue[priority])) {
             continue;
         }
-        PCB *candidate = processes[next_pid];
-        if (candidate != NULL && candidate->status == PS_READY) {
-            return candidate;
+        
+        // Buscar un proceso válido en esta cola de prioridad
+        while (!q_is_empty(ready_queue[priority])) {
+            pid_t next_pid = (pid_t) q_poll(ready_queue[priority]);
+            if (!pid_is_valid(next_pid)) {
+                continue;
+            }
+            PCB *candidate = processes[next_pid];
+            if (candidate != NULL && candidate->status == PS_READY) {
+                return candidate;
+            }
+            // Si el proceso ya no está listo, seguimos buscando en esta cola
         }
-        // Si el proceso ya no está listo, seguimos buscando
     }
 
     return NULL;
@@ -286,13 +306,12 @@ int scheduler_add_process(process_entry_t entry, int argc, const char **argv, co
     process->priority = DEFAULT_PRIORITY; // Asignar prioridad por defecto
     process->status = PS_READY; 
     process->cpu_ticks = 0;
-    process->remaining_quantum = process->priority;
 
 
     processes[pid] = process;
     process_count++;
 
-    if (ready_queue == NULL || !q_add(ready_queue, pid)) {
+    if (!q_add(ready_queue[process->priority], pid)) {
         processes[pid] = NULL;
         process_count--;
         free_process_resources(process);
@@ -314,9 +333,8 @@ int scheduler_remove_process(pid_t pid) {
 
     // Remover de la cola de procesos listos para correr
     if (process->status == PS_READY || process->status == PS_RUNNING) {
-        if (ready_queue != NULL) {
-            q_remove(ready_queue, process->pid);
-        }
+        // Buscar en la cola correspondiente a su prioridad
+        q_remove(ready_queue[process->priority], process->pid);
     }
 
     // Remover del array
@@ -338,12 +356,39 @@ int scheduler_remove_process(pid_t pid) {
 int scheduler_set_priority(pid_t pid, uint8_t new_priority) {
    if (!scheduler_initialized || !pid_is_valid(pid) || 
         processes[pid] == NULL || 
-        new_priority < MIN_PRIORITY || new_priority > MAX_PRIORITY) {
+        new_priority < MAX_PRIORITY || new_priority > MIN_PRIORITY) { // mas chico el numero, mayor la prioridad
         return -1;
     }
 
-    processes[pid]->priority = new_priority;
-    processes[pid]->remaining_quantum = new_priority;
+    PCB *process = processes[pid];
+    uint8_t old_priority = process->priority;
+    
+    // Si la prioridad no cambia, no hacer nada
+    if (old_priority == new_priority) {
+        return 0;
+    }
+    
+    // Si el proceso está READY, hay que moverlo de una cola a otra
+    if (process->status == PS_READY) {
+        // Remover de la cola antigua
+        q_remove(ready_queue[old_priority], pid);
+        
+        // Cambiar la prioridad
+        process->priority = new_priority;
+        
+        // Agregar a la nueva cola
+        if (!q_add(ready_queue[new_priority], pid)) {
+            // Si falla, volver a poner en la cola antigua
+            process->priority = old_priority;
+            q_add(ready_queue[old_priority], pid);
+            return -1;
+        }
+    } else {
+        // Si está RUNNING, BLOCKED o TERMINATED, solo cambiar la prioridad
+        // Cuando vuelva a READY, irá a la cola correcta
+        process->priority = new_priority;
+    }
+    
     return 0;
 }
 
@@ -414,9 +459,7 @@ int scheduler_kill_process(pid_t pid) {
     } else { // si el padre no es init, no vamos a eliminarlo porque su padre podria hacerle un wait
         // Lo sacamos de la cola de procesos ready para que no vuelva a correr PERO NO  del array de procesos (para que el padre pueda acceder a su ret_value)
         if (killed_process->status == PS_READY || killed_process->status == PS_RUNNING) {
-            if (ready_queue != NULL) {
-                q_remove(ready_queue, killed_process->pid);
-            }
+            q_remove(ready_queue[killed_process->priority], killed_process->pid);
         }
         killed_process->status = PS_TERMINATED; // Le cambio el estado despues de hacer el dequeue o sino no va a entrar en la condición del if
         killed_process->return_value = KILLED_RET_VALUE;
@@ -450,9 +493,7 @@ int scheduler_block_process(pid_t pid) {
     
     // Remover de cola READY (si está ahí)
     if (process->status == PS_READY || process->status == PS_RUNNING) {
-        if (ready_queue != NULL) {
-            q_remove(ready_queue, process->pid);
-        }
+        q_remove(ready_queue[process->priority], process->pid);
     }
     
     process->status = PS_BLOCKED;
@@ -478,8 +519,8 @@ int scheduler_unblock_process(pid_t pid) {
     
     process->status = PS_READY;
     
-    // Agregar a la cola READY global
-    if (ready_queue == NULL || !q_add(ready_queue, pid)) {
+    // Agregar a la cola correspondiente a su prioridad
+    if (!q_add(ready_queue[process->priority], pid)) {
         process->status = PS_BLOCKED;
         return -1;
     }
@@ -506,10 +547,10 @@ void scheduler_destroy(void) {
         return;
     }
 
-    // Limpiar la cola global liberando nodos
-    if (ready_queue != NULL) {
-        q_destroy(ready_queue);
-        ready_queue = NULL;
+    // Limpiar todas las colas de prioridades liberando nodos
+    for (int i = MAX_PRIORITY; i <= MIN_PRIORITY; i++) {
+        q_destroy(ready_queue[i]);
+        ready_queue[i] = NULL;
     }
 
     cleanup_all_processes();
@@ -567,6 +608,7 @@ void scheduler_exit_process(int64_t ret_value) {
     }
     
     PCB * current_process = processes[current_pid];
+    
     reparent_children_to_init(current_process->pid);
 
     if (current_pid == foreground_process_pid) {
@@ -582,9 +624,7 @@ void scheduler_exit_process(int64_t ret_value) {
     } else{ // si el padre no es init, no vamos a eliminarlo porque su padre podria hacerle un wait
         // Lo sacamos de la cola de procesos ready para que no vuelva a correr PERO NO  del array de procesos (para que el padre pueda acceder a su ret_value)
         if (current_process->status == PS_READY || current_process->status == PS_RUNNING) {
-            if (ready_queue != NULL) {
-                q_remove(ready_queue, current_process->pid);
-            }
+            q_remove(ready_queue[current_process->priority], current_process->pid);
         }
         current_process->status = PS_TERMINATED; // Le cambio el estado despues de hacer el dequeue o sino no va a entrar en la condición del if
         current_process->return_value = ret_value;

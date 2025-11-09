@@ -42,7 +42,7 @@ typedef struct PCB {
     // Estado y scheduling
     ProcessStatus status;
     uint8_t priority;                // 0-9 (0 = mayor prioridad)
-    uint8_t remaining_quantum;       // Ticks restantes en este quantum
+    uint64_t last_tick;
     
     // Contexto de ejecución
     void *stack_base;                // Base del stack

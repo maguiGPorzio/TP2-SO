@@ -10,6 +10,9 @@
 #define MAX_NAME_LENGTH 32
 #define MAX_PROCESSES 64
 
+#define MIN_PRIORITY 2
+#define MAX_PRIORITY 0 
+
 enum {
     STDIN = 0,
     STDOUT,
