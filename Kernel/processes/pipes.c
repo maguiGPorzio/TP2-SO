@@ -1,3 +1,6 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
+
 #include <stdbool.h>
 #include "pipes.h"
 #include "scheduler.h"
@@ -91,7 +94,7 @@ int create_pipe(int fds[2]) {
         return -1;
     }
 
-    MemoryManagerADT mm = get_kernel_memory_manager();
+    memory_manager_ADT mm = get_kernel_memory_manager();
     pipe_t * pipe = alloc_memory(mm, sizeof(pipe_t));
     if (pipe == NULL) {
         return -1;
@@ -392,7 +395,7 @@ void destroy_pipe(int idx) {
         return;
     }
 
-    MemoryManagerADT mm = get_kernel_memory_manager();
+    memory_manager_ADT mm = get_kernel_memory_manager();
 
     sem_close(pipe->read_sem);
     sem_close(pipe->write_sem);
@@ -404,7 +407,7 @@ void destroy_pipe(int idx) {
 }
 
 void list_pipes(void) {
-    vdPrint("\n=== PIPES ACTIVOS ===\n", 0xffffff);
+    vd_print("\n=== PIPES ACTIVOS ===\n", 0xffffff);
     
     int active_count = 0;
     char debug_str[20];
@@ -417,58 +420,58 @@ void list_pipes(void) {
         
         active_count++;
         
-        vdPrint("Pipe #", 0xffffff);
+        vd_print("Pipe #", 0xffffff);
         decimal_to_str(i, debug_str);
-        vdPrint(debug_str, 0xffffff);
-        vdPrint(": ", 0xffffff);
+        vd_print(debug_str, 0xffffff);
+        vd_print(": ", 0xffffff);
         
         // Nombre del pipe (anónimo si no tiene)
         if (pipe->name[0] == '\0') {
-            vdPrint("[anonymous]", 0xffffff);
+            vd_print("[anonymous]", 0xffffff);
         } else {
-            vdPrint("\"", 0xffffff);
-            vdPrint(pipe->name, 0xffffff);
-            vdPrint("\"", 0xffffff);
+            vd_print("\"", 0xffffff);
+            vd_print(pipe->name, 0xffffff);
+            vd_print("\"", 0xffffff);
         }
         
         // FDs
-        vdPrint(" read_fd=", 0xffffff);
+        vd_print(" read_fd=", 0xffffff);
         decimal_to_str(pipe->read_fd, debug_str);
-        vdPrint(debug_str, 0xffffff);
-        vdPrint(" write_fd=", 0xffffff);
+        vd_print(debug_str, 0xffffff);
+        vd_print(" write_fd=", 0xffffff);
         decimal_to_str(pipe->write_fd, debug_str);
-        vdPrint(debug_str, 0xffffff);
+        vd_print(debug_str, 0xffffff);
         
         // Contadores
-        vdPrint(" readers=", 0xffffff);
+        vd_print(" readers=", 0xffffff);
         decimal_to_str(pipe->reader_count, debug_str);
-        vdPrint(debug_str, 0xffffff);
-        vdPrint(" writers=", 0xffffff);
+        vd_print(debug_str, 0xffffff);
+        vd_print(" writers=", 0xffffff);
         decimal_to_str(pipe->writer_count, debug_str);
-        vdPrint(debug_str, 0xffffff);
+        vd_print(debug_str, 0xffffff);
         
         // Estado del buffer
-        vdPrint(" buffered=", 0xffffff);
+        vd_print(" buffered=", 0xffffff);
         int buffered = (pipe->write_idx - pipe->read_idx + PIPE_BUFFER_SIZE) % PIPE_BUFFER_SIZE;
         decimal_to_str(buffered, debug_str);
-        vdPrint(debug_str, 0xffffff);
-        vdPrint("/", 0xffffff);
+        vd_print(debug_str, 0xffffff);
+        vd_print("/", 0xffffff);
         decimal_to_str(PIPE_BUFFER_SIZE, debug_str);
-        vdPrint(debug_str, 0xffffff);
+        vd_print(debug_str, 0xffffff);
         
-        vdPrint("\n", 0xffffff);
+        vd_print("\n", 0xffffff);
     }
     
-    vdPrint("Total: ", 0xffffff);
+    vd_print("Total: ", 0xffffff);
     decimal_to_str(active_count, debug_str);
-    vdPrint(debug_str, 0xffffff);
-    vdPrint(" pipe", 0xffffff);
+    vd_print(debug_str, 0xffffff);
+    vd_print(" pipe", 0xffffff);
     if (active_count != 1) {
-        vdPrint("s", 0xffffff);
+        vd_print("s", 0xffffff);
     }
-    vdPrint(" activo", 0xffffff);
+    vd_print(" activo", 0xffffff);
     if (active_count != 1) {
-        vdPrint("s", 0xffffff);
+        vd_print("s", 0xffffff);
     }
-    vdPrint("\n\n", 0xffffff);
+    vd_print("\n\n", 0xffffff);
 }

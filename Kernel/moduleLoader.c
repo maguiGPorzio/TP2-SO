@@ -1,3 +1,6 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
+
 #include <stdint.h>
 #include <lib.h>
 #include <moduleLoader.h>
@@ -32,7 +35,7 @@ static void loadModule(uint8_t ** module, void * targetModuleAddress)
 	*module += moduleSize;
 
 	ncPrint(" [Done]");
-	ncNewline();
+	ncnewline();
 }
 
 static uint32_t readUint32(uint8_t ** address)

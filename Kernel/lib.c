@@ -1,7 +1,9 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
+
 #include <stdint.h>
 
-void * memset(void * destination, int32_t c, uint64_t length)
-{
+void * memset(void * destination, int32_t c, uint64_t length){
 	uint8_t chr = (uint8_t)c;
 	char * dst = (char*)destination;
 
@@ -11,8 +13,7 @@ void * memset(void * destination, int32_t c, uint64_t length)
 	return destination;
 }
 
-void * memcpy(void * destination, const void * source, uint64_t length)
-{
+void * memcpy(void * destination, const void * source, uint64_t length){
 	/*
 	* memcpy does not support overlapping buffers, so always do it
 	* forwards. (Don't change this without adjusting memmove.)
@@ -30,8 +31,7 @@ void * memcpy(void * destination, const void * source, uint64_t length)
 	const uint8_t * s = (const uint8_t*)source;
 
 	// Copy byte by byte until aligned to 8 bytes
-	while (i < length && ((uint64_t)(d + i) % sizeof(uint64_t) != 0 || (uint64_t)(s + i) % sizeof(uint64_t) != 0))
-	{
+	while (i < length && ((uint64_t)(d + i) % sizeof(uint64_t) != 0 || (uint64_t)(s + i) % sizeof(uint64_t) != 0)){
 		d[i] = s[i];
 		i++;
 	}
@@ -42,16 +42,14 @@ void * memcpy(void * destination, const void * source, uint64_t length)
 	uint64_t remaining = length - i;
 	uint64_t aligned_count = remaining / sizeof(uint64_t);
 
-	for (uint64_t j = 0; j < aligned_count; j++)
-	{
+	for (uint64_t j = 0; j < aligned_count; j++){
 		d64[j] = s64[j];
 	}
 
 	i += aligned_count * sizeof(uint64_t);
 
 	// Copy remaining bytes
-	while (i < length)
-	{
+	while (i < length){
 		d[i] = s[i];
 		i++;
 	}
@@ -59,8 +57,7 @@ void * memcpy(void * destination, const void * source, uint64_t length)
 	return destination;
 }
 
-void * memset64(void * destination, uint64_t pattern, uint64_t length)
-{
+void * memset64(void * destination, uint64_t pattern, uint64_t length){
 	uint8_t *d = (uint8_t *)destination;
 	uint64_t i = 0;
 

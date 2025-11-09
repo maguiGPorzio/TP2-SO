@@ -1,3 +1,6 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
+
 #include "usrlib.h"
 
 #define MAX_SEM_NAME_LENGTH 64 // TODO: se comparte con Kernel
@@ -108,7 +111,7 @@ static int attach_to_sync_objects(void) {
 }
 
 static void random_pause(void) {
-    uint64_t delay = MIN_SLEEP_MS + GetUniform(SLEEP_JITTER_MS);
+    uint64_t delay = MIN_SLEEP_MS + get_uniform(SLEEP_JITTER_MS);
     sys_sleep(delay);
 }
 

@@ -10,7 +10,7 @@ GLOBAL get_year
 GLOBAL get_seconds
 GLOBAL get_minutes
 GLOBAL get_hour
-GLOBAL setTimerFreq
+GLOBAL set_timer_freq
 
 extern store_snapshot
 
@@ -40,7 +40,7 @@ cpuVendor:
 	pop rbp
 	ret
 
-setTimerFreq:
+set_timer_freq:
     push rbp
     mov rbp, rsp
     

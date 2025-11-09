@@ -1,4 +1,6 @@
-//TEST CATEDRA
+// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
+
 #include "usrlib.h"
 #include "../include/test_util.h"
 
@@ -40,7 +42,7 @@ int test_mm(int argc, char * argv[]) {
 
     // Request as many blocks as we can
     while (rq < MAX_BLOCKS && total < max_memory) {
-      mm_rqs[rq].size = GetUniform(max_memory - total - 1) + 1;
+      mm_rqs[rq].size = get_uniform(max_memory - total - 1) + 1;
       mm_rqs[rq].address = sys_malloc(mm_rqs[rq].size);
 
       if (mm_rqs[rq].address) {
@@ -69,14 +71,14 @@ int test_mm(int argc, char * argv[]) {
         sys_free(mm_rqs[i].address);
 
     // Mostrar estado de memoria cada iteración
-    MemStatus st = sys_memstatus();
+    mem_info_t st = sys_mem_info_t();
     printf("[MM] total=%u used=%u free=%u blocks=%u\n", (unsigned)st.total_memory, (unsigned)st.used_memory, (unsigned)st.free_memory, (unsigned)st.allocated_blocks);
   }
 }
 
 
 //TEST CATEDRA MEJORADO
-// #include "../include/test_mm.h" // para sys_* y MemStatus
+// #include "../include/test_mm.h" // para sys_* y mem_info_t
 
 // #define MAX_BLOCKS 128
 
@@ -88,14 +90,14 @@ int test_mm(int argc, char * argv[]) {
 // static uint32_t m_z = 362436069;
 // static uint32_t m_w = 521288629;
 
-// uint32_t GetUint() {
+// uint32_t get_uint() {
 //   m_z = 36969 * (m_z & 65535) + (m_z >> 16);
 //   m_w = 18000 * (m_w & 65535) + (m_w >> 16);
 //   return (m_z << 16) + m_w;
 // }
 
-// uint32_t GetUniform(uint32_t max) {
-//   uint32_t u = GetUint();
+// uint32_t get_uniform(uint32_t max) {
+//   uint32_t u = get_uint();
 //   return (u + 1.0) * 2.328306435454494e-10 * max;
 // }
 
@@ -146,7 +148,7 @@ int test_mm(int argc, char * argv[]) {
 //     return -1;
 
 //   // Estado inicial
-//   MemStatus initial_status = sys_memstatus();
+//   mem_info_t initial_status = sys_mem_info_t();
 //   printf("\n========================================\n");
 //   printf("   MEMORY MANAGER STRESS TEST\n");
 //   printf("========================================\n");
@@ -165,7 +167,7 @@ int test_mm(int argc, char * argv[]) {
 
 //     // ===== FASE 1: ALLOCACIÓN =====
 //     while (rq < MAX_BLOCKS && total < max_memory) {
-//       mm_rqs[rq].size = GetUniform(max_memory - total - 1) + 1;
+//       mm_rqs[rq].size = get_uniform(max_memory - total - 1) + 1;
 //       mm_rqs[rq].address = sys_malloc(mm_rqs[rq].size);
 
 //       if (mm_rqs[rq].address) {
@@ -205,7 +207,7 @@ int test_mm(int argc, char * argv[]) {
 //     }
 
 //     // ===== FASE 5: VERIFICAR ESTADO DESPUÉS DE FREE =====
-//     MemStatus st = sys_memstatus();
+//     mem_info_t st = sys_mem_info_t();
 
 //     // CRÍTICO: Verificar que toda la memoria fue liberada
 //     if (st.used_memory != initial_status.used_memory) {

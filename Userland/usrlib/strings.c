@@ -1,3 +1,6 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
+
 #include "usrlib.h"
 
 uint64_t num_to_str_base(uint64_t value, char * buffer, uint32_t base) {

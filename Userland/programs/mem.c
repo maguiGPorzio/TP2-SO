@@ -1,4 +1,5 @@
-#include "usrlib.h"
+// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 
 
 // Helper para imprimir número con padding (alineado a la derecha)
@@ -31,7 +32,7 @@ int mem_main(int argc, char *argv[]) {
         return -1;
     }
 
-    MemStatus info = sys_memstatus();
+    mem_info_t info = sys_mem_info_t();
 
     char *units[] = {"B", "KB", "MB", "GB"};
 

@@ -1,12 +1,12 @@
 GLOBAL print_registers
-GLOBAL returnToUserland
+GLOBAL return_to_userland
 EXTERN print
 EXTERN printRegisterFormat
-EXTERN newLine
+EXTERN newline
 EXTERN main
 EXTERN getStackBase
-EXTERN vdSetTextSize
-EXTERN vdPrint
+EXTERN vd_set_text_size
+EXTERN vd_print
 EXTERN uint64_to_register_format
 section .text
 
@@ -20,11 +20,11 @@ print_registers:
 .loop_registers:
     
     mov rdi, 1
-    call vdSetTextSize
+    call vd_set_text_size
 
     mov rdi, [registers+r10] ; carga el string "RAX = ", "RBX = ", etc
     mov rsi, 0xFF0000 ; color rojo
-    call vdPrint
+    call vd_print
 
     add r10, 8 ; avanza al siguiente índice
     mov rdi, [rbp+r10+8] ; valor del registro sacado del stack. Los registros están almacenados en el stack automáticamente cuando ocurre una excepción
@@ -33,10 +33,10 @@ print_registers:
 
     mov rdi, buffReg
     mov rsi, 0xFF0000 
-    call vdPrint
+    call vd_print
 
 
-    call newLine
+    call newline
 
     cmp r10, length
     jne .loop_registers

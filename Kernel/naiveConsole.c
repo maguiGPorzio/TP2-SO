@@ -1,3 +1,6 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
+
 #include <naiveConsole.h>
 
 uint32_t uintToBase(uint64_t value, char * buffer, uint32_t base);
@@ -70,7 +73,7 @@ void ncPrintChar(char character){
 		*currentVideo = 0;
 		break;
 	case '\n':
-		ncNewline();
+		ncnewline();
 		break;
 	default:
 		*currentVideo = character;
@@ -82,7 +85,7 @@ void ncPrintChar(char character){
 
 }
 
-void ncNewline(){
+void ncnewline(){
 	do{
 		ncPrintChar(' ');
 	}

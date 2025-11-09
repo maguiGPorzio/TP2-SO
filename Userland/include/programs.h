@@ -20,5 +20,6 @@ int block_main(int argc, char *argv[]);
 int unblock_main(int argc, char *argv[]);
 int filter_main(int argc, char *argv[]);
 int text_main(int argc, char *argv[]);
+int kill_main(int argc, char *argv[]);
 
 #endif

@@ -1,7 +1,8 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
+
 #include <stdint.h>
 #include "../include/usrlib.h"
-
-
 
 // Memory
 uint8_t memcheck(void *start, uint8_t value, uint32_t size) {
@@ -14,9 +15,6 @@ uint8_t memcheck(void *start, uint8_t value, uint32_t size) {
 
   return 1;
 }
-
-
-
 
 // Dummies
 void bussy_wait(uint64_t n) {

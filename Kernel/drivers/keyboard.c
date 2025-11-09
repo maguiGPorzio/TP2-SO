@@ -1,3 +1,6 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
+
 #include "keyboard.h"
 #include "lib.h"
 #include "naiveConsole.h"
@@ -168,7 +171,7 @@ void handle_pressed_key() {
         }
 
         write_buffer(scancode_to_ascii[index][scancode]);
-		// vdPutChar(scancode_to_ascii[index][scancode], 0xffffff);
+		// vd_put_char(scancode_to_ascii[index][scancode], 0xffffff);
     }
 
     return;

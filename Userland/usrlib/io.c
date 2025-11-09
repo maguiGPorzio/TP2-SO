@@ -1,3 +1,6 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
+
 #include "usrlib.h"
 
 static uint64_t print_udecimal(uint64_t value);
@@ -9,8 +12,9 @@ static uint64_t print_bin(uint64_t value);
 static uint64_t print_float(double num);
 
 uint64_t fprint(uint64_t fd, char * str) {
-    if (str == 0)
+    if (str == 0){
         return 0;
+    }
     return sys_write(fd, str, strlen(str));
 }
 
@@ -43,7 +47,9 @@ uint64_t printf_aux(const char *fmt, const uint64_t *intArgs, const uint64_t *st
     uint64_t stk_idx = 0;
     uint64_t float_idx = 0;
 
-    if(!fmt) return 0; 
+    if(!fmt){
+        return 0; 
+    }
     
     while (*fmt) {
         if (*fmt != '%') {        
@@ -126,7 +132,7 @@ uint64_t printf_aux(const char *fmt, const uint64_t *intArgs, const uint64_t *st
                     case 'a':                      
                         break;
                     default:   
-                        // EXCEPCIÓN???
+                        // TODO: EXCEPCIÓN???
                         break;
  
                 }

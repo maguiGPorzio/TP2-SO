@@ -15,8 +15,8 @@
 //              TIPOS DE DATOS
 // ============================================
 
-// TAD - Tipo abstracto de datos (estructura opaca)
-typedef struct MemoryManagerCDT* MemoryManagerADT;
+// TAD - Tipo ABStracto de datos (estructura opaca)
+typedef struct memory_manager_CDT* memory_manager_ADT;
 
 // Estructura para estadísticas de memoria
 typedef struct {
@@ -24,29 +24,29 @@ typedef struct {
     size_t used_memory;
     size_t free_memory;
     size_t allocated_blocks;
-} MemStatus;
+} mem_info_t;
 
 /**
  * @brief Reserva un bloque de memoria
- * @param memManager Handler del memory manager
+ * @param memory_manager Handler del memory manager
  * @param size Tamaño en bytes a reservar
  * @return Puntero al bloque reservado o NULL si no hay memoria
  */
-void* alloc_memory(MemoryManagerADT memManager, size_t size);
+void* alloc_memory(memory_manager_ADT memory_manager, size_t size);
 
 /**
  * @brief Libera un bloque de memoria previamente reservado
- * @param memManager Handler del memory manager
+ * @param memory_manager Handler del memory manager
  * @param ptr Puntero al bloque a liberar
  */
-void free_memory(MemoryManagerADT memManager, void* ptr);
+void free_memory(memory_manager_ADT memory_manager, void* ptr);
 
 /**
  * @brief Obtiene estadísticas del estado de la memoria
- * @param memManager Handler del memory manager
+ * @param memory_manager Handler del memory manager
  * @return Estructura con información de memoria
  */
-MemStatus get_mem_status(MemoryManagerADT memManager);
+mem_info_t get_mem_status(memory_manager_ADT memory_manager);
 
 
 /**
@@ -55,6 +55,6 @@ MemStatus get_mem_status(MemoryManagerADT memManager);
  */
 void init_kernel_memory_manager(void);
 
-MemoryManagerADT get_kernel_memory_manager(void);
+memory_manager_ADT get_kernel_memory_manager(void);
 
 #endif // MEMORY_MANAGER_ADT_H

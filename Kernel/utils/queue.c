@@ -1,3 +1,6 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
+
 #include "queue.h"
 #include "memoryManager.h"
 
@@ -17,7 +20,7 @@ typedef struct queue_cdt {
 
 // constructor
 queue_t q_init() {
-    MemoryManagerADT mm = get_kernel_memory_manager();
+    memory_manager_ADT mm = get_kernel_memory_manager();
     queue_t q = alloc_memory(mm, sizeof(queue_cdt));
     if (q == NULL) {
         return NULL;
@@ -31,7 +34,7 @@ queue_t q_init() {
 
 // devuelve 1 si lo agrego, 0 sino (si se puede cambiar a bool)
 int q_add(queue_t q, int value) {
-    MemoryManagerADT mm = get_kernel_memory_manager();
+    memory_manager_ADT mm = get_kernel_memory_manager();
     node_t * new_node = alloc_memory(mm, sizeof(node_t));
     if (new_node == NULL) {
         return 0;
@@ -55,7 +58,7 @@ int q_poll(queue_t q) {
     if (q_is_empty(q)) {
         return -1;
     }
-    MemoryManagerADT mm = get_kernel_memory_manager();
+    memory_manager_ADT mm = get_kernel_memory_manager();
     int res = q->first->value;
     node_t * to_free = q->first;
     q->first = to_free->next;
@@ -72,7 +75,7 @@ int q_remove(queue_t q, int value) {
     if (q_is_empty(q)) {
         return 0;
     }
-    MemoryManagerADT mm = get_kernel_memory_manager();
+    memory_manager_ADT mm = get_kernel_memory_manager();
     if (q->first->value == value) {
         node_t * to_free = q->first;
         q->first = q->first->next;
@@ -129,7 +132,7 @@ void q_destroy(queue_t q) {
         return;
     }
 
-    MemoryManagerADT mm = get_kernel_memory_manager();
+    memory_manager_ADT mm = get_kernel_memory_manager();
     node_t * current = q->first;
     while (current != NULL) {
         node_t * next = current->next;
@@ -181,7 +184,7 @@ int q_remove_current(queue_t q) {
         return 0;
     }
     
-    MemoryManagerADT mm = get_kernel_memory_manager();
+    memory_manager_ADT mm = get_kernel_memory_manager();
     node_t * to_remove = q->prev_current;
     
     // Caso 1: el nodo a remover es el primero

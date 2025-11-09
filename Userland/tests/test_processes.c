@@ -1,3 +1,5 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 
 #include "../include/usrlib.h"
 #include "test_util.h"
@@ -54,7 +56,7 @@ int test_processes(int argc, char *argv[]) {
     while (alive > 0) {
 
       for (rq = 0; rq < max_processes; rq++) {
-        action = GetUniform(100) % 2;
+        action = get_uniform(100) % 2;
 
         switch (action) {
           case 0:
@@ -83,7 +85,7 @@ int test_processes(int argc, char *argv[]) {
 
       // Randomly unblocks processes
       for (rq = 0; rq < max_processes; rq++)
-        if (p_rqs[rq].state == BLOCKED && GetUniform(100) % 2) {
+        if (p_rqs[rq].state == BLOCKED && get_uniform(100) % 2) {
           if (sys_unblock(p_rqs[rq].pid) == -1) {
             print_err("test_processes: ERROR unblocking process\n");
             return -1;

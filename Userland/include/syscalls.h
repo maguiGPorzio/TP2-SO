@@ -30,7 +30,7 @@ typedef struct {
     size_t used_memory;
     size_t free_memory;
     size_t allocated_blocks;
-} MemStatus;
+} mem_info_t;
 
 typedef int (*process_entry_t)(int argc, char **argv);
 
@@ -39,12 +39,12 @@ typedef enum {
     PS_RUNNING,
     PS_BLOCKED,
     PS_TERMINATED
-} ProcessStatus;
+} process_status_t;
 
 typedef struct process_info {
     int pid;
     char name[MAX_NAME_LENGTH];
-    ProcessStatus status;
+    process_status_t status;
     uint8_t priority;
     int parent_pid;
     int read_fd;
@@ -60,8 +60,8 @@ typedef struct process_info {
 extern uint64_t sys_regs(char *buf);
 extern void     sys_time(uint8_t *buf);     
 extern void     sys_date(uint8_t *buf);
-extern int sys_read(int fd, char *buf,  uint64_t count);
-extern int sys_write(uint64_t fd, const char *buf, uint64_t count);
+extern int      sys_read(int fd, char *buf,  uint64_t count);
+extern int      sys_write(uint64_t fd, const char *buf, uint64_t count);
 extern void     sys_increase_fontsize();
 extern void     sys_decrease_fontsize();
 extern void     sys_beep(uint32_t freq_hz, uint64_t duration_ms);
@@ -85,7 +85,7 @@ extern uint64_t sys_ticks();
 /*-- SYSTEMCALLS DE MEMORIA --*/
 extern void * sys_malloc(uint64_t size);
 extern void sys_free(void * ptr);
-extern MemStatus sys_memstatus(void);
+extern mem_info_t sys_mem_info_t(void);
 
 /*-- SYSTEMCALLS DE PROCESOS --*/
 extern int64_t sys_create_process(void * entry, int argc, const char **argv, const char *name, int fds[2]);
