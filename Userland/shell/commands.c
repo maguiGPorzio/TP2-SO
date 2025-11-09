@@ -15,7 +15,7 @@
 static void cls(int argc, char * argv[]);
 static void help(int argc, char * argv[]);
 static void list_pipes(int argc, char * argv[]);
-static void kill_process(int argc, char * argv[]);
+static void username_cmd(int argc, char * argv[]);
 
 static bool is_cmd_background(char *line);
 
@@ -23,6 +23,7 @@ static BuiltinCommand builtins[] = {
     { "clear", "clears the screen", &cls },
     { "help", "provides information about available commands", &help },
     { "pipes", "lists active pipes information", &list_pipes },
+    { "username", "changes the shell username", &username_cmd },
 
     { NULL, NULL, NULL }
 };
@@ -364,6 +365,35 @@ static void help(int argc, char * argv[]) {
 
 static void list_pipes(int argc, char * argv[]) {
     sys_list_pipes();
+}
+
+
+static void username_cmd(int argc, char * argv[]) {
+    if (argc == 0) {
+        print("Usage: username <new_name>\n");
+        return;
+    }
+    
+    // Concatenar todos los argumentos en un solo nombre
+    char new_name[INPUT_MAX] = {0};
+    int offset = 0;
+    
+    for (int i = 0; i < argc && offset < INPUT_MAX - 1; i++) {
+        if (i > 0) {
+            new_name[offset++] = ' ';
+        }
+        
+        int j = 0;
+        while (argv[i][j] != '\0' && offset < INPUT_MAX - 1) {
+            new_name[offset++] = argv[i][j++];
+        }
+    }
+    new_name[offset] = '\0';
+    
+    set_username(new_name);
+    print("Username updated to: ");
+    print(new_name);
+    putchar('\n');
 }
 
 

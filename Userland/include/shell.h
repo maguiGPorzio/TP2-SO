@@ -35,4 +35,5 @@ void read_line(char * buf, uint64_t max);
 void process_line(char * line); 
 void incfont();
 void decfont();
+void set_username(const char * new_name);
 #endif 
