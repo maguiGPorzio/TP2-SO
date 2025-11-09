@@ -25,7 +25,6 @@ static bool is_cmd_background(char *line);
 static BuiltinCommand builtins[] = {
     { "clear", "clears the screen", &cls },
     { "help", "provides information about available commands", &help },
-    { "pipes", "lists active pipes information", &list_pipes },
     { "username", "changes the shell username", &username_cmd },
 
     { NULL, NULL, NULL }
@@ -45,6 +44,7 @@ static ExternalProgram programs[] = {
     { "time", "prints system time to STDOUT", &time_main },
     { "date", "prints system date to STDOUT", &date_main },
     { "ps", "prints to STDOUT information about current processes", &ps_main },
+    { "pipes", "prints to STDOUT information about open pipes", &pipes_main },
     { "printa", "prints the letter 'a' indefinitely to STDOUT with a delay", &print_a_main },
     { "text", "lo puse para probar wc", &text_main },
     { "nice", "changes the priority of a process", &nice_main },
@@ -366,9 +366,6 @@ static void help(int argc, char * argv[]) {
     putchar('\n');
 }
 
-static void list_pipes(int argc, char * argv[]) {
-    sys_list_pipes();
-}
 
 
 static void username_cmd(int argc, char * argv[]) {
@@ -378,16 +375,16 @@ static void username_cmd(int argc, char * argv[]) {
     }
     
     // Concatenar todos los argumentos en un solo nombre
-    char new_name[INPUT_MAX] = {0};
+    char new_name[USERNAME_MAX_LENGTH] = {0};
     int offset = 0;
     
-    for (int i = 0; i < argc && offset < INPUT_MAX - 1; i++) {
+    for (int i = 0; i < argc && offset < USERNAME_MAX_LENGTH - 1; i++) {
         if (i > 0) {
             new_name[offset++] = ' ';
         }
         
         int j = 0;
-        while (argv[i][j] != '\0' && offset < INPUT_MAX - 1) {
+        while (argv[i][j] != '\0' && offset < USERNAME_MAX_LENGTH - 1) {
             new_name[offset++] = argv[i][j++];
         }
     }

@@ -13,6 +13,9 @@
 #define MIN_PRIORITY 2
 #define MAX_PRIORITY 0 
 
+#define MAX_PIPES 32
+#define MAX_PIPE_NAME_LENGTH 32
+
 enum {
     STDIN = 0,
     STDOUT,
@@ -25,7 +28,7 @@ enum {
     FDS_COUNT
 };
 
-typedef struct {
+typedef struct mem_info {
     size_t total_memory;
     size_t used_memory;
     size_t free_memory;
@@ -54,6 +57,15 @@ typedef struct process_info {
 } process_info_t;
 
 
+typedef struct pipe_info {
+    int id;
+    char name[MAX_PIPE_NAME_LENGTH];
+    int read_fd;
+    int write_fd;
+    int readers;
+    int writers;
+    int buffered;
+} pipe_info_t;
 
 
 /*-- SYSTEMCALLS DE ARQUI --*/
@@ -85,7 +97,7 @@ extern uint64_t sys_ticks();
 /*-- SYSTEMCALLS DE MEMORIA --*/
 extern void * sys_malloc(uint64_t size);
 extern void sys_free(void * ptr);
-extern mem_info_t sys_mem_info_t(void);
+extern mem_info_t sys_mem_info(void);
 
 /*-- SYSTEMCALLS DE PROCESOS --*/
 extern int64_t sys_create_process(void * entry, int argc, const char **argv, const char *name, int fds[2]);
@@ -117,6 +129,7 @@ extern int sys_get_foreground_process(void);
 // mas syscalls de pipes
 extern int sys_open_named_pipe(char * name, int fds[2]);
 extern int sys_close_fd(int fd);
-extern void sys_list_pipes(void);
+extern int sys_pipes_info(pipe_info_t * buf, int max_count);
+
 
 #endif

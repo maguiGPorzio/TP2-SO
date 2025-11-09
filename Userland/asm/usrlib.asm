@@ -3,11 +3,11 @@ global  sys_increase_fontsize, sys_decrease_fontsize, sys_beep
 global  sys_screen_size, sys_circle, sys_rectangle, sys_line, sys_draw_string
 global  sys_enable_textmode, sys_disable_textmode, sys_put_pixel, sys_key_status
 global  sys_sleep, sys_clear_input_buffer, sys_ticks
-global  sys_malloc, sys_free, sys_mem_info_t
+global  sys_malloc, sys_free, sys_mem_info
 ; Process/syscalls (scheduler-backed)
 global  sys_create_process, sys_exit_current, sys_getpid, sys_kill, sys_block, sys_unblock, sys_wait, sys_nice, sys_processes_info, sys_yield
 global sys_sem_open,sys_sem_close,sys_sem_wait,sys_sem_post
-global sys_create_pipe, sys_destroy_pipe, sys_open_named_pipe, sys_close_fd, sys_list_pipes
+global sys_create_pipe, sys_destroy_pipe, sys_open_named_pipe, sys_close_fd, sys_pipes_info
 global sys_set_foreground_process, sys_adopt_init_as_parent, sys_get_foreground_process
 global generate_invalid_opcode
 global printf
@@ -123,8 +123,8 @@ sys_malloc:
 sys_free:
     SYSCALL 24
 
-; 25 - mem_info_t sys_mem_info_t(void)
-sys_mem_info_t:
+; 25 - mem_info sys_mem_info(void)
+sys_mem_info:
     SYSCALL 25
 
 ; 26 - int64_t sys_create_process(void *entry, int argc, const char **argv, const char *name)
@@ -212,8 +212,8 @@ sys_open_named_pipe:
 sys_close_fd:
     SYSCALL 46
 
-; 47 - void sys_list_pipes(void);
-sys_list_pipes:
+; 47 - void sys_pipes_info(pipe_info_t * buf, int max_count);
+sys_pipes_info:
     SYSCALL 47
 
 generate_invalid_opcode:

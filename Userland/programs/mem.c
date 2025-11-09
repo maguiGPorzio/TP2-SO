@@ -1,6 +1,7 @@
 // This is a personal academic project. Dear PVS-Studio, please check it.
 // PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 
+#include "usrlib.h"
 
 // Helper para imprimir número con padding (alineado a la derecha)
 static void print_padded_int(unsigned value, int width) {
@@ -32,7 +33,7 @@ int mem_main(int argc, char *argv[]) {
         return -1;
     }
 
-    mem_info_t info = sys_mem_info_t();
+    mem_info_t info = sys_mem_info();
 
     char *units[] = {"B", "KB", "MB", "GB"};
 

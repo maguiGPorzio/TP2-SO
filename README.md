@@ -33,7 +33,7 @@ Implementamos un mini kernel de 64 bits con scheduler propio, syscalls, memoria 
 | `loop` | — | Imprime "Hola" con el PID cada 2 s; sirve para ver `sys_sleep`.
 | `nice` | `<pid> <prio>` | Cambia prioridad (1–10) del proceso objetivo mediante `sys_nice`.
 | `wc` | — | Cuenta líneas de STDIN hasta EOF.
-| `mem` | — | Consulta `sys_mem_info_t` e imprime memoria total/usada/libre y bloques asignados.
+| `mem` | — | Consulta `sys_mem_info` e imprime memoria total/usada/libre y bloques asignados.
 | `block` | `<pid>` | Llama a `sys_block` para pausar el proceso indicado.
 | `unblock` | `<pid>` | Reactiva un proceso previamente bloqueado.
 | `filter` | — | Consume STDIN y emite solo consonantes hasta leer `-`.
@@ -42,7 +42,7 @@ Implementamos un mini kernel de 64 bits con scheduler propio, syscalls, memoria 
 ### Tests de la cátedra
 | Test | Parámetros | Descripción |
 | --- | --- | --- |
-| `test_mm` | `<max_memory>` | Stress del memory manager: reserva/libera bloques hasta el límite pedido y reporta `sys_mem_info_t`.
+| `test_mm` | `<max_memory>` | Stress del memory manager: reserva/libera bloques hasta el límite pedido y reporta `sys_mem_info`.
 | `test_prio` | `<max_iterations>` | Crea 3 procesos que cuentan hasta `max_iterations`, varía prioridades y verifica fairness/blocking.
 | `test_processes` | `<max_processes>` | Spawnea `max_processes` instancias de `endless_loop` y luego las mata/bloquea/desbloquea aleatoriamente.
 | `test_sync` | `<iterations> <use_semaphore>` | Corre pares de productores/consumidores sobre `global`. Valor 0 reproduce race condition; 1 sincroniza con semáforo `sem`.
