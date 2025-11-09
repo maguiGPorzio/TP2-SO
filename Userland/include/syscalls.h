@@ -57,8 +57,8 @@ typedef struct process_info {
 extern uint64_t sys_regs(char *buf);
 extern void     sys_time(uint8_t *buf);     
 extern void     sys_date(uint8_t *buf);
-extern uint64_t sys_read(int fd, char *buf,  uint64_t count);
-extern uint64_t sys_write(uint64_t fd, const char *buf, uint64_t count);
+extern int sys_read(int fd, char *buf,  uint64_t count);
+extern int sys_write(uint64_t fd, const char *buf, uint64_t count);
 extern void     sys_increase_fontsize();
 extern void     sys_decrease_fontsize();
 extern void     sys_beep(uint32_t freq_hz, uint64_t duration_ms);
@@ -110,5 +110,10 @@ extern void sys_destroy_pipe(int fd);
 extern int sys_set_foreground_process(int pid);
 extern int sys_adopt_init_as_parent(int pid);
 extern int sys_get_foreground_process(void);
+
+// mas syscalls de pipes
+extern int sys_open_named_pipe(char * name, int fds[2]);
+extern int sys_close_fd(int fd);
+extern void sys_list_pipes(void);
 
 #endif

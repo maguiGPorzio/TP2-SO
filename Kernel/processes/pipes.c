@@ -1,15 +1,20 @@
 #include <stdbool.h>
 #include "pipes.h"
+#include "scheduler.h"
 #include "lib.h"
 #include "synchro.h"
 #include "queue.h"
+#include "videoDriver.h"
 
 typedef struct pipe {
     char buffer[PIPE_BUFFER_SIZE]; // buffer circular
+    char name[MAX_PIPE_NAME_LENGTH];
     int read_fd;
     int write_fd;
     int read_idx;
     int write_idx;
+    int reader_count;
+    int writer_count;
     char read_sem[SEM_NAME_SIZE];
     char write_sem[SEM_NAME_SIZE];
 } pipe_t;
@@ -17,30 +22,6 @@ typedef struct pipe {
 
 static pipe_t * pipes[MAX_PIPES] = {NULL};
 static queue_t free_indexes = NULL;
-
-static bool pipe_process_is_alive(pid_t pid) {
-    PCB *process = scheduler_get_process(pid);
-    return process != NULL && process->status != PS_TERMINATED;
-}
-
-static pid_t pipe_find_process_by_fd(int fd, bool match_read_fd) {
-    for (pid_t pid = 0; pid <= MAX_PID; pid++) {
-        PCB *process = scheduler_get_process(pid);
-        if (process == NULL || process->status == PS_TERMINATED) {
-            continue;
-        }
-
-        if (match_read_fd) {
-            if (process->read_fd == fd) {
-                return pid;
-            }
-        } else if (process->write_fd == fd) {
-            return pid;
-        }
-    }
-    return NO_PID;
-}
-
 
 static int get_free_idx() {
     return q_poll(free_indexes);
@@ -66,6 +47,29 @@ static int get_idx_from_fd(int fd) {
     int idx = (fd_par - base) / 2;
     
     return (idx < 0 || idx >= MAX_PIPES) ? -1 : idx;
+}
+
+static pid_t pipe_find_process_by_fd(int fd, bool match_read_fd) {
+    for (pid_t pid = 0; pid <= MAX_PID; pid++) {
+        PCB *process = scheduler_get_process(pid);
+        if (process == NULL || process->status == PS_TERMINATED) {
+            continue;
+        }
+
+        if (match_read_fd) {
+            if (process->read_fd == fd) {
+                return pid;
+            }
+        } else if (process->write_fd == fd) {
+            return pid;
+        }
+    }
+    return NO_PID;
+}
+
+static bool pipe_process_is_alive(pid_t pid) {
+    PCB *process = scheduler_get_process(pid);
+    return process != NULL && process->status != PS_TERMINATED;
 }
 
 int init_pipes() {
@@ -97,6 +101,9 @@ int create_pipe(int fds[2]) {
 
     pipe->read_idx = 0;
     pipe->write_idx = 0;
+    pipe->reader_count = 1;
+    pipe->writer_count = 1;
+    pipe->name[0] = '\0';  // Pipe anónimo (sin nombre)
     
     // Asignar los FDs usando la nueva función
     pipe->read_fd = get_fd_from_idx(idx);      // FD par (lectura)
@@ -124,7 +131,139 @@ int create_pipe(int fds[2]) {
     }
 
     return idx;
+}
+
+// Busca un pipe por nombre, retorna su índice o -1 si no existe
+static int find_pipe_by_name(const char *name) {
+    if (name == NULL || name[0] == '\0') {
+        return -1;
+    }
     
+    for (int i = 0; i < MAX_PIPES; i++) {
+        if (pipes[i] != NULL && strcmp(pipes[i]->name, name) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+int open_pipe(char *name, int fds[2]) {
+    if (name == NULL || name[0] == '\0') {
+        return -1;  // Nombre inválido
+    }
+    
+    // Buscar si ya existe un pipe con ese nombre
+    int idx = find_pipe_by_name(name);
+    
+    if (idx >= 0) {
+        // Pipe ya existe, devolver sus FDs
+        pipe_t *pipe = pipes[idx];
+        
+        // Si el pipe ya cerró todos sus writers, no permitir reabrirlo
+        // (los readers pueden haber visto EOF)
+        if (pipe->writer_count == 0) {
+            return -1;
+        }
+        
+        fds[0] = pipe->read_fd;
+        fds[1] = pipe->write_fd;
+        pipe->reader_count++;
+        pipe->writer_count++;
+        return idx;
+    }
+    
+    // No existe, crear uno nuevo
+    idx = create_pipe(fds);
+    if (idx < 0) {
+        return -1;
+    }
+    
+    // Asignarle el nombre
+    pipe_t *pipe = pipes[idx];
+    strncpy(pipe->name, name, MAX_PIPE_NAME_LENGTH - 1);
+    pipe->name[MAX_PIPE_NAME_LENGTH - 1] = '\0';
+    
+    return idx;
+}
+
+int open_fd(int fd) {
+    int idx = get_idx_from_fd(fd);
+    if (idx < 0) {
+        return -1;
+    }
+    
+    pipe_t *pipe = pipes[idx];
+    if (pipe == NULL) {
+        return -1;
+    }
+
+    if (fd == pipe->read_fd) {
+        pipe->reader_count++;
+        return 1;
+    }
+
+    if (fd == pipe->write_fd) {
+        // Si ya no hay writers (llegó a 0), no permitir nuevos writers
+        // Esto evita problemas con EOF: ya se hicieron posts para despertar readers
+        // y permitir un nuevo writer podría causar inconsistencias
+        if (pipe->writer_count == 0) {
+            return -1;  // No se pueden agregar writers después de que todos cerraron
+        }
+        pipe->writer_count++;
+        return 1;
+    }
+    
+    return 0;
+}
+
+int close_fd(int fd) {
+    int idx = get_idx_from_fd(fd);
+    if (idx < 0) {
+        return -1;
+    }
+    
+    pipe_t *pipe = pipes[idx];
+    if (pipe == NULL) {
+        return -1;
+    }
+
+    if (fd == pipe->read_fd) {
+        if (pipe->reader_count > 0) {
+            pipe->reader_count--;
+        }
+        
+        // Si no quedan readers ni writers, destruir el pipe
+        if (pipe->reader_count == 0 && pipe->writer_count == 0) {
+            destroy_pipe(idx);
+        }
+        return 1;
+    }
+
+    if (fd == pipe->write_fd) {
+        if (pipe->writer_count > 0) {
+            pipe->writer_count--;
+            
+            // Si era el último writer, despertar a los readers bloqueados
+            // Les damos un "token" para que puedan despertar y verificar EOF
+            // Si hay datos en el buffer, estos posts se usarán para leer esos datos
+            // Si no hay datos, el reader verá EOF inmediatamente
+            if (pipe->writer_count == 0) {
+                // Despertar a todos los readers que puedan estar bloqueados
+                // Usamos reader_count como estimación de cuántos pueden estar esperando
+                for (int i = 0; i < pipe->reader_count; i++) {
+                    sem_post(pipe->read_sem);
+                }
+            }
+        }
+        
+        // Si no quedan readers ni writers, destruir el pipe
+        if (pipe->reader_count == 0 && pipe->writer_count == 0) {
+            destroy_pipe(idx);
+        }
+        return 1;
+    }
+    
+    return 0;
 }
 
 int read_pipe(int fd, char * buf, int count) {
@@ -141,16 +280,32 @@ int read_pipe(int fd, char * buf, int count) {
     if (fd == pipe->write_fd) { // no se puede leer en el extremo de escritura
         return -1;
     }
+    
+    // TODO: Validar que el proceso actual tenga este FD abierto
+    // Requiere implementar open_fds[] en el PCB
 
     for (int i = 0; i < count; i++) {
+        // Primero verificar EOF sin bloquear: si no hay writers y buffer vacío
+        if (pipe->writer_count == 0 && pipe->read_idx == pipe->write_idx) {
+            return i;  // EOF: retornar cuántos bytes se leyeron hasta ahora
+        }
+        
+        // Si hay writers o hay datos, intentar leer (puede bloquear)
         sem_wait(pipe->read_sem);
+        
+        // Re-verificar EOF después de despertar (por si el último writer cerró mientras esperábamos)
+        if (pipe->writer_count == 0 && pipe->read_idx == pipe->write_idx) {
+            // Re-post para que otros readers también puedan ver el EOF
+            sem_post(pipe->read_sem);
+            return i;  // EOF: retornar cuántos bytes se leyeron antes del EOF
+        }
+        
         buf[i] = pipe->buffer[pipe->read_idx];
         pipe->read_idx = (pipe->read_idx + 1) % PIPE_BUFFER_SIZE;
         sem_post(pipe->write_sem);
     }
 
     return count;
-
 }
 
 int write_pipe(int fd, char * buf, int count) {
@@ -167,6 +322,13 @@ int write_pipe(int fd, char * buf, int count) {
     if (fd == pipe->read_fd) { // no se puede escribir en el extremo de lectura
         return -1;
     }
+    
+    // Permitir escritura aunque no haya readers todavía
+    // Los datos quedarán en el buffer esperando a que lleguen
+    
+    // TODO: Validar que el proceso actual tenga este FD abierto
+    // Requiere implementar open_fds[] en el PCB
+    // Por ahora confiamos en que el proceso no intente escribir después de close_fd
 
     for (int i = 0; i < count; i++) {
         sem_wait(pipe->write_sem);
@@ -220,7 +382,6 @@ void pipe_on_process_killed(pid_t victim) {
 }
 
 
-
 void destroy_pipe(int idx) {
     if (idx < 0 || idx >= MAX_PIPES) {
         return;
@@ -240,4 +401,74 @@ void destroy_pipe(int idx) {
     
     // Devolver el índice a la cola de libres
     q_add(free_indexes, idx);
+}
+
+void list_pipes(void) {
+    vdPrint("\n=== PIPES ACTIVOS ===\n", 0x00ffff);
+    
+    int active_count = 0;
+    char debug_str[20];
+    
+    for (int i = 0; i < MAX_PIPES; i++) {
+        pipe_t *pipe = pipes[i];
+        if (pipe == NULL) {
+            continue;
+        }
+        
+        active_count++;
+        
+        vdPrint("Pipe #", 0x00ffff);
+        decimal_to_str(i, debug_str);
+        vdPrint(debug_str, 0x00ffff);
+        vdPrint(": ", 0x00ffff);
+        
+        // Nombre del pipe (anónimo si no tiene)
+        if (pipe->name[0] == '\0') {
+            vdPrint("[anonymous]", 0x00ffff);
+        } else {
+            vdPrint("\"", 0x00ffff);
+            vdPrint(pipe->name, 0x00ffff);
+            vdPrint("\"", 0x00ffff);
+        }
+        
+        // FDs
+        vdPrint(" read_fd=", 0x00ffff);
+        decimal_to_str(pipe->read_fd, debug_str);
+        vdPrint(debug_str, 0x00ffff);
+        vdPrint(" write_fd=", 0x00ffff);
+        decimal_to_str(pipe->write_fd, debug_str);
+        vdPrint(debug_str, 0x00ffff);
+        
+        // Contadores
+        vdPrint(" readers=", 0x00ffff);
+        decimal_to_str(pipe->reader_count, debug_str);
+        vdPrint(debug_str, 0x00ffff);
+        vdPrint(" writers=", 0x00ffff);
+        decimal_to_str(pipe->writer_count, debug_str);
+        vdPrint(debug_str, 0x00ffff);
+        
+        // Estado del buffer
+        vdPrint(" buffered=", 0x00ffff);
+        int buffered = (pipe->write_idx - pipe->read_idx + PIPE_BUFFER_SIZE) % PIPE_BUFFER_SIZE;
+        decimal_to_str(buffered, debug_str);
+        vdPrint(debug_str, 0x00ffff);
+        vdPrint("/", 0x00ffff);
+        decimal_to_str(PIPE_BUFFER_SIZE, debug_str);
+        vdPrint(debug_str, 0x00ffff);
+        
+        vdPrint("\n", 0x00ffff);
+    }
+    
+    vdPrint("Total: ", 0x00ffff);
+    decimal_to_str(active_count, debug_str);
+    vdPrint(debug_str, 0x00ffff);
+    vdPrint(" pipe", 0x00ffff);
+    if (active_count != 1) {
+        vdPrint("s", 0x00ffff);
+    }
+    vdPrint(" activo", 0x00ffff);
+    if (active_count != 1) {
+        vdPrint("s", 0x00ffff);
+    }
+    vdPrint("\n\n", 0x00ffff);
 }

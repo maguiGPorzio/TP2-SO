@@ -16,6 +16,7 @@
         "syscalls.h": "c",
         "fds.h": "c",
         "variant": "c",
-        "stddef.h": "c"
+        "stddef.h": "c",
+        "pipes.h": "c"
     }
 }

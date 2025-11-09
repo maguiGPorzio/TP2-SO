@@ -1,10 +1,10 @@
 #include "usrlib.h"
 
 int cat_main(int argc, char * argv[]) {
-    for (int i = 0; i < argc; i++) {
-        print(argv[i]);
-        putchar(' ');
+    char c;
+    while ((c = getchar()) != EOF) {
+        sys_write(STDOUT, &c, 1);
     }
-    putchar(EOF);
+
     return OK;
 }

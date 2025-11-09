@@ -6,7 +6,7 @@
 #include "queue.h"
 
 #define MAX_PROCESSES 64
-#define MAX_NAME_LENGTH 32
+#define MAX_PROCESS_NAME_LENGTH 32
 #define PROCESS_STACK_SIZE (4096 * 2)  // 8KB stack
 #define MAX_PID (MAX_PROCESSES - 1)
 #define KILLED_RET_VALUE -1
@@ -14,6 +14,9 @@
 #define INIT_PID 0 
 #define SHELL_PID 1
 #define NO_PID -1
+
+#define OK 0
+#define ERROR -1
 
 // ============================================
 //           TIPOS Y ESTRUCTURAS
@@ -34,7 +37,7 @@ typedef struct PCB {
     // Identificación
     int pid;
     int parent_pid;              // PID del proceso padre (-1 si no tiene)
-    char name[MAX_NAME_LENGTH];
+    char name[MAX_PROCESS_NAME_LENGTH];
     
     // Estado y scheduling
     ProcessStatus status;
@@ -61,15 +64,14 @@ typedef struct PCB {
     bool killable;                   // si false, el proceso no puede ser matado (init/shell)
 
     // queues 
-    queue_t memory_blocks_allocated; // lista de bloques de memoria asignados al proceso
-    queue_t semaphore;           // lista de pipes abiertos por el proceso
+    queue_t open_fds; // lista de fds abiertos
 } PCB;
 
 
 // Estructura para exponer información de procesos a userland
 typedef struct process_info {
     int pid;
-    char name[MAX_NAME_LENGTH];
+    char name[MAX_PROCESS_NAME_LENGTH];
     ProcessStatus status;
     uint8_t priority;
     int parent_pid;
