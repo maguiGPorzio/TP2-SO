@@ -30,7 +30,7 @@ typedef enum {
     PS_RUNNING,
     PS_BLOCKED,
     PS_TERMINATED
-} ProcessStatus;
+} process_status_t;
 
 // Process Control Block
 typedef struct PCB {
@@ -40,7 +40,7 @@ typedef struct PCB {
     char name[MAX_PROCESS_NAME_LENGTH];
     
     // Estado y scheduling
-    ProcessStatus status;
+    process_status_t status;
     uint8_t priority;                // Prioridad base (0-2, 0 = mayor prioridad)
     uint8_t effective_priority;      // Prioridad efectiva (puede ser promovida por aging)
     uint64_t last_tick;
@@ -73,7 +73,7 @@ typedef struct PCB {
 typedef struct process_info {
     int pid;
     char name[MAX_PROCESS_NAME_LENGTH];
-    ProcessStatus status;
+    process_status_t status;
     uint8_t priority;
     int parent_pid;
     int read_fd;

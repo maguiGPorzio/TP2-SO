@@ -3,7 +3,7 @@ global  sys_increase_fontsize, sys_decrease_fontsize, sys_beep
 global  sys_screen_size, sys_circle, sys_rectangle, sys_line, sys_draw_string
 global  sys_enable_textmode, sys_disable_textmode, sys_put_pixel, sys_key_status
 global  sys_sleep, sys_clear_input_buffer, sys_ticks
-global  sys_malloc, sys_free, sys_memstatus
+global  sys_malloc, sys_free, sys_mem_info_t
 ; Process/syscalls (scheduler-backed)
 global  sys_create_process, sys_exit_current, sys_getpid, sys_kill, sys_block, sys_unblock, sys_wait, sys_nice, sys_processes_info, sys_yield
 global sys_sem_open,sys_sem_close,sys_sem_wait,sys_sem_post
@@ -123,8 +123,8 @@ sys_malloc:
 sys_free:
     SYSCALL 24
 
-; 25 - MemStatus sys_memstatus(void)
-sys_memstatus:
+; 25 - mem_info_t sys_mem_info_t(void)
+sys_mem_info_t:
     SYSCALL 25
 
 ; 26 - int64_t sys_create_process(void *entry, int argc, const char **argv, const char *name)

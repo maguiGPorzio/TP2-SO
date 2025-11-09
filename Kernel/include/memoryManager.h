@@ -24,7 +24,7 @@ typedef struct {
     size_t used_memory;
     size_t free_memory;
     size_t allocated_blocks;
-} MemStatus;
+} mem_info_t;
 
 /**
  * @brief Reserva un bloque de memoria
@@ -46,7 +46,7 @@ void free_memory(MemoryManagerADT memManager, void* ptr);
  * @param memManager Handler del memory manager
  * @return Estructura con información de memoria
  */
-MemStatus get_mem_status(MemoryManagerADT memManager);
+mem_info_t get_mem_status(MemoryManagerADT memManager);
 
 
 /**

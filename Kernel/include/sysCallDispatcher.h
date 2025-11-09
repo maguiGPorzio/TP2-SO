@@ -36,7 +36,7 @@ static uint64_t sys_ticks();
 // Memory management syscalls
 static void * sys_malloc(size_t size);
 static void sys_free(void * ptr);
-static MemStatus sys_memStatus(void);
+static mem_info_t sys_mem_info_t(void);
 
 // processes syscalls
 static int64_t sys_create_process(void * entry, int argc, const char **argv, const char *name, int fds[2]);

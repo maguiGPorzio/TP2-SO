@@ -45,7 +45,7 @@ void * syscalls[] = {
     // syscalls de memoria
     &sys_malloc,             // 23
     &sys_free,               // 24
-    &sys_memStatus,          // 25
+    &sys_mem_info_t,          // 25
 
     // syscalls de procesos
     &sys_create_process,     // 26
@@ -243,7 +243,7 @@ static void sys_free(void * ptr) {
     free_memory(get_kernel_memory_manager(), ptr);
 }
 
-static MemStatus sys_memStatus(void) {
+static mem_info_t sys_mem_info_t(void) {
     return get_mem_status(get_kernel_memory_manager());
 }
 

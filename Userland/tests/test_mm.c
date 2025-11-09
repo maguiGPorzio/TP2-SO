@@ -71,14 +71,14 @@ int test_mm(int argc, char * argv[]) {
         sys_free(mm_rqs[i].address);
 
     // Mostrar estado de memoria cada iteración
-    MemStatus st = sys_memstatus();
+    mem_info_t st = sys_mem_info_t();
     printf("[MM] total=%u used=%u free=%u blocks=%u\n", (unsigned)st.total_memory, (unsigned)st.used_memory, (unsigned)st.free_memory, (unsigned)st.allocated_blocks);
   }
 }
 
 
 //TEST CATEDRA MEJORADO
-// #include "../include/test_mm.h" // para sys_* y MemStatus
+// #include "../include/test_mm.h" // para sys_* y mem_info_t
 
 // #define MAX_BLOCKS 128
 
@@ -148,7 +148,7 @@ int test_mm(int argc, char * argv[]) {
 //     return -1;
 
 //   // Estado inicial
-//   MemStatus initial_status = sys_memstatus();
+//   mem_info_t initial_status = sys_mem_info_t();
 //   printf("\n========================================\n");
 //   printf("   MEMORY MANAGER STRESS TEST\n");
 //   printf("========================================\n");
@@ -207,7 +207,7 @@ int test_mm(int argc, char * argv[]) {
 //     }
 
 //     // ===== FASE 5: VERIFICAR ESTADO DESPUÉS DE FREE =====
-//     MemStatus st = sys_memstatus();
+//     mem_info_t st = sys_mem_info_t();
 
 //     // CRÍTICO: Verificar que toda la memoria fue liberada
 //     if (st.used_memory != initial_status.used_memory) {

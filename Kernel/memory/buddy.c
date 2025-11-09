@@ -279,8 +279,8 @@ void free_memory(MemoryManagerADT memManager, void* ptr) {
     coalesce(memManager, block);
 }
 
-MemStatus get_mem_status(MemoryManagerADT memManager) {
-    MemStatus status = {0};
+mem_info_t get_mem_status(MemoryManagerADT memManager) {
+    mem_info_t status = {0};
     
     if (memManager != NULL) {
         status.total_memory = memManager->totalSize;
@@ -384,6 +384,6 @@ void sys_free(void* ptr) {
     free_memory(kernelMemManager, ptr);
 }
 
-MemStatus sys_memStatus(void) {
+mem_info_t sys_mem_info_t(void) {
     return get_mem_status(kernelMemManager);
 }

@@ -198,8 +198,8 @@ void free_memory(MemoryManagerADT memManager, void* ptr) {
     coalesceBlocks(block);
 }
 
-MemStatus get_mem_status(MemoryManagerADT memManager) {
-    MemStatus status = {0};
+mem_info_t get_mem_status(MemoryManagerADT memManager) {
+    mem_info_t status = {0};
     
     if (memManager != NULL) {
         status.total_memory = memManager->totalSize;
