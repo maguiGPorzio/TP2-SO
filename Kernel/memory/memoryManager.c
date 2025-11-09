@@ -26,10 +26,10 @@ typedef struct MemBlock {
 // Estructura del Memory Manager (CDT)
 struct MemoryManagerCDT {
     void* startAddress;         // Dirección base de la memoria
-    size_t totalSize;           // Tamaño total
+    size_t total_size;           // Tamaño total
     MemBlock* firstBlock;       // Primer bloque de la lista
     size_t allocated_blocks;     // Contador de bloques allocados
-    size_t totalAllocated;      // Total de bytes allocados
+    size_t total_allocated;      // Total de bytes allocados
 };
 
 // ============================================
@@ -128,9 +128,9 @@ MemoryManagerADT createMemoryManager(void* startAddress, size_t size) {
     
     // Inicializar estructura
     memManager->startAddress = startAddress;
-    memManager->totalSize = size;
+    memManager->total_size = size;
     memManager->allocated_blocks = 0;
-    memManager->totalAllocated = 0;
+    memManager->total_allocated = 0;
     
     // Crear el primer bloque libre después del CDT
     memManager->firstBlock = (MemBlock*)((char*)startAddress + sizeof(struct MemoryManagerCDT));
@@ -164,7 +164,7 @@ void* alloc_memory(MemoryManagerADT memManager, size_t size) {
     // Marcar como ocupado
     block->free = false;
     memManager->allocated_blocks++;
-    memManager->totalAllocated += block->size;
+    memManager->total_allocated += block->size;
     
     // Retornar puntero después del header (donde arranca el espacio utilizable del bloque)
     return (char*)block + sizeof(MemBlock);
@@ -192,7 +192,7 @@ void free_memory(MemoryManagerADT memManager, void* ptr) {
     // Marcar como libre
     block->free = true;
     memManager->allocated_blocks--;
-    memManager->totalAllocated -= block->size;
+    memManager->total_allocated -= block->size;
 
     // Fusionar con bloques adyacentes
     coalesceBlocks(block);
@@ -202,8 +202,8 @@ mem_info_t get_mem_status(MemoryManagerADT memManager) {
     mem_info_t status = {0};
     
     if (memManager != NULL) {
-        status.total_memory = memManager->totalSize;
-        status.used_memory = memManager->totalAllocated;
+        status.total_memory = memManager->total_size;
+        status.used_memory = memManager->total_allocated;
         status.free_memory = status.total_memory - status.used_memory - 
                            sizeof(struct MemoryManagerCDT) - 
                            (memManager->allocated_blocks * sizeof(MemBlock));

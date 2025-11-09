@@ -21,10 +21,10 @@ typedef struct buddy_node_t {
 // Estructura del Buddy Memory Manager
 struct MemoryManagerCDT {
     void* baseAddress;                    // Dirección base de la memoria
-    size_t totalSize;                     // Tamaño total
+    size_t total_size;                     // Tamaño total
     buddy_node_t* freeLists[NUM_ORDERS];    // Array de listas libres por orden
     size_t allocated_blocks;               // Bloques allocados
-    size_t totalAllocated;                // Bytes totales allocados
+    size_t total_allocated;                // Bytes totales allocados
 };
 
 // ============================================
@@ -184,9 +184,9 @@ MemoryManagerADT createMemoryManager(void* startAddress, size_t size) {
     // Colocar el CDT al inicio
     MemoryManagerADT memManager = (MemoryManagerADT)startAddress;
     memManager->baseAddress = (char*)startAddress + sizeof(struct MemoryManagerCDT);
-    memManager->totalSize = size - sizeof(struct MemoryManagerCDT);
+    memManager->total_size = size - sizeof(struct MemoryManagerCDT);
     memManager->allocated_blocks = 0;
-    memManager->totalAllocated = 0;
+    memManager->total_allocated = 0;
     
     // Inicializar listas libres
     for (int i = 0; i < NUM_ORDERS; i++) {
@@ -194,7 +194,7 @@ MemoryManagerADT createMemoryManager(void* startAddress, size_t size) {
     }
     
     // Crear bloques iniciales con la memoria disponible
-    size_t remainingSize = memManager->totalSize;
+    size_t remainingSize = memManager->total_size;
     void* currentAddr = memManager->baseAddress;
     
     // Dividir la memoria en bloques del máximo orden posible
@@ -249,7 +249,7 @@ void* alloc_memory(MemoryManagerADT memManager, size_t size) {
     block->order = order;
     
     memManager->allocated_blocks++;
-    memManager->totalAllocated += orderToSize(order) - sizeof(buddy_node_t);
+    memManager->total_allocated += orderToSize(order) - sizeof(buddy_node_t);
     
     // Retornar puntero después del header
     return (char*)block + sizeof(buddy_node_t);
@@ -270,7 +270,7 @@ void free_memory(MemoryManagerADT memManager, void* ptr) {
     // Marcar como libre
     block->free = true;
     memManager->allocated_blocks--;
-    memManager->totalAllocated -= orderToSize(block->order) - sizeof(buddy_node_t);
+    memManager->total_allocated -= orderToSize(block->order) - sizeof(buddy_node_t);
     
     // Agregar a la lista libre
     addToFreeList(memManager, block, block->order);
@@ -283,8 +283,8 @@ mem_info_t get_mem_status(MemoryManagerADT memManager) {
     mem_info_t status = {0};
     
     if (memManager != NULL) {
-        status.total_memory = memManager->totalSize;
-        status.used_memory = memManager->totalAllocated;
+        status.total_memory = memManager->total_size;
+        status.used_memory = memManager->total_allocated;
         status.free_memory = status.total_memory - status.used_memory;
         status.allocated_blocks = memManager->allocated_blocks;
     }
@@ -304,11 +304,11 @@ void printMemState(MemoryManagerADT memManager) {
     ncPrint("\n");
     
     ncPrint("Total Size: ");
-    ncPrintDec(memManager->totalSize / 1024);
+    ncPrintDec(memManager->total_size / 1024);
     ncPrint(" KB\n");
     
     ncPrint("Allocated: ");
-    ncPrintDec(memManager->totalAllocated / 1024);
+    ncPrintDec(memManager->total_allocated / 1024);
     ncPrint(" KB in ");
     ncPrintDec(memManager->allocated_blocks);
     ncPrint(" blocks\n");
