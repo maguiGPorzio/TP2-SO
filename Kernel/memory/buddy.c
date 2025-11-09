@@ -59,22 +59,22 @@ static uint8_t size_to_order(size_t size) {
 }
 
 // Calcula la dirección del buddy de un bloque
-static void* getBuddyAddress(memory_manager_ADT memManager, void* blockAddr, uint8_t order) {
+static void* get_buddy_address(memory_manager_ADT memory_manager, void* block_addr, uint8_t order) {
     // XOR con el tamaño del bloque para flip el bit correspondiente
-    size_t offset = (char*)blockAddr - (char*)memManager->base_address;
-    size_t buddyOffset = offset ^ order_to_size(order);
-    return (char*)memManager->base_address + buddyOffset;
+    size_t offset = (char*)block_addr - (char*)memory_manager->base_address;
+    size_t buddy_offset = offset ^ order_to_size(order);
+    return (char*)memory_manager->base_address + buddy_offset;
 }
 
 // Elimina un nodo de su lista libre
-static void removeFromFreeList(memory_manager_ADT memManager, buddy_node_t* node, uint8_t order) {
+static void removeFromFreeList(memory_manager_ADT memory_manager, buddy_node_t* node, uint8_t order) {
     uint8_t index = order - MIN_ORDER;
     
     if (node->prev) {
         node->prev->next = node->next;
     } else {
         // Es el primer nodo de la lista
-        memManager->free_lists[index] = node->next;
+        memory_manager->free_lists[index] = node->next;
     }
     
     if (node->next) {
@@ -86,23 +86,23 @@ static void removeFromFreeList(memory_manager_ADT memManager, buddy_node_t* node
 }
 
 // Agrega un nodo al inicio de su lista libre
-static void addToFreeList(memory_manager_ADT memManager, buddy_node_t* node, uint8_t order) {
+static void addToFreeList(memory_manager_ADT memory_manager, buddy_node_t* node, uint8_t order) {
     uint8_t index = order - MIN_ORDER;
     
-    node->next = memManager->free_lists[index];
+    node->next = memory_manager->free_lists[index];
     node->prev = NULL;
     node->order = order;
     node->free = true;
     
-    if (memManager->free_lists[index]) {
-        memManager->free_lists[index]->prev = node;
+    if (memory_manager->free_lists[index]) {
+        memory_manager->free_lists[index]->prev = node;
     }
     
-    memManager->free_lists[index] = node;
+    memory_manager->free_lists[index] = node;
 }
 
 // Divide un bloque en dos buddies
-static buddy_node_t* splitBlock(memory_manager_ADT memManager, uint8_t order) {
+static buddy_node_t* splitBlock(memory_manager_ADT memory_manager, uint8_t order) {
     if (order == MIN_ORDER) {
         return NULL;  // No se puede dividir más
     }
@@ -114,15 +114,15 @@ static buddy_node_t* splitBlock(memory_manager_ADT memManager, uint8_t order) {
     uint8_t index = order - MIN_ORDER;
     
     // Si no hay bloques de este orden, dividir uno más grande
-    if (memManager->free_lists[index] == NULL) {
-        if (splitBlock(memManager, order + 1) == NULL) {
+    if (memory_manager->free_lists[index] == NULL) {
+        if (splitBlock(memory_manager, order + 1) == NULL) {
             return NULL;  // No hay bloques más grandes
         }
     }
     
     // Tomar el primer bloque de este orden
-    buddy_node_t* block = memManager->free_lists[index];
-    removeFromFreeList(memManager, block, order);
+    buddy_node_t* block = memory_manager->free_lists[index];
+    removeFromFreeList(memory_manager, block, order);
     
     // Dividir en dos buddies de orden-1
     uint8_t newOrder = order - 1;
@@ -135,14 +135,14 @@ static buddy_node_t* splitBlock(memory_manager_ADT memManager, uint8_t order) {
     buddy_node_t* buddy2 = (buddy_node_t*)((char*)block + halfSize);
     
     // Agregar ambos a la lista del orden inferior
-    addToFreeList(memManager, buddy1, newOrder);
-    addToFreeList(memManager, buddy2, newOrder);
+    addToFreeList(memory_manager, buddy1, newOrder);
+    addToFreeList(memory_manager, buddy2, newOrder);
     
     return buddy1;
 }
 
 // Fusiona un bloque con su buddy si es posible
-static void coalesce(memory_manager_ADT memManager, buddy_node_t* block) {
+static void coalesce(memory_manager_ADT memory_manager, buddy_node_t* block) {
     uint8_t order = block->order;
     
     if (order >= MAX_ORDER) {
@@ -150,7 +150,7 @@ static void coalesce(memory_manager_ADT memManager, buddy_node_t* block) {
     }
     
     // Buscar el buddy
-    void* buddyAddr = getBuddyAddress(memManager, block, order);
+    void* buddyAddr = get_buddy_address(memory_manager, block, order);
     buddy_node_t* buddy = (buddy_node_t*)buddyAddr;
     
     // Verificar si el buddy está libre y tiene el mismo orden
@@ -159,17 +159,17 @@ static void coalesce(memory_manager_ADT memManager, buddy_node_t* block) {
     }
     
     // Eliminar ambos de sus listas
-    removeFromFreeList(memManager, block, order);
-    removeFromFreeList(memManager, buddy, order);
+    removeFromFreeList(memory_manager, block, order);
+    removeFromFreeList(memory_manager, buddy, order);
     
     // El bloque con dirección menor se convierte en el bloque fusionado
     buddy_node_t* merged = (block < buddy) ? block : buddy;
     
     // Agregar a la lista del siguiente orden
-    addToFreeList(memManager, merged, order + 1);
+    addToFreeList(memory_manager, merged, order + 1);
     
     // Intentar fusionar recursivamente
-    coalesce(memManager, merged);
+    coalesce(memory_manager, merged);
 }
 
 // ============================================
@@ -182,20 +182,20 @@ memory_manager_ADT createMemoryManager(void* startAddress, size_t size) {
     }
     
     // Colocar el CDT al inicio
-    memory_manager_ADT memManager = (memory_manager_ADT)startAddress;
-    memManager->base_address = (char*)startAddress + sizeof(struct memory_manager_CDT);
-    memManager->total_size = size - sizeof(struct memory_manager_CDT);
-    memManager->allocated_blocks = 0;
-    memManager->total_allocated = 0;
+    memory_manager_ADT memory_manager = (memory_manager_ADT)startAddress;
+    memory_manager->base_address = (char*)startAddress + sizeof(struct memory_manager_CDT);
+    memory_manager->total_size = size - sizeof(struct memory_manager_CDT);
+    memory_manager->allocated_blocks = 0;
+    memory_manager->total_allocated = 0;
     
     // Inicializar listas libres
     for (int i = 0; i < NUM_ORDERS; i++) {
-        memManager->free_lists[i] = NULL;
+        memory_manager->free_lists[i] = NULL;
     }
     
     // Crear bloques iniciales con la memoria disponible
-    size_t remainingSize = memManager->total_size;
-    void* currentAddr = memManager->base_address;
+    size_t remainingSize = memory_manager->total_size;
+    void* currentAddr = memory_manager->base_address;
     
     // Dividir la memoria en bloques del máximo orden posible
     while (remainingSize >= (1ULL << MIN_ORDER)) {
@@ -210,17 +210,17 @@ memory_manager_ADT createMemoryManager(void* startAddress, size_t size) {
         
         // Crear el bloque
         buddy_node_t* node = (buddy_node_t*)currentAddr;
-        addToFreeList(memManager, node, order);  // ← Ahora pasa memManager
+        addToFreeList(memory_manager, node, order);  // ← Ahora pasa memory_manager
         
         currentAddr = (char*)currentAddr + block_size;
         remainingSize -= block_size;
     }
     
-    return memManager;
+    return memory_manager;
 }
 
-void* alloc_memory(memory_manager_ADT memManager, size_t size) {
-    if (memManager == NULL || size == 0) {
+void* alloc_memory(memory_manager_ADT memory_manager, size_t size) {
+    if (memory_manager == NULL || size == 0) {
         return NULL;
     }
     
@@ -234,29 +234,29 @@ void* alloc_memory(memory_manager_ADT memManager, size_t size) {
     uint8_t index = order - MIN_ORDER;
     
     // Si no hay bloques del orden exacto, dividir uno más grande
-    if (memManager->free_lists[index] == NULL) {
-        if (splitBlock(memManager, order + 1) == NULL) {
+    if (memory_manager->free_lists[index] == NULL) {
+        if (splitBlock(memory_manager, order + 1) == NULL) {
             return NULL;  // Sin memoria
         }
     }
     
     // Tomar el primer bloque del orden
-    buddy_node_t* block = memManager->free_lists[index];
-    removeFromFreeList(memManager, block, order);
+    buddy_node_t* block = memory_manager->free_lists[index];
+    removeFromFreeList(memory_manager, block, order);
     
     // Marcar como ocupado
     block->free = false;
     block->order = order;
     
-    memManager->allocated_blocks++;
-    memManager->total_allocated += order_to_size(order) - sizeof(buddy_node_t);
+    memory_manager->allocated_blocks++;
+    memory_manager->total_allocated += order_to_size(order) - sizeof(buddy_node_t);
     
     // Retornar puntero después del header
     return (char*)block + sizeof(buddy_node_t);
 }
 
-void free_memory(memory_manager_ADT memManager, void* ptr) {
-    if (memManager == NULL || ptr == NULL) {
+void free_memory(memory_manager_ADT memory_manager, void* ptr) {
+    if (memory_manager == NULL || ptr == NULL) {
         return;
     }
     
@@ -269,48 +269,48 @@ void free_memory(memory_manager_ADT memManager, void* ptr) {
     
     // Marcar como libre
     block->free = true;
-    memManager->allocated_blocks--;
-    memManager->total_allocated -= order_to_size(block->order) - sizeof(buddy_node_t);
+    memory_manager->allocated_blocks--;
+    memory_manager->total_allocated -= order_to_size(block->order) - sizeof(buddy_node_t);
     
     // Agregar a la lista libre
-    addToFreeList(memManager, block, block->order);
+    addToFreeList(memory_manager, block, block->order);
     
     // Intentar fusionar con el buddy
-    coalesce(memManager, block);
+    coalesce(memory_manager, block);
 }
 
-mem_info_t get_mem_status(memory_manager_ADT memManager) {
+mem_info_t get_mem_status(memory_manager_ADT memory_manager) {
     mem_info_t status = {0};
     
-    if (memManager != NULL) {
-        status.total_memory = memManager->total_size;
-        status.used_memory = memManager->total_allocated;
+    if (memory_manager != NULL) {
+        status.total_memory = memory_manager->total_size;
+        status.used_memory = memory_manager->total_allocated;
         status.free_memory = status.total_memory - status.used_memory;
-        status.allocated_blocks = memManager->allocated_blocks;
+        status.allocated_blocks = memory_manager->allocated_blocks;
     }
     
     return status;
 }
 
-void printMemState(memory_manager_ADT memManager) {
-    if (memManager == NULL) {
+void printMemState(memory_manager_ADT memory_manager) {
+    if (memory_manager == NULL) {
         ncPrint("Buddy Memory Manager: NULL\n");
         return;
     }
     
     ncPrint("=== BUDDY MEMORY STATE ===\n");
     ncPrint("Base Address: 0x");
-    ncPrintHex((uint64_t)memManager->base_address);
+    ncPrintHex((uint64_t)memory_manager->base_address);
     ncPrint("\n");
     
     ncPrint("Total Size: ");
-    ncPrintDec(memManager->total_size / 1024);
+    ncPrintDec(memory_manager->total_size / 1024);
     ncPrint(" KB\n");
     
     ncPrint("Allocated: ");
-    ncPrintDec(memManager->total_allocated / 1024);
+    ncPrintDec(memory_manager->total_allocated / 1024);
     ncPrint(" KB in ");
-    ncPrintDec(memManager->allocated_blocks);
+    ncPrintDec(memory_manager->allocated_blocks);
     ncPrint(" blocks\n");
     
     // Mostrar listas libres por orden
@@ -318,7 +318,7 @@ void printMemState(memory_manager_ADT memManager) {
     for (int i = 0; i < NUM_ORDERS; i++) {
         uint8_t order = MIN_ORDER + i;
         int count = 0;
-        buddy_node_t* node = memManager->free_lists[i];
+        buddy_node_t* node = memory_manager->free_lists[i];
         
         while (node != NULL) {
             count++;

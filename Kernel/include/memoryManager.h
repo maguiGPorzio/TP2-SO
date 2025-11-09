@@ -28,25 +28,25 @@ typedef struct {
 
 /**
  * @brief Reserva un bloque de memoria
- * @param memManager Handler del memory manager
+ * @param memory_manager Handler del memory manager
  * @param size Tamaño en bytes a reservar
  * @return Puntero al bloque reservado o NULL si no hay memoria
  */
-void* alloc_memory(memory_manager_ADT memManager, size_t size);
+void* alloc_memory(memory_manager_ADT memory_manager, size_t size);
 
 /**
  * @brief Libera un bloque de memoria previamente reservado
- * @param memManager Handler del memory manager
+ * @param memory_manager Handler del memory manager
  * @param ptr Puntero al bloque a liberar
  */
-void free_memory(memory_manager_ADT memManager, void* ptr);
+void free_memory(memory_manager_ADT memory_manager, void* ptr);
 
 /**
  * @brief Obtiene estadísticas del estado de la memoria
- * @param memManager Handler del memory manager
+ * @param memory_manager Handler del memory manager
  * @return Estructura con información de memoria
  */
-mem_info_t get_mem_status(memory_manager_ADT memManager);
+mem_info_t get_mem_status(memory_manager_ADT memory_manager);
 
 
 /**
