@@ -13,6 +13,8 @@ extern void timer_tick();
 
 #define SHELL_ADDRESS ((void *) 0x400000)      // TODO: Esto ver si lo movemos a otro archivo (tipo memoryMap.h)
 
+// Prioridad MIN=0 tiene 1 slot, prioridad k tiene k+1 slots
+#define SLOTS_FOR_PRIORITY(p) ((p) - MIN_PRIORITY + 1)
 
 // ============================================
 //         ESTADO DEL SCHEDULER
@@ -224,16 +226,12 @@ void *schedule(void *prev_rsp) {
 //    - remaining_iterations arranca en MAX_PRIORITY
 // ============================================
 
-static inline int slots_for_priority(int priority) {
-    return priority + 1;
-}
-
 static inline void normalize_priority_window(void) {
     if (current_priority < MIN_PRIORITY || current_priority > MAX_PRIORITY) {
         current_priority = MAX_PRIORITY;
     }
     if (remaining_iterations <= 0) {
-        remaining_iterations = slots_for_priority(current_priority); // advance_priority_window();
+        remaining_iterations = SLOTS_FOR_PRIORITY(current_priority); // advance_priority_window();
     }
 }
 
@@ -241,7 +239,7 @@ static inline void advance_priority_window(void) {
     if (--current_priority < MIN_PRIORITY) {
         current_priority = MAX_PRIORITY;
     }
-    remaining_iterations = slots_for_priority(current_priority);
+    remaining_iterations = SLOTS_FOR_PRIORITY(current_priority);
 }
 
 static PCB *pick_next_process(void) {
