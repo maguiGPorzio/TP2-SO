@@ -369,7 +369,7 @@ int scheduler_set_priority(pid_t pid, uint8_t new_priority) {
     }
     
     // Si el proceso está READY, hay que moverlo de una cola a otra
-    if (process->status == PS_READY) {
+    if (process->status == PS_READY) { 
         // Remover de la cola antigua
         q_remove(ready_queue[old_priority], pid);
         
