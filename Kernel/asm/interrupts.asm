@@ -28,7 +28,7 @@ GLOBAL _cli
 GLOBAL _sti
 
 EXTERN SNAPSHOT_KEY
-EXTERN irqDispatcher
+EXTERN irq_dispatcher
 EXTERN exception_dispatcher
 EXTERN syscalls
 EXTERN current_kernel_rsp
@@ -80,7 +80,7 @@ SECTION .text
 
 	mov rdi, %1 ; pasaje de parametro
 	mov rsi, rsp
-	call irqDispatcher
+	call irq_dispatcher
 	mov rsp, rax
 
 	; EOI

@@ -8,7 +8,7 @@
 static uint64_t int_20(uint64_t rsp);
 static void int_21();
 
-uint64_t irqDispatcher(uint64_t irq, uint64_t rsp) {
+uint64_t irq_dispatcher(uint64_t irq, uint64_t rsp) {
     switch (irq) {
         case 0:
             rsp = int_20(rsp);

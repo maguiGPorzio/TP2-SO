@@ -166,8 +166,8 @@ static void sys_beep(uint32_t freq_hz, uint64_t duration){
 
 // devuelve la info del tamaño de la pantalla
 static void sys_screensize(uint32_t * width, uint32_t * height){
-    *width = getScreenWidth();
-    *height = getScreenHeight();
+    *width = get_screen_width();
+    *height = get_screen_height();
 }
 
 // info: [x_center, y_center, radius]

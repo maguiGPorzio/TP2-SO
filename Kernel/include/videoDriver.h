@@ -5,8 +5,8 @@
 
 // dibuja un pixel en pantalla
 void put_pixel(uint32_t hex_color, uint64_t x, uint64_t y);
-uint16_t getScreenHeight();
-uint16_t getScreenWidth();
+uint16_t get_screen_height();
+uint16_t get_screen_width();
 
 /*  FUNCIONES DE MODO TEXTO  */
 void enable_text_mode();

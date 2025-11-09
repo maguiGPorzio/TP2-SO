@@ -77,11 +77,11 @@ void put_pixel(uint32_t hex_color, uint64_t x, uint64_t y) {
     framebuffer[offset+2]   =  (hex_color >> 16) & 0xFF;
 }
 
-uint16_t getScreenHeight() {
+uint16_t get_screen_height() {
 	return VBE_mode_info->height;
 }
 
-uint16_t getScreenWidth() {
+uint16_t get_screen_width() {
 	return VBE_mode_info->width;
 }
 
@@ -241,7 +241,7 @@ void vd_clear() {
         return;
     }
     // fill_rectangle(0, 0, VBE_mode_info->width, VBE_mode_info->width, BKG_COLOR);
-    uint64_t length = getScreenHeight() * getScreenWidth() * VBE_mode_info->bpp / 8;
+    uint64_t length = get_screen_height() * get_screen_width() * VBE_mode_info->bpp / 8;
     memset64((void *) VBE_mode_info->framebuffer, 0, length); // hardcodeado que el background color es negro
     cursor_x = 0;
     cursor_y = 0;
