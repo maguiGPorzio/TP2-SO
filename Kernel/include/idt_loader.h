@@ -3,5 +3,4 @@
 
 void load_idt();
 
-
-#endif 
+#endif

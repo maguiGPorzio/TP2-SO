@@ -5,15 +5,15 @@
 
 // File descriptors estándar
 enum {
-    STDIN = 0,
-    STDOUT,
-    STDERR,
-    STDGREEN,
-    STDBLUE,
-    STDCYAN,
-    STDMAGENTA,
-    STDYELLOW,
-    FIRST_FREE_FD
+	STDIN = 0,
+	STDOUT,
+	STDERR,
+	STDGREEN,
+	STDBLUE,
+	STDCYAN,
+	STDMAGENTA,
+	STDYELLOW,
+	FIRST_FREE_FD
 };
 
 // Declaración externa: el array se define en fds.c

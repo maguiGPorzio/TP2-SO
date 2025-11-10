@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-typedef struct queue_cdt * queue_t;
+typedef struct queue_cdt *queue_t;
 
 // constructor
 queue_t q_init();
@@ -25,7 +25,7 @@ int q_contains(queue_t q, int value);
 int q_is_empty(queue_t q);
 
 // libera los recursos de la queue
-void q_destroy(queue_t q); 
+void q_destroy(queue_t q);
 
 // ============================================
 //             ITERADOR
@@ -45,4 +45,4 @@ int q_next(queue_t q);
 // Devuelve 1 si lo removió, 0 si no había elemento actual
 int q_remove_current(queue_t q);
 
-#endif 
+#endif

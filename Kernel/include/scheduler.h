@@ -5,8 +5,7 @@
 #include <stdbool.h>
 #include "process.h"
 
-
-typedef int pid_t;  
+typedef int pid_t;
 
 #define MAX_PRIORITY 0
 #define DEFAULT_PRIORITY 1
@@ -14,26 +13,27 @@ typedef int pid_t;
 #define PRIORITY_COUNT 3
 
 // Aging constants
-#define AGING_CHECK_INTERVAL 10   // Cada cuántos ticks aplicar aging
-#define AGING_THRESHOLD 50        // Ticks sin correr para ser promovido
+#define AGING_CHECK_INTERVAL 10 // Cada cuántos ticks aplicar aging
+#define AGING_THRESHOLD 50      // Ticks sin correr para ser promovido
 
 // Inicialización
-int init_scheduler(void);
+int  init_scheduler(void);
 void scheduler_destroy(void);
 
 // Función principal del scheduler (llamada por timer interrupt)
 void *schedule(void *prev_rsp);
 
 // Gestión de procesos
-int scheduler_add_process(process_entry_t entry, int argc, const char **argv, const char *name, int fds[2]);
-int scheduler_remove_process(pid_t pid);
-int scheduler_set_priority(pid_t pid, uint8_t priority);
-int scheduler_get_priority(pid_t pid);
+int scheduler_add_process(
+        process_entry_t entry, int argc, const char **argv, const char *name, int fds[2]);
+int  scheduler_remove_process(pid_t pid);
+int  scheduler_set_priority(pid_t pid, uint8_t priority);
+int  scheduler_get_priority(pid_t pid);
 void scheduler_yield(void);
-int scheduler_kill_process(pid_t pid);
+int  scheduler_kill_process(pid_t pid);
 PCB *scheduler_get_process(pid_t pid);
 void scheduler_exit_process(int64_t retValue);
-int scheduler_waitpid(pid_t child_pid);
+int  scheduler_waitpid(pid_t child_pid);
 
 // Bloqueo/desbloqueo (para usar desde processes.c)
 int scheduler_block_process(pid_t pid);
@@ -41,15 +41,15 @@ int scheduler_unblock_process(pid_t pid);
 
 // Control de scheduling
 void scheduler_force_reschedule(void);
-int scheduler_get_current_pid(void);
+int  scheduler_get_current_pid(void);
 
 // Información de procesos
 int scheduler_get_processes(process_info_t *buffer, int max_count);
 
 // Foreground process control (getter/setter)
 pid_t scheduler_get_foreground_pid(void);
-int scheduler_set_foreground_process(pid_t pid);
-int scheduler_kill_foreground_process(void);
+int   scheduler_set_foreground_process(pid_t pid);
+int   scheduler_kill_foreground_process(void);
 
 // Reparent single process to INIT
 int adopt_init_as_parent(pid_t pid);

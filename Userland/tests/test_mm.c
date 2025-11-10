@@ -6,85 +6,88 @@
 
 #define MAX_BLOCKS 128
 
-void * memset(void * destination, int32_t character, uint64_t length);
-void * memcpy(void * destination, const void * source, uint64_t length);
+void *memset(void *destination, int32_t character, uint64_t length);
+void *memcpy(void *destination, const void *source, uint64_t length);
 
 typedef struct MM_rq {
-  void *address;
-  uint32_t size;
+	void    *address;
+	uint32_t size;
 } mm_rq;
 
-int test_mm(int argc, char * argv[]) {
+int test_mm(int argc, char *argv[])
+{
+	mm_rq    mm_rqs[MAX_BLOCKS];
+	uint8_t  rq;
+	uint32_t total;
+	uint64_t max_memory;
 
-  mm_rq mm_rqs[MAX_BLOCKS];
-  uint8_t rq;
-  uint32_t total;
-  uint64_t max_memory;
+	if (argc != 1) {
+		print_err("Error: test_mm requires exactly 1 argument\n");
+		print_err("Usage: test mm <max_memory>\n");
+		print_err("  max_memory: maximum bytes to allocate per iteration\n");
+		print_err("Example: test mm 10485760  (10MB)\n");
+		return -1;
+	}
 
-  if (argc != 1) {
-    print_err("Error: test_mm requires exactly 1 argument\n");
-    print_err("Usage: test mm <max_memory>\n");
-    print_err("  max_memory: maximum bytes to allocate per iteration\n");
-    print_err("Example: test mm 10485760  (10MB)\n");
-    return -1;
-  }
+	if ((max_memory = satoi(argv[0])) <= 0) {
+		print_err("Error: invalid max_memory value ");
+		print_err(argv[0]);
+		printf("\nmax_memory must be a positive integer\n");
+		return -1;
+	}
 
-  if ((max_memory = satoi(argv[0])) <= 0) {
-    print_err("Error: invalid max_memory value ");
-    print_err(argv[0]);
-    printf("\nmax_memory must be a positive integer\n");
-    return -1;
-  }
+	if (max_memory > 26214400) {
+		print_err("Warning: max_memory too high, setting to 25MB\n");
+		max_memory = 26214400;
+		return 0;
+	}
 
-  if (max_memory > 26214400) {
-    print_err("Warning: max_memory too high, setting to 25MB\n");
-    max_memory = 26214400;
-    return 0;
-  }
+	while (1) {
+		rq    = 0;
+		total = 0;
 
-  while (1) {
-    rq = 0;
-    total = 0;
+		// Request as many blocks as we can
+		while (rq < MAX_BLOCKS && total < max_memory) {
+			mm_rqs[rq].size    = get_uniform(max_memory - total - 1) + 1;
+			mm_rqs[rq].address = sys_malloc(mm_rqs[rq].size);
 
-    // Request as many blocks as we can
-    while (rq < MAX_BLOCKS && total < max_memory) {
-      mm_rqs[rq].size = get_uniform(max_memory - total - 1) + 1;
-      mm_rqs[rq].address = sys_malloc(mm_rqs[rq].size);
+			if (mm_rqs[rq].address) {
+				total += mm_rqs[rq].size;
+				rq++;
+			}
+		}
 
-      if (mm_rqs[rq].address) {
-        total += mm_rqs[rq].size;
-        rq++;
-      }
-    }
+		// Set
+		uint32_t i;
+		for (i = 0; i < rq; i++)
+			if (mm_rqs[i].address)
+				memset(mm_rqs[i].address, i, mm_rqs[i].size);
 
-    // Set
-    uint32_t i;
-    for (i = 0; i < rq; i++)
-      if (mm_rqs[i].address)
-        memset(mm_rqs[i].address, i, mm_rqs[i].size);
+		// Check
+		for (i = 0; i < rq; i++)
+			if (mm_rqs[i].address)
+				if (!memcheck(mm_rqs[i].address, i, mm_rqs[i].size)) {
+					printf("test_mm ERROR\n");
+					return -1;
+				}
 
-    // Check
-    for (i = 0; i < rq; i++)
-      if (mm_rqs[i].address)
-        if (!memcheck(mm_rqs[i].address, i, mm_rqs[i].size)) {
-          printf("test_mm ERROR\n");
-          return -1;
-        }
+		// Free
+		for (i = 0; i < rq; i++)
+			if (mm_rqs[i].address)
+				sys_free(mm_rqs[i].address);
 
-    // Free
-    for (i = 0; i < rq; i++)
-      if (mm_rqs[i].address)
-        sys_free(mm_rqs[i].address);
-
-    // Mostrar estado de memoria cada iteración
-    mem_info_t st = sys_mem_info();
-    printf("[MM] total=%u used=%u free=%u blocks=%u\n", (unsigned)st.total_memory, (unsigned)st.used_memory, (unsigned)st.free_memory, (unsigned)st.allocated_blocks);
-  }
+		// Mostrar estado de memoria cada iteración
+		mem_info_t st = sys_mem_info();
+		printf("[MM] total=%u used=%u free=%u blocks=%u\n",
+		       (unsigned)st.total_memory,
+		       (unsigned)st.used_memory,
+		       (unsigned)st.free_memory,
+		       (unsigned)st.allocated_blocks);
+	}
 }
 
-
-//TEST CATEDRA MEJORADO
-// #include "../include/test_mm.h" // para sys_* y mem_info_t
+// TEST CATEDRA MEJORADO
+//  #include "../include/test_mm.h" // para sys_* y mem_info_t
 
 // #define MAX_BLOCKS 128
 
@@ -221,9 +224,9 @@ int test_mm(int argc, char * argv[]) {
 //       printf("  Iteration: %u\n", iteration);
 //       printf("  Initial used: %u bytes\n", (unsigned)initial_status.used_memory);
 //       printf("  Current used: %u bytes\n", (unsigned)st.used_memory);
-//       printf("  Leaked: %u bytes\n", 
+//       printf("  Leaked: %u bytes\n",
 //              (unsigned)(st.used_memory - initial_status.used_memory));
-//       printf("  Allocated blocks: %u (should be %u)\n", 
+//       printf("  Allocated blocks: %u (should be %u)\n",
 //              (unsigned)st.allocated_blocks,
 //              (unsigned)initial_status.allocated_blocks);
 //       return -1;
@@ -234,13 +237,13 @@ int test_mm(int argc, char * argv[]) {
 //       printf("[Iteration %5u] ", iteration);
 //       printf("Allocated: %3u blocks, %6u bytes | ", rq, total);
 //       printf("Status: ");
-      
-//       if (st.used_memory == initial_status.used_memory && 
+
+//       if (st.used_memory == initial_status.used_memory &&
 //           st.allocated_blocks == initial_status.allocated_blocks) {
 //         printf("✓ OK (no leaks)\n");
 //       } else {
-//         printf("⚠ LEAK! used=%u blocks=%u\n", 
-//                (unsigned)st.used_memory, 
+//         printf("⚠ LEAK! used=%u blocks=%u\n",
+//                (unsigned)st.used_memory,
 //                (unsigned)st.allocated_blocks);
 //       }
 //     }

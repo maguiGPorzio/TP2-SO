@@ -8,79 +8,84 @@
 
 int64_t global; // shared memory
 
-static void slowInc(int64_t *p, int64_t inc) {
-  uint64_t aux = *p;
-  sys_yield(); // This makes the race condition highly probable
-  aux += inc;
-  *p = aux;
+static void slowInc(int64_t *p, int64_t inc)
+{
+	uint64_t aux = *p;
+	sys_yield(); // This makes the race condition highly probable
+	aux += inc;
+	*p = aux;
 }
 
-static uint64_t my_process_inc(uint64_t argc, char *argv[]) {
-  uint64_t n;
-  int8_t inc;
-  int8_t use_sem;
+static uint64_t my_process_inc(uint64_t argc, char *argv[])
+{
+	uint64_t n;
+	int8_t   inc;
+	int8_t   use_sem;
 
-  if (argc != 3)
-    return -1;
+	if (argc != 3)
+		return -1;
 
-  if ((n = satoi(argv[0])) <= 0)
-    return -1;
-  if ((inc = satoi(argv[1])) == 0)
-    return -1;
-  if ((use_sem = satoi(argv[2])) < 0)
-    return -1;
+	if ((n = satoi(argv[0])) <= 0)
+		return -1;
+	if ((inc = satoi(argv[1])) == 0)
+		return -1;
+	if ((use_sem = satoi(argv[2])) < 0)
+		return -1;
 
-  if (use_sem)
-    if (sys_sem_open(SEM_ID, 1) == -1) {
-      print_err("test_sync: ERROR opening semaphore\n");
-      return -1;
-    }
+	if (use_sem)
+		if (sys_sem_open(SEM_ID, 1) == -1) {
+			print_err("test_sync: ERROR opening semaphore\n");
+			return -1;
+		}
 
-  uint64_t i;
-  for (i = 0; i < n; i++) {
-    if (use_sem)
-      sys_sem_wait(SEM_ID);
-    slowInc(&global, inc);
-    if (use_sem)
-      sys_sem_post(SEM_ID);
-  }
+	uint64_t i;
+	for (i = 0; i < n; i++) {
+		if (use_sem)
+			sys_sem_wait(SEM_ID);
+		slowInc(&global, inc);
+		if (use_sem)
+			sys_sem_post(SEM_ID);
+	}
 
-  if (use_sem)
-    sys_sem_close(SEM_ID);
+	if (use_sem)
+		sys_sem_close(SEM_ID);
 
-  return 0;
+	return 0;
 }
 
-int test_sync(int argc, char *argv[]) { 
-  uint64_t pids[2 * TOTAL_PAIR_PROCESSES];
+int test_sync(int argc, char *argv[])
+{
+	uint64_t pids[2 * TOTAL_PAIR_PROCESSES];
 
-  if (argc != 2) {
-    print_err("Error: test_sync requires exactly 2 arguments\n");
-    print_err("Usage: test sync <iterations> <use_semaphore>\n");
-    print_err("  iterations: number of increments/decrements per process\n");
-    print_err("  use_semaphore: 1 to use semaphores (synchronized), 0 for no sync (race condition)\n");
-    print_err("Example: test sync 10000 0  (no sync, should fail)\n");
-    print_err("Example: test sync 10000 1  (with sync, should succeed)\n");
-    return -1;
-  }
+	if (argc != 2) {
+		print_err("Error: test_sync requires exactly 2 arguments\n");
+		print_err("Usage: test sync <iterations> <use_semaphore>\n");
+		print_err("  iterations: number of increments/decrements per process\n");
+		print_err("  use_semaphore: 1 to use semaphores (synchronized), 0 for no sync "
+		          "(race condition)\n");
+		print_err("Example: test sync 10000 0  (no sync, should fail)\n");
+		print_err("Example: test sync 10000 1  (with sync, should succeed)\n");
+		return -1;
+	}
 
-  const char *argvDec[] = {argv[0], "-1", argv[1], NULL};
-  const char *argvInc[] = {argv[0], "1", argv[1], NULL};
+	const char *argvDec[] = {argv[0], "-1", argv[1], NULL};
+	const char *argvInc[] = {argv[0], "1", argv[1], NULL};
 
-  global = 0;
+	global = 0;
 
-  uint64_t i;
-  for (i = 0; i < TOTAL_PAIR_PROCESSES; i++) {
-    pids[i] = sys_create_process(&my_process_inc, 3, argvDec, "my_process_inc", NULL);
-    pids[i + TOTAL_PAIR_PROCESSES] = sys_create_process(&my_process_inc, 3, argvInc, "my_process_inc", NULL);
-  }
+	uint64_t i;
+	for (i = 0; i < TOTAL_PAIR_PROCESSES; i++) {
+		pids[i] = sys_create_process(&my_process_inc, 3, argvDec, "my_process_inc", NULL);
+		pids[i + TOTAL_PAIR_PROCESSES] =
+		        sys_create_process(&my_process_inc, 3, argvInc, "my_process_inc", NULL);
+	}
 
-  for (i = 0; i < TOTAL_PAIR_PROCESSES; i++) {
-    sys_wait(pids[i]);
-    sys_wait(pids[i + TOTAL_PAIR_PROCESSES]);
-  }
+	for (i = 0; i < TOTAL_PAIR_PROCESSES; i++) {
+		sys_wait(pids[i]);
+		sys_wait(pids[i + TOTAL_PAIR_PROCESSES]);
+	}
 
-  printf("Final value: %d\n", global);
+	printf("Final value: %d\n", global);
 
-  return 0;
+	return 0;
 }

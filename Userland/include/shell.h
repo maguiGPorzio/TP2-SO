@@ -6,20 +6,17 @@
 typedef void (*command_handler_t)(int argc, char **argv);
 
 typedef struct {
-    char *name;
-    char * description;
-    command_handler_t handler;
+	char             *name;
+	char             *description;
+	command_handler_t handler;
 
 } BuiltinCommand;
 
 typedef struct {
-    char *name;
-    char * description;
-    process_entry_t entry;
+	char           *name;
+	char           *description;
+	process_entry_t entry;
 } ExternalProgram;
-
-
-
 
 #define INPUT_MAX 128
 #define PROMPT "> "
@@ -30,10 +27,10 @@ typedef struct {
 #define HELP_MESSAGE "--Write help to see available commands--\n"
 #define USERNAME_MAX_LENGTH 16
 
-// funciones de la shell  
-void read_line(char * buf, uint64_t max);
-void process_line(char * line); 
+// funciones de la shell
+void read_line(char *buf, uint64_t max);
+void process_line(char *line);
 void incfont();
 void decfont();
-void set_username(const char * new_name);
-#endif 
+void set_username(const char *new_name);
+#endif

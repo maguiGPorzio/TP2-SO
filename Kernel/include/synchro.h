@@ -16,17 +16,17 @@ extern void release_lock(lock_t *lock);
 extern void _cli(void);
 extern void _sti(void);
 
-//Inicializa el sistema de semáforos al arrancar el kernel.
+// Inicializa el sistema de semáforos al arrancar el kernel.
 void init_semaphore_manager(void);
 // Crea o abre un semáforo con un nombre dado.
 // Aloca memoria para el manager de semáforos
 // Inicializa el array de semáforos en NULL
 // Se llama UNA vez al inicio del kernel
 int64_t sem_open(char *name, int initial_value);
-//Cierra un semáforo con un nombre dado.
-// Si hay más procesos usándolo → solo decrementa contador
-// Si es el último proceso → destruye el semáforo y libera memoria
-// Retorna: 0 si éxito, -1 si error
+// Cierra un semáforo con un nombre dado.
+//  Si hay más procesos usándolo → solo decrementa contador
+//  Si es el último proceso → destruye el semáforo y libera memoria
+//  Retorna: 0 si éxito, -1 si error
 int64_t sem_close(char *name);
 // Intentar adquirir recurso.
 // Si value > 0 → decrementa valor y continúa

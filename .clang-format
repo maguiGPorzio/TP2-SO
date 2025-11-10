@@ -1,0 +1,41 @@
+# .clang-format (compatible con clang-format-18)
+
+BasedOnStyle: LLVM
+Language: Cpp             # aplica a .c y .h también
+
+# Identación estilo kernel (tabs de 8)
+UseTab: ForIndentation
+IndentWidth: 8
+TabWidth: 8
+ContinuationIndentWidth: 8
+IndentCaseLabels: false   # 'case' alineado con 'switch'
+
+# Límites y vacíos
+ColumnLimit: 100
+KeepEmptyLinesAtTheStartOfBlocks: false
+
+# Llaves K&R / Linux-like
+BreakBeforeBraces: Linux
+
+# One-liners
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Empty
+
+# Espacios y operadores
+SpaceBeforeParens: ControlStatements
+SpacesInSquareBrackets: false
+SpaceBeforeCpp11BracedList: false
+PointerAlignment: Right
+AlignOperands: AlignAfterOperator
+BinPackArguments: false
+BinPackParameters: false
+AlignConsecutiveAssignments: Consecutive
+AlignConsecutiveDeclarations: Consecutive
+
+# Includes
+SortIncludes: false
+IncludeBlocks: Preserve
+
+# Otros
+DerivePointerAlignment: false

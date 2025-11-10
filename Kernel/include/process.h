@@ -7,11 +7,11 @@
 
 #define MAX_PROCESSES 64
 #define MAX_PROCESS_NAME_LENGTH 32
-#define PROCESS_STACK_SIZE (4096 * 2)  // 8KB stack
+#define PROCESS_STACK_SIZE (4096 * 2) // 8KB stack
 #define MAX_PID (MAX_PROCESSES - 1)
 #define KILLED_RET_VALUE -1
 
-#define INIT_PID 0 
+#define INIT_PID 0
 #define SHELL_PID 1
 #define NO_PID -1
 
@@ -21,67 +21,65 @@
 typedef int (*process_entry_t)(int argc, char **argv);
 
 // Estados de proceso
-typedef enum {
-    PS_READY = 0,
-    PS_RUNNING,
-    PS_BLOCKED,
-    PS_TERMINATED
-} process_status_t;
+typedef enum { PS_READY = 0, PS_RUNNING, PS_BLOCKED, PS_TERMINATED } process_status_t;
 
 // Process Control Block
 typedef struct PCB {
-    // Identificación
-    int pid;
-    int parent_pid;              // PID del proceso padre (-1 si no tiene)
-    char name[MAX_PROCESS_NAME_LENGTH];
-    
-    // Estado y scheduling
-    process_status_t status;
-    uint8_t priority;                // Prioridad base (0-2, 0 = mayor prioridad)
-    uint8_t effective_priority;      // Prioridad efectiva (puede ser promovida por aging)
-    uint64_t last_tick;
-    
-    // Contexto de ejecución
-    void *stack_base;                // Base del stack
-    void *stack_pointer;             // RSP actual (apunta al contexto guardado)
-    
-    // Función de entrada
-    process_entry_t entry;
-    int argc;
-    char **argv;
-    
-    // Estadísticas
-    uint64_t cpu_ticks;              // Total de ticks de CPU usados
-    int return_value;                // Valor de retorno (para exit)
-    int waiting_on;                  // PID que está esperando (-1 si ninguno)
+	// Identificación
+	int  pid;
+	int  parent_pid; // PID del proceso padre (-1 si no tiene)
+	char name[MAX_PROCESS_NAME_LENGTH];
 
-    // file descriptors
-    int read_fd;
-    int write_fd;
-    bool killable;                   // si false, el proceso no puede ser matado (init/shell)
+	// Estado y scheduling
+	process_status_t status;
+	uint8_t          priority;           // Prioridad base (0-2, 0 = mayor prioridad)
+	uint8_t          effective_priority; // Prioridad efectiva (puede ser promovida por aging)
+	uint64_t         last_tick;
 
-    // queues 
-    queue_t open_fds; // lista de fds abiertos
+	// Contexto de ejecución
+	void *stack_base;    // Base del stack
+	void *stack_pointer; // RSP actual (apunta al contexto guardado)
+
+	// Función de entrada
+	process_entry_t entry;
+	int             argc;
+	char          **argv;
+
+	// Estadísticas
+	uint64_t cpu_ticks;    // Total de ticks de CPU usados
+	int      return_value; // Valor de retorno (para exit)
+	int      waiting_on;   // PID que está esperando (-1 si ninguno)
+
+	// file descriptors
+	int  read_fd;
+	int  write_fd;
+	bool killable; // si false, el proceso no puede ser matado (init/shell)
+
+	// queues
+	queue_t open_fds; // lista de fds abiertos
 } PCB;
-
 
 // Estructura para exponer información de procesos a userland
 typedef struct process_info {
-    int pid;
-    char name[MAX_PROCESS_NAME_LENGTH];
-    process_status_t status;
-    uint8_t priority;
-    int parent_pid;
-    int read_fd;
-    int write_fd;
-    uint64_t stack_base;
-    uint64_t stack_pointer;
+	int              pid;
+	char             name[MAX_PROCESS_NAME_LENGTH];
+	process_status_t status;
+	uint8_t          priority;
+	int              parent_pid;
+	int              read_fd;
+	int              write_fd;
+	uint64_t         stack_base;
+	uint64_t         stack_pointer;
 } process_info_t;
 
-
-
 // Creación y limpieza (usadas por scheduler)
-PCB *proc_create(int pid, process_entry_t entry, int argc, const char **argv, const char *name, bool killable, int fds[2]);
+PCB *proc_create(int             pid,
+                 process_entry_t entry,
+                 int             argc,
+                 const char    **argv,
+                 const char     *name,
+                 bool            killable,
+                 int             fds[2]);
 void free_process_resources(PCB *p);
 
 #endif // PROCESS_H

@@ -4,18 +4,18 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#define HEAP_START_ADDRESS 0x600000    // Dirección de inicio del heap
-#define HEAP_SIZE 0x2000000             // 32MB de heap
+#define HEAP_START_ADDRESS 0x600000 // Dirección de inicio del heap
+#define HEAP_SIZE 0x2000000         // 32MB de heap
 
 // TAD - Tipo ABStracto de datos (estructura opaca)
-typedef struct memory_manager_CDT* memory_manager_ADT;
+typedef struct memory_manager_CDT *memory_manager_ADT;
 
 // Estructura para estadísticas de memoria
 typedef struct {
-    size_t total_memory;
-    size_t used_memory;
-    size_t free_memory;
-    size_t allocated_blocks;
+	size_t total_memory;
+	size_t used_memory;
+	size_t free_memory;
+	size_t allocated_blocks;
 } mem_info_t;
 
 /**
@@ -24,14 +24,14 @@ typedef struct {
  * @param size Tamaño en bytes a reservar
  * @return Puntero al bloque reservado o NULL si no hay memoria
  */
-void* alloc_memory(memory_manager_ADT memory_manager, size_t size);
+void *alloc_memory(memory_manager_ADT memory_manager, size_t size);
 
 /**
  * @brief Libera un bloque de memoria previamente reservado
  * @param memory_manager Handler del memory manager
  * @param ptr Puntero al bloque a liberar
  */
-void free_memory(memory_manager_ADT memory_manager, void* ptr);
+void free_memory(memory_manager_ADT memory_manager, void *ptr);
 
 /**
  * @brief Obtiene estadísticas del estado de la memoria
@@ -39,7 +39,6 @@ void free_memory(memory_manager_ADT memory_manager, void* ptr);
  * @return Estructura con información de memoria
  */
 mem_info_t get_mem_status(memory_manager_ADT memory_manager);
-
 
 /**
  * @brief Inicializa el memory manager del kernel
