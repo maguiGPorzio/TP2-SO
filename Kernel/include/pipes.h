@@ -12,6 +12,16 @@
 #define SEM_NAME_SIZE 32
 #define EOF -1
 
+typedef struct pipe_info {
+    int id;
+    char name[MAX_PIPE_NAME_LENGTH];
+    int read_fd;
+    int write_fd;
+    int readers;
+    int writers;
+    int buffered;
+} pipe_info_t;
+
 int init_pipes();
 
 // deja en fd[0] el read_fd y en fd[1] el write_fd
@@ -44,5 +54,9 @@ void pipe_on_process_killed(pid_t victim);
 
 // lista todos los pipes activos con su información
 void list_pipes(void);
+
+// llena el buffer con información de los pipes activos
+// retorna el número de pipes copiados, o -1 si hay error
+int pipes_info(pipe_info_t * buf, int max_count);
 
 #endif

@@ -27,13 +27,13 @@ static void print_padded_int(unsigned value, int width) {
     printf("%u", value);
 }
 
-int mem(int argc, char *argv[]) {
+int mem_main(int argc, char *argv[]) {
     if (argc != 0) {
         printf("mem: Invalid number of arguments.\n");
         return -1;
     }
 
-    mem_info_t info = sys_mem_info_t();
+    mem_info_t info = sys_mem_info();
 
     char *units[] = {"B", "KB", "MB", "GB"};
 

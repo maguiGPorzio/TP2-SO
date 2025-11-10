@@ -9,7 +9,7 @@ static int is_vowel(char c) {
 }
 
 
-int filter(int argc, char *argv[]) {
+int filter_main(int argc, char *argv[]) {
     if (argc != 0) {
         print_err("Filter requires no arguments\n");
         return ERROR;

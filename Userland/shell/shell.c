@@ -6,7 +6,7 @@
 // Buffer para el comando actual y el anterior
 static char current_input[INPUT_MAX];
 static char previous_input[INPUT_MAX];
-static char initial_input[INPUT_MAX];
+static char user_name[INPUT_MAX];
 static void print_initial_message();
 
 int main(void) {
@@ -21,7 +21,7 @@ int main(void) {
     sys_clear_input_buffer();
 
     while (1) {
-        fprint(STDCYAN, initial_input);
+        fprint(STDCYAN, user_name);
         print(PROMPT);
         read_line(current_input, INPUT_MAX-1);
         putchar('\n');
@@ -41,11 +41,19 @@ static void print_initial_message(){
     fprint(STDMAGENTA, INITIAL_MESSAGE_1);
     putchar('\n');
     print(INITIAL_MESSAGE_2);
-    read_line(initial_input, USERNAME_MAX_LENGTH);
+    read_line(user_name, USERNAME_MAX_LENGTH-1);
     putchar('\n');
     fprint(STDMAGENTA, HELP_MESSAGE);
     putchar('\n');
     sys_decrease_fontsize();
+}
+
+void set_username(const char * new_name) {
+    int i;
+    for (i = 0; i < USERNAME_MAX_LENGTH - 1 && new_name[i] != '\0'; i++) {
+        user_name[i] = new_name[i];
+    }
+    user_name[i] = '\0';
 }
 
 void read_line(char * buf, uint64_t max) {
@@ -90,7 +98,7 @@ void incfont()  {
     sys_increase_fontsize(); 
     sys_clear();
     // Imprimir prompt sin cursor (usar print directamente)
-    fprint(STDCYAN, initial_input);
+    fprint(STDCYAN, user_name);
     print(PROMPT);
     // Imprimir el input actual
     for (int i = 0; current_input[i] != '\0' && i < INPUT_MAX; i++) {
@@ -104,7 +112,7 @@ void decfont()  {
     sys_decrease_fontsize(); 
     sys_clear();
     // Imprimir prompt sin cursor (usar print directamente)
-    fprint(STDCYAN, initial_input);
+    fprint(STDCYAN, user_name);
     print(PROMPT);
     // Imprimir el input actual
     for (int i = 0; current_input[i] != '\0' && i < INPUT_MAX; i++) {

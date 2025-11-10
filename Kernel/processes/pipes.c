@@ -406,72 +406,32 @@ void destroy_pipe(int idx) {
     q_add(free_indexes, idx);
 }
 
-void list_pipes(void) {
-    vd_print("\n=== PIPES ACTIVOS ===\n", 0xffffff);
-    
-    int active_count = 0;
-    char debug_str[20];
-    
-    for (int i = 0; i < MAX_PIPES; i++) {
+
+int pipes_info(pipe_info_t * buf, int max_count) {
+    if (buf == NULL || max_count <= 0) {
+        return -1;
+    }
+
+    int count = 0;
+    for (int i = 0; i < MAX_PIPES && count < max_count; i++) {
         pipe_t *pipe = pipes[i];
         if (pipe == NULL) {
             continue;
         }
         
-        active_count++;
+        buf[count].id = i;
+        strncpy(buf[count].name, pipe->name, MAX_PIPE_NAME_LENGTH);
+        buf[count].read_fd = pipe->read_fd;
+        buf[count].write_fd = pipe->write_fd;
+        buf[count].readers = pipe->reader_count;
+        buf[count].writers = pipe->writer_count;
+        buf[count].buffered = (pipe->write_idx - pipe->read_idx + PIPE_BUFFER_SIZE) % PIPE_BUFFER_SIZE;
         
-        vd_print("Pipe #", 0xffffff);
-        decimal_to_str(i, debug_str);
-        vd_print(debug_str, 0xffffff);
-        vd_print(": ", 0xffffff);
-        
-        // Nombre del pipe (anónimo si no tiene)
-        if (pipe->name[0] == '\0') {
-            vd_print("[anonymous]", 0xffffff);
-        } else {
-            vd_print("\"", 0xffffff);
-            vd_print(pipe->name, 0xffffff);
-            vd_print("\"", 0xffffff);
-        }
-        
-        // FDs
-        vd_print(" read_fd=", 0xffffff);
-        decimal_to_str(pipe->read_fd, debug_str);
-        vd_print(debug_str, 0xffffff);
-        vd_print(" write_fd=", 0xffffff);
-        decimal_to_str(pipe->write_fd, debug_str);
-        vd_print(debug_str, 0xffffff);
-        
-        // Contadores
-        vd_print(" readers=", 0xffffff);
-        decimal_to_str(pipe->reader_count, debug_str);
-        vd_print(debug_str, 0xffffff);
-        vd_print(" writers=", 0xffffff);
-        decimal_to_str(pipe->writer_count, debug_str);
-        vd_print(debug_str, 0xffffff);
-        
-        // Estado del buffer
-        vd_print(" buffered=", 0xffffff);
-        int buffered = (pipe->write_idx - pipe->read_idx + PIPE_BUFFER_SIZE) % PIPE_BUFFER_SIZE;
-        decimal_to_str(buffered, debug_str);
-        vd_print(debug_str, 0xffffff);
-        vd_print("/", 0xffffff);
-        decimal_to_str(PIPE_BUFFER_SIZE, debug_str);
-        vd_print(debug_str, 0xffffff);
-        
-        vd_print("\n", 0xffffff);
+        count++;
     }
-    
-    vd_print("Total: ", 0xffffff);
-    decimal_to_str(active_count, debug_str);
-    vd_print(debug_str, 0xffffff);
-    vd_print(" pipe", 0xffffff);
-    if (active_count != 1) {
-        vd_print("s", 0xffffff);
-    }
-    vd_print(" activo", 0xffffff);
-    if (active_count != 1) {
-        vd_print("s", 0xffffff);
-    }
-    vd_print("\n\n", 0xffffff);
+
+    return count;
 }
+
+
+

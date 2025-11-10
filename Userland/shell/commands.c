@@ -17,14 +17,14 @@
 
 static void cls(int argc, char * argv[]);
 static void help(int argc, char * argv[]);
-static void list_pipes(int argc, char * argv[]);
+static void username_cmd(int argc, char * argv[]);
 
 static bool is_cmd_background(char *line);
 
 static BuiltinCommand builtins[] = {
     { "clear", "clears the screen", &cls },
     { "help", "provides information about available commands", &help },
-    { "pipes", "lists active pipes information", &list_pipes },
+    { "username", "changes the shell username", &username_cmd },
 
     { NULL, NULL, NULL }
 };
@@ -36,31 +36,28 @@ static BuiltinCommand builtins[] = {
 
 
 static ExternalProgram programs[] = {
+    { "ps", "prints to STDOUT information about current processes", &ps_main },
+    { "mem", "prints to STDOUT memory usage information", &mem_main},
+    { "pipes", "prints to STDOUT information about open pipes", &pipes_main },
+    { "time", "prints system time to STDOUT", &time_main },
+    { "date", "prints system date to STDOUT", &date_main },
     { "echo", "prints to STDOUT its params", &echo_main },
+    { "printa", "prints the letter 'a' indefinitely to STDOUT with a delay", &print_a_main },
     { "cat", "reads from STDIN and prints it to STDOUT", &cat_main },
     { "red", "reads from STDIN and prints it to STDERR", &red_main },
     { "rainbow", "reads from STDIN and prints one char to each color fd", &rainbow_main},
-    { "time", "prints system time to STDOUT", &time_main },
-    { "date", "prints system date to STDOUT", &date_main },
-    { "ps", "prints to STDOUT information about current processes", &ps_main },
-    { "kill", "kills a process by PID", &kill_main },
-    { "loop", "runs an infinite loop printing dots to STDOUT", &loop_main },
-    { "nice", "changes the priority of a process", &nice_main },
+    { "filter", "filters out vowels from input until '-' is encountered", &filter_main},
     { "wc", "counts the number of lines, words and characters from STDIN", &wc_main },
-    { "mem", "prints memory usage information", &mem},
-    { "block", "blocks a running process", &block}, 
-    { "unblock", "unblocks a blocked process", &unblock},
-    { "filter", "filters out vowels from input until '-' is encountered", &filter},
     { "mvar", "tests multi-variable synchronization", &mvar_main},
+    { "kill", "kills a process given its pid", &kill_main},
+    { "block", "blocks a process given its pid", &block_main}, 
+    { "unblock", "unblocks a blocked process given its pid", &unblock_main},
+    { "nice", "changes the priority of a process", &nice_main },
     { "test_mm", "runs an mm test", &test_mm},
     { "test_prio", "runs a priority test", &test_prio},
     { "test_processes", "runs an process test", &test_processes},
-    { "test_sync", "runs a sync test", &test_sync},
-    { "test_pipes", "runs a piptes test", &test_pipes},
-    //{ "printa", "prints the letter 'a' indefinitely to STDOUT", &print_a_main },
-    //{ "printb", "prints the letter 'b' indefinitely to STDOUT", &print_b_main },
-    //{ "text", "lo puse para probar wc", &text_main },
-    //{ "sleep", "sleeps for a given number of milliseconds", &sleep_main },
+    { "test_sync", "runs a sync test with or without semaphores", &test_sync},
+    { "test_pipes", "runs a named pipes test", &test_pipes},
     { NULL, NULL }
 };
 
@@ -356,6 +353,7 @@ static void help(int argc, char * argv[]) {
     
     print("\nExternal programs:\n");
     print("--Type <program_name> & to run in background, else it runs in foreground--\n");
+    print("--Type <program_1> | <program_2> to pipe 2 programs--\n\n");
     for (int i = 0; programs[i].name != NULL; i++) {
         print("  ");
         print(programs[i].name);
@@ -367,9 +365,36 @@ static void help(int argc, char * argv[]) {
     putchar('\n');
 }
 
-static void list_pipes(int argc, char * argv[]) {
-    sys_list_pipes();
+
+
+static void username_cmd(int argc, char * argv[]) {
+    if (argc == 0) {
+        print("Usage: username <new_name>\n");
+        return;
+    }
+    
+    // Concatenar todos los argumentos en un solo nombre
+    char new_name[USERNAME_MAX_LENGTH] = {0};
+    int offset = 0;
+    
+    for (int i = 0; i < argc && offset < USERNAME_MAX_LENGTH - 1; i++) {
+        if (i > 0) {
+            new_name[offset++] = ' ';
+        }
+        
+        int j = 0;
+        while (argv[i][j] != '\0' && offset < USERNAME_MAX_LENGTH - 1) {
+            new_name[offset++] = argv[i][j++];
+        }
+    }
+    new_name[offset] = '\0';
+    
+    set_username(new_name);
+    print("Username updated to: ");
+    print(new_name);
+    putchar('\n');
 }
+
 
 
 // static void print_test_use() {

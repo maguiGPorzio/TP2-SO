@@ -11,7 +11,6 @@
 #include "memoryManager.h"
 #include "scheduler.h"
 #include "synchro.h"
-#include "pipes.h"
 
 #define MIN_CHAR 0
 #define MAX_CHAR 256
@@ -45,7 +44,7 @@ void * syscalls[] = {
     // syscalls de memoria
     &sys_malloc,             // 23
     &sys_free,               // 24
-    &sys_mem_info_t,          // 25
+    &sys_mem_info,          // 25
 
     // syscalls de procesos
     &sys_create_process,     // 26
@@ -75,8 +74,7 @@ void * syscalls[] = {
 
     &sys_open_named_pipe, // 45
     &sys_close_fd,        // 46
-    &sys_list_pipes       // 47
-
+    &sys_pipes_info,      // 47
 };
 
 static uint64_t sys_regs(char * buffer) {
@@ -243,7 +241,7 @@ static void sys_free(void * ptr) {
     free_memory(get_kernel_memory_manager(), ptr);
 }
 
-static mem_info_t sys_mem_info_t(void) {
+static mem_info_t sys_mem_info(void) {
     return get_mem_status(get_kernel_memory_manager());
 }
 
@@ -378,7 +376,8 @@ static int sys_close_fd(int fd) {
     return 0; // no lo tenia abierto
 }
 
-static void sys_list_pipes(void) {
-    list_pipes();
+static int sys_pipes_info(pipe_info_t * buf, int max_count) {
+    return pipes_info(buf, max_count);
 }
+
 

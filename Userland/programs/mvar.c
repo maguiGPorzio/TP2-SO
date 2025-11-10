@@ -33,7 +33,7 @@ static int reader_process(int argc, char *argv[]);
 
 int mvar_main(int argc, char *argv[]) {
     if (argc != 2) {
-        print_err("Uso: mvar <num_escritores> <num_lectores>\n");
+        print_err("Use: mvar <num_writers> <num_readers>\n");
         return ERROR;
     }
 
@@ -41,13 +41,13 @@ int mvar_main(int argc, char *argv[]) {
     int num_readers = satoi(argv[1]);
 
     if (num_writers <= 0 || num_readers <= 0) {
-        print_err("mvar: los parámetros deben ser enteros positivos.\n");
-        print_err("Uso: mvar <num_escritores> <num_lectores>\n");
+        print_err("mvar: paramers must be greater than 0.\n");
+        print_err("Use: mvar <num_writers> <num_readers>\n");
         return ERROR;
     }
 
     if (num_writers > (int)LETTER_POOL_SIZE) {
-        print_err("mvar: cantidad máxima de escritores soportada es 62.\n");
+        print_err("mvar: maximum number of readers is 62.\n");
         return ERROR;
     }
 
@@ -55,19 +55,19 @@ int mvar_main(int argc, char *argv[]) {
 
     for (int i = 0; i < num_writers; i++) {
         if (spawn_writer(i) < 0) {
-            print_err("mvar: error creando un escritor.\n");
+            print_err("mvar: error creating a writer.\n");
             return ERROR;
         }
     }
 
     for (int i = 0; i < num_readers; i++) {
         if (spawn_reader(i) < 0) {
-            print_err("mvar: error creando un lector.\n");
+            print_err("mvar: error creating a reader.\n");
             return ERROR;
         }
     }
 
-    printf("mvar: %d escritores y %d lectores lanzados.\n", num_writers, num_readers);
+    printf("mvar: %d writers y %d readers created.\n", num_writers, num_readers);
     return OK;
 }
 
@@ -146,7 +146,7 @@ static int writer_process(int argc, char *argv[]) {
     }
 
     if (attach_to_sync_objects() < 0) {
-        print_err("writer: no se pudieron abrir los semáforos.\n");
+        print_err("writer: could not open semaphores.\n");
         return ERROR;
     }
 
@@ -169,7 +169,7 @@ static int reader_process(int argc, char *argv[]) {
     }
 
     if (attach_to_sync_objects() < 0) {
-        print_err("reader: no se pudieron abrir los semáforos.\n");
+        print_err("reader: could not open semaphores.\n");
         return ERROR;
     }
 

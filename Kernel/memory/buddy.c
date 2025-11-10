@@ -385,6 +385,6 @@ void sys_free(void* ptr) {
     free_memory(kernel_mm, ptr);
 }
 
-mem_info_t sys_mem_info_t(void) {
+mem_info_t sys_mem_info(void) {
     return get_mem_status(kernel_mm);
 }

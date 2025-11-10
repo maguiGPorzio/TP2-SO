@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include "memoryManager.h"
 #include "process.h"
+#include "pipes.h"
 
 // TODO: reordenar las syscalls para que tengan un orden mas logico
 
@@ -36,7 +37,7 @@ static uint64_t sys_ticks();
 // Memory management syscalls
 static void * sys_malloc(size_t size);
 static void sys_free(void * ptr);
-static mem_info_t sys_mem_info_t(void);
+static mem_info_t sys_mem_info(void);
 
 // processes syscalls
 static int64_t sys_create_process(void * entry, int argc, const char **argv, const char *name, int fds[2]);
@@ -68,7 +69,7 @@ static int sys_get_foreground_process(void);
 // mas syscalls de pipes
 static int sys_open_named_pipe(char * name, int fds[2]);
 static int sys_close_fd(int fd);
-static void sys_list_pipes(void);
+static int sys_pipes_info(pipe_info_t * buf, int max_count);
 
 
 

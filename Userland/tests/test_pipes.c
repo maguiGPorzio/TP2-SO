@@ -23,9 +23,9 @@ static int writer_process(int argc, char *argv[]) {
     
     // Escribir varios mensajes
     const char *messages[] = {
-        "Hello from writer!\n",
-        "This is message 2\n",
-        "Final message\n"
+        "This is the 1st message\n",
+        "This is the 2nd message\n",
+        "This is the 3rd and final message\n"
     };
     
     for (int i = 0; i < 3; i++) {
