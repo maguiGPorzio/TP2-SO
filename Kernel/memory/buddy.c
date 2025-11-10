@@ -27,17 +27,9 @@ struct memory_manager_CDT {
     size_t total_allocated;                // Bytes totales allocados
 };
 
-// ============================================
-//         VARIABLES GLOBALES
-// ============================================
-
 static memory_manager_ADT kernel_mm = NULL;
 
 extern void _hlt(void);
-
-// ============================================
-//          FUNCIONES AUXILIARES
-// ============================================
 
 // Calcula el tamaño de un bloque dado su orden
 static size_t order_to_size(uint8_t order) {
@@ -183,10 +175,6 @@ static void coalesce(memory_manager_ADT memory_manager, buddy_node_t* block) {
     coalesce(memory_manager, merged);
 }
 
-// ============================================
-//        IMPLEMENTACIÓN DE LA INTERFAZ
-// ============================================
-
 memory_manager_ADT create_memory_manager(void* start_address, size_t size) {
     if (start_address == NULL || size < sizeof(struct memory_manager_CDT) + (1ULL << MIN_ORDER)) {
         return NULL;
@@ -310,27 +298,9 @@ mem_info_t get_mem_status(memory_manager_ADT memory_manager) {
 // TODO: esto no lo usamos
 void print_mem_state(memory_manager_ADT memory_manager) {
     if (memory_manager == NULL) {
-        ncPrint("Buddy Memory Manager: NULL\n");
         return;
     }
     
-    ncPrint("=== BUDDY MEMORY STATE ===\n");
-    ncPrint("Base Address: 0x");
-    ncPrintHex((uint64_t)memory_manager->base_address);
-    ncPrint("\n");
-    
-    ncPrint("Total Size: ");
-    ncPrintDec(memory_manager->total_size / 1024);
-    ncPrint(" KB\n");
-    
-    ncPrint("Allocated: ");
-    ncPrintDec(memory_manager->total_allocated / 1024);
-    ncPrint(" KB in ");
-    ncPrintDec(memory_manager->allocated_blocks);
-    ncPrint(" blocks\n");
-    
-    // Mostrar listas libres por orden
-    ncPrint("\nFree Lists:\n");
     for (int i = 0; i < NUM_ORDERS; i++) {
         uint8_t order = MIN_ORDER + i;
         int count = 0;
@@ -340,19 +310,7 @@ void print_mem_state(memory_manager_ADT memory_manager) {
             count++;
             node = node->next;
         }
-        
-        if (count > 0) {
-            ncPrint("  Order ");
-            ncPrintDec(order);
-            ncPrint(" (");
-            ncPrintDec(order_to_size(order) / 1024);
-            ncPrint(" KB): ");
-            ncPrintDec(count);
-            ncPrint(" blocks\n");
-        }
     }
-    
-    ncPrint("==========================\n");
 }
 
 void init_kernel_memory_manager(void) {
