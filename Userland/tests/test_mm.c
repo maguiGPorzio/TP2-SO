@@ -36,6 +36,12 @@ int test_mm(int argc, char * argv[]) {
     return -1;
   }
 
+  if (max_memory > 26214400) {
+    print_err("Warning: max_memory too high, setting to 25MB\n");
+    max_memory = 26214400;
+    return 0;
+  }
+
   while (1) {
     rq = 0;
     total = 0;
