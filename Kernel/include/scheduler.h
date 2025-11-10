@@ -18,7 +18,7 @@ typedef int pid_t;
 
 // Aging constants
 #define AGING_CHECK_INTERVAL 10   // Cada cuántos ticks aplicar aging
-#define AGING_THRESHOLD 100        // Ticks sin correr para ser promovido
+#define AGING_THRESHOLD 50        // Ticks sin correr para ser promovido
 
 // ============================================
 //           FUNCIONES PÚBLICAS
