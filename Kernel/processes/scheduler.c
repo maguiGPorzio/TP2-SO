@@ -42,14 +42,14 @@ static inline bool pid_is_valid(pid_t pid);
 static void cleanup_all_processes(void);
 static int create_shell();
 static inline bool pid_is_valid(pid_t pid) ;
-static void cleanup_resources(PCB * p);
+static void close_open_fds(PCB * p);
 static void apply_aging(void);
 
 static inline bool pid_is_valid(pid_t pid) {
     return pid >= 0 && pid <= MAX_PID;
 }
 
-static void cleanup_resources(PCB * p) {
+static void close_open_fds(PCB * p) {
     while (!q_is_empty(p->open_fds)) {
         int fd = q_poll(p->open_fds);
         close_fd(fd);
@@ -507,7 +507,7 @@ int scheduler_kill_process(pid_t pid) {
     killed_process->return_value = KILLED_RET_VALUE;
     
     // cierra los fds abiertos
-    cleanup_resources(killed_process);
+    close_open_fds(killed_process);
 
 
     if(killed_process->parent_pid == INIT_PID) {
@@ -673,7 +673,7 @@ void scheduler_exit_process(int64_t ret_value) {
     remove_process_from_all_semaphore_queues(current_process->pid);
     
     // limpia los fds abiertos
-    cleanup_resources(current_process);
+    close_open_fds(current_process);
 
     if(current_process->parent_pid == INIT_PID) { // si el padre es init, no hace falta mantener su pcb para guardarnos ret_value pues nadie le va a hacer waitpid
         scheduler_remove_process(current_process->pid); 
