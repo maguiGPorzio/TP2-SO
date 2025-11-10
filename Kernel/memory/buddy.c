@@ -33,6 +33,8 @@ struct memory_manager_CDT {
 
 static memory_manager_ADT kernel_mm = NULL;
 
+extern void _hlt(void);
+
 // ============================================
 //          FUNCIONES AUXILIARES
 // ============================================
@@ -357,38 +359,15 @@ void init_kernel_memory_manager(void) {
     kernel_mm = create_memory_manager((void*)HEAP_START_ADDRESS, HEAP_SIZE);
     
     if (kernel_mm == NULL) {
-        ncPrint("KERNEL PANIC: Failed to initialize Buddy memory manager\n");
         while(1) {
-            __asm__ __volatile__("hlt");
+            _hlt();
         }
     }
-    
-    ncPrint("Buddy Memory Manager initialized at 0x");
-    ncPrintHex(HEAP_START_ADDRESS);
-    ncPrint(" with ");
-    ncPrintDec(HEAP_SIZE / (1024 * 1024));
-    ncPrint(" MB\n");
-    
-    ncPrint("  Min block size: ");
-    ncPrintDec(1 << MIN_ORDER);
-    ncPrint(" bytes (order ");
-    ncPrintDec(MIN_ORDER);
-    ncPrint(")\n");
-    
-    ncPrint("  Max block size: ");
-    ncPrintDec((1 << MAX_ORDER) / 1024);
-    ncPrint(" KB (order ");
-    ncPrintDec(MAX_ORDER);
-    ncPrint(")\n");
 }
 
 memory_manager_ADT get_kernel_memory_manager(void) {
     return kernel_mm;
 }
-
-// ============================================
-//         WRAPPERS PARA SYSCALLS
-// ============================================
 
 void* sys_malloc(size_t size) {
     return alloc_memory(kernel_mm, size);
