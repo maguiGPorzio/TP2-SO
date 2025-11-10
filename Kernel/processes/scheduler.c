@@ -202,6 +202,10 @@ void * schedule(void * prev_rsp) {
         current->cpu_ticks++; // cuantas veces interrumpimos este proceso que estuvo corrriendo hasta ahora
         total_cpu_ticks++;
 
+        // Cuando un proceso deja de correr (por cualquier razón), vuelve a su prioridad base
+        // (pierde cualquier promoción temporal por aging)
+        current->effective_priority = current->priority;
+
         // Con quantum de 1 tick, siempre forzamos reschedule después de cada tick
         // (a menos que el proceso ya no esté RUNNING por otra razón)
         
@@ -209,15 +213,15 @@ void * schedule(void * prev_rsp) {
             // Si el status es RUNNING, cambiar a READY
             // Si fue bloqueado, terminado o matado, el status ya se cambió en otras funciones
             current->status = PS_READY;
-        }
-        
-        if (current->status == PS_READY && current->pid != INIT_PID) {
-            // Agregar a la cola correspondiente a su prioridad efectiva
-            queue_t target_queue = ready_queue[current->effective_priority];
-            if (!q_add(target_queue, current->pid)) {
-                current->status = PS_RUNNING;
-                force_reschedule = false;
-                return prev_rsp;
+
+            if (current->pid != INIT_PID) {
+                // Agregar a la cola correspondiente a su prioridad efectiva
+                queue_t target_queue = ready_queue[current->effective_priority];
+                if (!q_add(target_queue, current->pid)) {
+                    current->status = PS_RUNNING;
+                    force_reschedule = false;
+                    return prev_rsp;
+                }
             }
         }
     }
@@ -236,10 +240,8 @@ void * schedule(void * prev_rsp) {
     }
 
     // Cuando un proceso va a correr:
-    // 1. Actualizar su last_tick
-    // 2. Resetear effective_priority a su priority base
+    // Actualizar su last_tick para el control de aging
     next->last_tick = total_cpu_ticks;
-    next->effective_priority = next->priority;
 
     current_pid = next->pid;
     next->status = PS_RUNNING;
@@ -289,29 +291,31 @@ static PCB *pick_next_process(void) {
 
 // Aplica aging: promueve procesos que llevan mucho tiempo sin correr
 static void apply_aging(void) {
-    // Promover de prioridad 2 (MIN_PRIORITY) a 1 (MEDIUM)
-    q_to_begin(ready_queue[2]);
-    while (q_has_next(ready_queue[2])) {
-        pid_t pid = q_next(ready_queue[2]);
-        PCB *p = processes[pid];
-        
-        if (p != NULL && total_cpu_ticks - p->last_tick >= AGING_THRESHOLD) {
-            q_remove_current(ready_queue[2]);
-            p->effective_priority = 1;
-            q_add(ready_queue[1], pid);
+    // Recorrer desde MIN_PRIORITY hasta MAX_PRIORITY+1 (no promovemos desde MAX_PRIORITY)
+    for (int i = MIN_PRIORITY; i > MAX_PRIORITY; i--) {
+        if (q_is_empty(ready_queue[i])) {
+            continue;
         }
-    }
-    
-    // Promover de prioridad 1 (MEDIUM) a 0 (MAX_PRIORITY)
-    q_to_begin(ready_queue[1]);
-    while (q_has_next(ready_queue[1])) {
-        pid_t pid = q_next(ready_queue[1]);
-        PCB *p = processes[pid];
         
-        if (p != NULL && total_cpu_ticks - p->last_tick >= AGING_THRESHOLD) {
-            q_remove_current(ready_queue[1]);
-            p->effective_priority = 0;
-            q_add(ready_queue[0], pid);
+        q_to_begin(ready_queue[i]);
+        while (q_has_next(ready_queue[i])) {
+            pid_t pid = q_next(ready_queue[i]);
+            PCB *p = processes[pid];
+            
+            // Si el proceso no existe o no cumple el threshold, continuar
+            if (p == NULL) {
+                continue;
+            }
+            
+            // Verificar si hace mucho que no corre (comparar con total_cpu_ticks)
+            if (total_cpu_ticks - p->last_tick >= AGING_THRESHOLD) {
+                // Promover: remover de esta cola y agregar a la de mayor prioridad
+                q_remove_current(ready_queue[i]);
+                p->effective_priority = i - 1;  // Subir un nivel de prioridad
+                p->last_tick = total_cpu_ticks; // Actualizar last_tick para evitar promociones repetidas
+                q_add(ready_queue[i - 1], pid);
+                
+            }
         }
     }
 }
@@ -349,6 +353,7 @@ int scheduler_add_process(process_entry_t entry, int argc, const char **argv, co
     process->effective_priority = DEFAULT_PRIORITY; // Inicialmente igual a priority
     process->status = PS_READY; 
     process->cpu_ticks = 0;
+    process->last_tick = total_cpu_ticks;
 
 
     processes[pid] = process;
@@ -565,6 +570,10 @@ int scheduler_unblock_process(pid_t pid) {
     }
     
     process->status = PS_READY;
+    
+    // Al desbloquearse, el proceso vuelve a su prioridad base
+    // (por si fue promovido por aging mientras esperaba ser seleccionado, antes de bloquearse)
+    process->effective_priority = process->priority;
     
     // Agregar a la cola correspondiente a su prioridad efectiva
     if (!q_add(ready_queue[process->effective_priority], pid)) {
