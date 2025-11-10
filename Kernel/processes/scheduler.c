@@ -11,6 +11,7 @@
 #include "videoDriver.h"
 #include "../include/time.h"
 #include <stddef.h>
+#include "synchro.h"
 
 extern void timer_tick();
 
@@ -51,17 +52,13 @@ static void close_open_fds(PCB * p) {
 
 // Proceso init: arranca la shell y se queda haciendo halt para no consumir CPU (actúa como proceso idle). Se lo elige siempre que no haya otro proceso para correr!!!!
 static int init(int argc, char **argv) {
-
     if (create_shell() != 0) {
         return -1;
     }
-
     scheduler_set_foreground_process(SHELL_PID);
-
     while (1) {
 		_hlt();
 	}
-
     return -1;
 }
 
