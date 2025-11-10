@@ -87,13 +87,6 @@ uint8_t get_char_from_buffer() {
 // copia en el buff lo que hay en el buffer de teclado hasta count y va vaciando el buffer de teclado
 // Bloquea hasta tener TODOS los caracteres pedidos (comportamiento idéntico a pipes)
 uint64_t read_keyboard_buffer (char * buff_copy, uint64_t count) {
-    int current_pid = scheduler_get_current_pid();
-    int foreground_pid = scheduler_get_foreground_pid();
-    
-    // Solo el proceso en foreground puede leer del teclado
-    if (current_pid != foreground_pid) {
-        return EOF;  // Error: proceso no está en foreground
-    }
 
     for (int i = 0; i < count; i++) {
         sem_wait(KEYBOARD_SEM_NAME);  // Bloquea hasta que haya un carácter disponible

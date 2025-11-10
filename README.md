@@ -67,6 +67,7 @@ Implementamos un mini kernel de 64 bits con scheduler de prioridades, administra
 - Pipes y filtros:
   - `ps | rainbow` escribe la salida de ps de muchos colores.
   - `echo hola mundo | filter` produce `hl mnd` (sin vocales).
+  - `cat | wc` puedes escribir (no veras en pantalla lo que escribes porque esta siendo redirigido a wc) y luego cuando termines con `ctrl+d` puedes ver la cantidad de lineas, palabras y caracteres que haz escrito.
   - `printa | red &` imprime 'a' de manera indefinida con un delay en background, luego `pipes` mientras corres pipelines muestra pipes activos, FDs y bytes buffered.
   - `test_pipes` crea dos procesos que comunican por pipe nombrado "test_pipe".
 - Sincronización:

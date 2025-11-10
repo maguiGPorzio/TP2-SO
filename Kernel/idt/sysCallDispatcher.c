@@ -115,6 +115,8 @@ static int sys_write(uint64_t fd, const char * buffer, uint64_t count) {
 static int sys_read(int fd, char * buffer, uint64_t count) {
     int pid = scheduler_get_current_pid();
     PCB * p = scheduler_get_process(pid);
+
+    
     
     if (fd == STDIN) { // que es para este tipo stdin?
         fd = p->read_fd;
@@ -123,7 +125,11 @@ static int sys_read(int fd, char * buffer, uint64_t count) {
         return -1;
     }
 
-    if (fd == STDIN) {
+    if (fd == STDIN) { // quiere leer de teclado
+        int foreground_pid = scheduler_get_foreground_pid();
+        if (pid != foreground_pid) {
+            return EOF;  // solo el proceso de foreground puede leer del teclado
+        }
         return read_keyboard_buffer(buffer, count);
     }
 
