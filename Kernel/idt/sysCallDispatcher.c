@@ -7,7 +7,7 @@
 #include "time.h"
 #include "keyboard.h"
 #include "sound.h"
-#include "sysCallDispatcher.h"
+#include "syscall_dispatcher.h"
 #include "memoryManager.h"
 #include "scheduler.h"
 #include "synchro.h"
