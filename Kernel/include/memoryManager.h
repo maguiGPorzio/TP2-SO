@@ -4,16 +4,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
-// ============================================
-//           CONSTANTES Y CONFIGURACIÓN
-// ============================================
-
 #define HEAP_START_ADDRESS 0x600000    // Dirección de inicio del heap
 #define HEAP_SIZE 0x2000000             // 32MB de heap
-
-// ============================================
-//              TIPOS DE DATOS
-// ============================================
 
 // TAD - Tipo ABStracto de datos (estructura opaca)
 typedef struct memory_manager_CDT* memory_manager_ADT;

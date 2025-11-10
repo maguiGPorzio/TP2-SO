@@ -18,10 +18,6 @@
 #define OK 0
 #define ERROR -1
 
-// ============================================
-//           TIPOS Y ESTRUCTURAS
-// ============================================
-
 typedef int (*process_entry_t)(int argc, char **argv);
 
 // Estados de proceso
@@ -83,9 +79,6 @@ typedef struct process_info {
 } process_info_t;
 
 
-// ============================================
-//      FUNCIONES INTERNAS (process.c)
-// ============================================
 
 // Creación y limpieza (usadas por scheduler)
 PCB *proc_create(int pid, process_entry_t entry, int argc, const char **argv, const char *name, bool killable, int fds[2]);

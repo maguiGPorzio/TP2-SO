@@ -5,9 +5,6 @@
 #include <stdbool.h>
 #include "process.h"
 
-// ============================================
-//           DEFINICIONES
-// ============================================
 
 typedef int pid_t;  
 
@@ -19,10 +16,6 @@ typedef int pid_t;
 // Aging constants
 #define AGING_CHECK_INTERVAL 10   // Cada cuántos ticks aplicar aging
 #define AGING_THRESHOLD 50        // Ticks sin correr para ser promovido
-
-// ============================================
-//           FUNCIONES PÚBLICAS
-// ============================================
 
 // Inicialización
 int init_scheduler(void);
