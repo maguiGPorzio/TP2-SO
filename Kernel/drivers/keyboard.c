@@ -101,9 +101,9 @@ void handle_pressed_key() {
         shift = 1;
     } else if (scancode == LEFT_SHIFT + BREAKCODE_OFFSET || scancode == RIGHT_SHIFT + BREAKCODE_OFFSET) { 
         shift = 0;
-    } else if (scancode == LEFT_CONTROL || scancode == RIGHT_CONTROL) {
+    } else if (scancode == LEFT_CONTROL) {
         control = 1;
-    } else if (scancode == LEFT_CONTROL + BREAKCODE_OFFSET || scancode == RIGHT_CONTROL + BREAKCODE_OFFSET) {
+    } else if (scancode == LEFT_CONTROL + BREAKCODE_OFFSET) {
         control = 0;
     } else if (scancode == SNAPSHOT_KEY) {  
         copied_registers = 1;
@@ -119,11 +119,7 @@ void handle_pressed_key() {
             pressed_keys[raw-'a'] = 0; // marcamos la tecla como no presionada
         }
         return;
-    } 
-    else if (scancode == UP_ARROW || scancode == DOWN_ARROW || scancode == LEFT_ARROW || scancode == RIGHT_ARROW || scancode==0){  
-        return;
-    } 
-    else {
+    } else {
         int index;                      
         char raw = lower_keys[scancode]; 
         int is_letter = (raw >= 'a' && raw <= 'z');  

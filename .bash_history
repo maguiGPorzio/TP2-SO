@@ -41,3 +41,9 @@ ls
 exit
 ls
 exit
+pvs-studio-analyzer analyze -o PVS-report.log
+plog-converter -a 'GA:1,2;64' -t fullhtml -o PVS-report2.html PVS-report.log
+exit
+pvs-studio-analyzer analyze -o PVS-report.log
+plog-converter -a 'GA:1,2;64' -t fullhtml -o PVS-report3.html PVS-report.log
+exit
