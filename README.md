@@ -65,22 +65,34 @@ Implementamos un mini kernel de 64 bits con scheduler de prioridades, administra
 - `+` / `-`: aumentan/reducen tamaño de fuente y redibujan prompt+input.
 
 ### Ejemplos, por fuera de los tests
-- Procesos y prioridades:
-  - `printa &` luego `ps`
-  - `nice <pid_a> 2` baja prioridad de 'printa'.
-  - `mvar 2 2`, luego `ps`, para ver el id de los readers y writers, luego cambiarle la prioridad a estos con `nice <pid> <new_priority>` y ver los efectos en qué caracteres y de qué color se imprimen; recordar 0 es la prioridad más alta y 2 la más baja
-- Pipes y filtros:
-  - `ps | rainbow` escribe la salida de ps de muchos colores.
+
+- **Procesos y prioridades:**
+  1. **Usando printa y printb**
+     - Ejecutar `printa &` y `printb &` para correr ambos en background.
+     - Al inicio deberían imprimirse aproximadamente la misma cantidad de letras `a` y `b`, ya que ambos tienen igual prioridad.
+     - Luego usar `ps` para obtener los *pid* de cada uno y cambiar la prioridad de uno de ellos con `nice <pid> <nueva_prioridad>`.
+     - Se podrá observar que el proceso con prioridad más alta (número menor) empieza a imprimir con mayor frecuencia que el otro, reflejando el efecto del scheduler sobre la asignación de CPU.
+
+  2. **Usando MVar**
+     - Ejecutar `mvar 2 2` y luego `ps` para ver los *pid* de los readers y writers.
+     - Cambiar la prioridad de alguno de ellos con `nice <pid> <nueva_prioridad>` y observar cómo afecta la frecuencia y el color de los caracteres impresos.
+     - Recordar que **0 es la prioridad más alta** y **2 la más baja**.
+
+- **Pipes y filtros:**
+  - `ps | rainbow` escribe la salida de `ps` con muchos colores.
   - `echo hola mundo | filter` produce `hl mnd` (sin vocales).
-  - `cat | wc` puedes escribir (no veras en pantalla lo que escribes porque esta siendo redirigido a wc) y luego cuando termines con `ctrl+d` puedes ver la cantidad de lineas, palabras y caracteres que haz escrito.
-  - `printa | red &` imprime 'a' de manera indefinida con un delay en background, luego `pipes` mientras corres pipelines muestra pipes activos, FDs y bytes buffered.
-  - `test_pipes` crea dos procesos que comunican por pipe nombrado "test_pipe".
-- Sincronización:
+  - `cat | wc` permite escribir (no verás en pantalla lo que escribes porque se redirige a `wc`), y al finalizar con `Ctrl+D` se muestran las líneas, palabras y caracteres escritos.
+  - `printa | red &` imprime ‘a’ de manera indefinida con un delay en background; mientras tanto, `pipes` muestra los pipes activos, FDs y bytes en buffer.
+  - `test_pipes` crea dos procesos que se comunican mediante un pipe nombrado `"test_pipe"`.
+
+- **Sincronización:**
   - `test_sync 10000 0` suele terminar con `Final value != 0`.
   - `test_sync 10000 1` termina con `Final value: 0`.
-- Memoria:
-  - `mem` muestra total/used/free/blocks; puedes probarlo creando y matando procesos para ver como varia 
-  - `test_mm 1048576` imprime estado en cada iteración.
+
+- **Memoria:**
+  - `mem` muestra total/used/free/blocks; podés probar creando y matando procesos para ver cómo varían los valores.
+  - `test_mm 1048576` imprime el estado de memoria en cada iteración.
+
 
 ### Requerimientos faltantes o parcialmente implementados
 - Solo un pipe por línea; falta encadenado `cmd1 | cmd2 | cmd3` en la shell.
@@ -112,7 +124,9 @@ Implementamos un mini kernel de 64 bits con scheduler de prioridades, administra
 ## Errores de PVS que dejamos
 - Los referidos a bmfs.c, naiveConsole.c, main.c porque son del repositorio base de la cátedra de Arquitectura de Computadoras
 - En keyboard.c: 
+
 VER CON MAGUI
+
 128: "Array overrun is possible. The value of 'scancode' index could reach 128."
 Se ignora pues sino en la línea 116 entraría en el else if (scancode > BREAKCODE_OFFSET)
 
