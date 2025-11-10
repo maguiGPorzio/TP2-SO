@@ -136,3 +136,33 @@ Esto nunca ocurre porque antes llamamos a pid_is_valid(pid)
 
 - En rainbow.c, red.c, wc.c, cat.c y filter.c: "EOF should not be compared with a value of the 'char' type. The '(c = getchar())' should be of the 'int' type."
 Se ignora porque en el entorno de compilación del TP, el tipo char es signed por defecto, por lo que la comparación con EOF (−1) funciona correctamente. El warning aplica solo a entornos donde char es unsigned, lo cual no ocurre en nuestra plataforma
+
+## Errores de PVS ignorados y justificación
+
+- **bmfs.c, naiveConsole.c y main.c:**  
+  Los warnings se ignoran porque estos archivos pertenecen al repositorio base provisto por la cátedra de *Arquitectura de Computadoras* y no forman parte del código desarrollado en este trabajo práctico.
+
+- **keyboard.c:**  
+  *"Array overrun is possible. The value of 'scancode' index could reach 128."*  
+  Este warning se ignora porque, si `scancode` fuera mayor a `BREAKCODE_OFFSET`, la ejecución ingresaría en el bloque:
+  ```c
+  else if (scancode > BREAKCODE_OFFSET)
+De esta forma se evita el acceso al arreglo señalado por PVS, por lo que no hay overrun en este contexto.
+
+- **scheduler.c:**
+
+*"A part of conditional expression is always true: c >= 'A'."*
+
+  Corresponde a una simplificación del analizador estático y no afecta la lógica.
+
+*"Array underrun is possible. The value of 'pid' index could reach -1."*
+
+No puede ocurrir en la práctica: previamente se valida el PID con pid_is_valid(pid).
+
+- **rainbow.c, red.c, wc.c, cat.c y filter.c**:
+
+"*EOF should not be compared with a value of the 'char' type. The '(c = getchar())' should be of the 'int' type.*"
+
+Se ignora porque en el entorno de compilación del TP, char es signed por defecto.
+La comparación con EOF (−1) funciona correctamente.
+Este warning aplica a entornos donde char es unsigned, lo cual no ocurre en nuestra plataforma.
