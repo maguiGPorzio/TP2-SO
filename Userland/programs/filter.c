@@ -17,7 +17,7 @@ int filter_main(int argc, char *argv[]) {
 
    char c;
 
-    while ((c = getchar()) != '-') {
+    while ((c = getchar()) != EOF) {
         if (!is_vowel(c)) {
             putchar(c);
         }

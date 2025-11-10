@@ -64,8 +64,8 @@ int test_sync(int argc, char *argv[]) {
     return -1;
   }
 
-  char *argvDec[] = {argv[0], "-1", argv[1], NULL};
-  char *argvInc[] = {argv[0], "1", argv[1], NULL};
+  const char *argvDec[] = {argv[0], "-1", argv[1], NULL};
+  const char *argvInc[] = {argv[0], "1", argv[1], NULL};
 
   global = 0;
 

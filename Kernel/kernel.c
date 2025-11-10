@@ -74,7 +74,6 @@ int main() {
 	init_scheduler();
 
 	init_semaphore_manager();
-	// TODO: crear el proceso de la shell
 	
 	//((EntryPoint)sampleCodeModuleAddress)();
 

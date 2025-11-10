@@ -7,7 +7,7 @@
 #include <stdbool.h>
 #include "syscalls.h"
 
-#define NO_PID -1 // TODO: ver esto donde lo ponemos porque lo comparte con Kernel
+#define NO_PID -1 
 #define MAX_ARGS 16
 
 // ============================================
@@ -237,7 +237,7 @@ static int execute_piped_commands(char **left_tokens, int left_count,
     }
     
     // Foreground: establecer el último proceso como foreground para poder matarlo con Ctrl+C
-    sys_set_foreground_process(pid_right);
+    sys_set_foreground_process(pid_left);
     
     // Esperar a que terminen ambos procesos
     sys_wait(pid_left);

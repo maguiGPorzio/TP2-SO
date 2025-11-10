@@ -32,7 +32,7 @@ int create_pipe(int fds[2]);
 int read_pipe(int fd, char * buf, int count);
 
 // devuelve cuantos bytes escribio, -1 si falla
-int write_pipe(int fd, char * buf, int count);
+int write_pipe(int fd, const char * buf, int count);
 
 // libera los recursos del pipe
 void destroy_pipe(int idx); 
@@ -50,10 +50,9 @@ int open_fd(int fd);
 // si ambos counts llegan a 0, destruye el pipe automáticamente
 int close_fd(int fd);
 
+// para matar el foreground gruop
 void pipe_on_process_killed(pid_t victim);
 
-// lista todos los pipes activos con su información
-void list_pipes(void);
 
 // llena el buffer con información de los pipes activos
 // retorna el número de pipes copiados, o -1 si hay error
