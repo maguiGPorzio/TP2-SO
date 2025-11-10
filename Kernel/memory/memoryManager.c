@@ -10,10 +10,6 @@
 #define ALIGN_SIZE 8            // Alineación de memoria (8 bytes)
 #define MAGIC_NUMBER 0xDEADBEEF // Para detectar corrupción
 
-// ============================================
-//           ESTRUCTURAS PRIVADAS
-// ============================================
-
 // Header de cada bloque de memoria. Es una lista doblemente enlazada.
 typedef struct mem_block {
     size_t size;                // Tamaño del bloque (sin incluir header)
@@ -32,15 +28,8 @@ struct memory_manager_CDT {
     size_t total_allocated;      // Total de bytes allocados
 };
 
-// ============================================
-//         VARIABLES GLOBALES DEL KERNEL
-// ============================================
 
 static memory_manager_ADT kernel_mm = NULL;
-
-// ============================================
-//          FUNCIONES AUXILIARES PRIVADAS
-// ============================================
 
 // Alinea un tamaño al múltiplo de ALIGN_SIZE
 static size_t align(size_t size) {
@@ -114,9 +103,6 @@ static mem_block* find_free_block(memory_manager_ADT memory_manager, size_t size
     return NULL; // No hay bloque libre suficiente
 }
 
-// ============================================
-//        IMPLEMENTACIÓN DE LA INTERFAZ
-// ============================================
 
 memory_manager_ADT create_memory_manager(void* start_address, size_t size) {
     // Valida tamaño mínimo para el memory manager y al menos un bloque
