@@ -16,6 +16,7 @@
 #define AMOUNT_REGISTERS 20
 #define BUFFER_LENGTH 256
 #define LETTERS 26
+#define REG_BUFF_LENGTH 800
 
 extern char get_pressed_key();
 extern uint64_t reg_array[]; 

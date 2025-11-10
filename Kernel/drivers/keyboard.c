@@ -10,8 +10,6 @@
 #include "pipes.h"
 
 #define KEYBOARD_SEM_NAME "keyboard"
-
-// Variable global exportada para que ASM pueda accederla
 const uint8_t SNAPSHOT_KEY = LEFT_CONTROL; // TODO: cambiarlo por otra
 
 static int shift = 0 ;
@@ -24,7 +22,7 @@ uint16_t buffer_end = 0; // índice del buffer donde se va a escribir el próxim
 uint16_t buffer_current_size = 0; // cantidad de caracteres en el buffer actual (listos para ser leídos)
 
 static uint8_t buffer[BUFFER_LENGTH];
-static char reg_buff[800]; // ACA FIJARNOS QUÉ TAMAÑO NOS CONVIENE
+static char reg_buff[REG_BUFF_LENGTH];
 
 static void write_buffer(unsigned char c);
 
