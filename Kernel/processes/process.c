@@ -43,7 +43,7 @@ PCB* proc_create(int pid, process_entry_t entry, int argc, const char **argv,
     strncpy(p->name, name, MAX_PROCESS_NAME_LENGTH - 1);
     p->name[MAX_PROCESS_NAME_LENGTH - 1] = '\0';
     p->entry = entry;
-    p->return_value = 0; // TODO: FIJARSE COMO INCIIALIZARLO
+    p->return_value = 0; 
     p->waiting_on = NO_PID;
     p->killable = killable;
 

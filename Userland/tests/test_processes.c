@@ -24,7 +24,7 @@ int test_processes(int argc, char *argv[]) {
     print_err("Error: test_processes requires exactly 1 argument\n");
     print_err("Usage: test processes <max_processes>\n");
     print_err("  max_processes: number of processes to create and manage\n");
-    print_err("Example: test processes 10\n");
+    print_err("Example: test processes 4\n");
     return -1;
   }
 

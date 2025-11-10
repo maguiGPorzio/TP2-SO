@@ -1,34 +1,35 @@
 // This is a personal academic project. Dear PVS-Studio, please check it.
 // PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 
+
 #include "scheduler.h"
 #include "process.h" 
 #include "lib.h"
 #include "queue.h"
 #include "pipes.h"
-#include "interrupts.h" // lo incluí para usar _hlt()
+#include "interrupts.h" 
 #include "videoDriver.h"
 #include "../include/time.h"
 #include <stddef.h>
 
 extern void timer_tick();
 
-#define SHELL_ADDRESS ((void *) 0x400000)      // TODO: Esto ver si lo movemos a otro archivo (tipo memoryMap.h)
+#define SHELL_ADDRESS ((void *) 0x400000)      // direccion donde empieza userland
 
 
 // ============================================
 //         ESTADO DEL SCHEDULER
 // ============================================
 
-static PCB *processes[MAX_PROCESSES];       // Array para acceso por PID
-static queue_t ready_queue[PRIORITY_COUNT] = {0};              // Array de queues
+static PCB *processes[MAX_PROCESSES];
+static queue_t ready_queue[PRIORITY_COUNT] = {0};
 
-static pid_t current_pid = NO_PID;                // PID del proceso actual
-static uint8_t process_count = 0;               // Cantidad total de procesos
-static uint64_t total_cpu_ticks = 0;            // Total de ticks de CPU
-static bool force_reschedule = false;           // Flag para forzar cambio de proceso
+static pid_t current_pid = NO_PID;                
+static uint8_t process_count = 0;               
+static uint64_t total_cpu_ticks = 0;            
+static bool force_reschedule = false;           
 static bool scheduler_initialized = false;
-static pid_t foreground_process_pid = NO_PID;                  // PID  del proceso que está corriendo en foreground
+static pid_t foreground_process_pid = NO_PID;
 
 // ============================================
 //        DECLARACIONES AUXILIARES
@@ -57,6 +58,7 @@ static void close_open_fds(PCB * p) {
 }
 
 // Proceso init: arranca la shell y se queda haciendo halt para no consumir CPU. Se lo elige siempre que no haya otro proceso para correr!!!!
+// funciona tambien como idle
 static int init(int argc, char **argv) {
 
     if (create_shell() != 0) {
@@ -213,15 +215,15 @@ void * schedule(void * prev_rsp) {
             // Si el status es RUNNING, cambiar a READY
             // Si fue bloqueado, terminado o matado, el status ya se cambió en otras funciones
             current->status = PS_READY;
-
-            if (current->pid != INIT_PID) {
-                // Agregar a la cola correspondiente a su prioridad efectiva
-                queue_t target_queue = ready_queue[current->effective_priority];
-                if (!q_add(target_queue, current->pid)) {
-                    current->status = PS_RUNNING;
-                    force_reschedule = false;
-                    return prev_rsp;
-                }
+        }
+        
+        if (current->status == PS_READY && current->pid != INIT_PID) {
+            // Agregar a la cola correspondiente a su prioridad efectiva (que ya fue reseteada a priority)
+            queue_t target_queue = ready_queue[current->effective_priority];
+            if (!q_add(target_queue, current->pid)) {
+                current->status = PS_RUNNING;
+                force_reschedule = false;
+                return prev_rsp;
             }
         }
     }

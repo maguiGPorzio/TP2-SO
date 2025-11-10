@@ -7,7 +7,6 @@
 #include "process.h"
 #include "pipes.h"
 
-// TODO: reordenar las syscalls para que tengan un orden mas logico
 
 // syscalls de arqui
 static int sys_write(uint64_t fd, const char * buf, uint64_t count);
@@ -34,12 +33,13 @@ static void sys_sleep(uint64_t miliseconds);
 static void sys_clear_input_buffer();
 static uint64_t sys_ticks();
 
-// Memory management syscalls
+
+// syscalls de memory management
 static void * sys_malloc(size_t size);
 static void sys_free(void * ptr);
 static mem_info_t sys_mem_info(void);
 
-// processes syscalls
+// syscalls de procesos
 static int64_t sys_create_process(void * entry, int argc, const char **argv, const char *name, int fds[2]);
 static void    sys_exit(int status);
 static int64_t sys_getpid(void);
@@ -47,29 +47,31 @@ static int64_t sys_kill(int pid);
 static int64_t sys_block(int pid);
 static int64_t sys_unblock(int pid);
 static int64_t sys_wait(int pid);
-static int64_t sys_nice(int64_t pid, int new_prio);
+static int64_t sys_nice(int pid, int new_prio);
 static void sys_yield();
 static int sys_processes_info(process_info_t * buf, int max_count);
-
-// semaphores syscalls (name-based)
-static int64_t sys_sem_open(const char *name, int value);
-static void sys_sem_close(const char *name);
-static void sys_sem_wait(const char *name);
-static void sys_sem_post(const char *name);
-
-// pipes syscalls
-static int sys_create_pipe(int fds[2]);
-static void sys_destroy_pipe(int id);
 
 // syscalls para foreground processes
 static int sys_set_foreground_process(int pid);
 static int sys_adopt_init_as_parent(int pid);
 static int sys_get_foreground_process(void);
 
-// mas syscalls de pipes
+// syscalls de semaforos
+static int64_t sys_sem_open(const char *name, int value);
+static void sys_sem_close(const char *name);
+static void sys_sem_wait(const char *name);
+static void sys_sem_post(const char *name);
+
+// syscalls de pipes
+static int sys_create_pipe(int fds[2]);
+static void sys_destroy_pipe(int id);
 static int sys_open_named_pipe(char * name, int fds[2]);
 static int sys_close_fd(int fd);
 static int sys_pipes_info(pipe_info_t * buf, int max_count);
+
+
+
+
 
 
 

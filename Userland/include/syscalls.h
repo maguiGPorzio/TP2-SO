@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
+
 #define OK 0
 #define ERROR -1
 #define EOF -1
@@ -68,7 +69,7 @@ typedef struct pipe_info {
 } pipe_info_t;
 
 
-/*-- SYSTEMCALLS DE ARQUI --*/
+// syscalls de arqui
 extern uint64_t sys_regs(char *buf);
 extern void     sys_time(uint8_t *buf);     
 extern void     sys_date(uint8_t *buf);
@@ -93,40 +94,38 @@ extern void     sys_sleep(uint64_t miliseconds);
 extern void     sys_clear_input_buffer();
 extern uint64_t sys_ticks();
 
-
-/*-- SYSTEMCALLS DE MEMORIA --*/
+// syscalls de memory management
 extern void * sys_malloc(uint64_t size);
 extern void sys_free(void * ptr);
 extern mem_info_t sys_mem_info(void);
 
-/*-- SYSTEMCALLS DE PROCESOS --*/
+// syscalls de procesos
 extern int64_t sys_create_process(void * entry, int argc, const char **argv, const char *name, int fds[2]);
 extern void sys_exit(int status);
 extern int64_t sys_getpid(void);
-extern int64_t sys_kill(int64_t pid);
-extern int64_t sys_block(int64_t pid);
-extern int64_t sys_unblock(int64_t pid);
-extern int64_t sys_wait(int64_t pid);
-extern int64_t sys_nice(int64_t pid, int new_prio);
+extern int64_t sys_kill(int pid);
+extern int64_t sys_block(int pid);
+extern int64_t sys_unblock(int pid);
+extern int64_t sys_wait(int pid);
+extern int64_t sys_nice(int pid, int new_prio);
 extern void sys_yield();
 extern int sys_processes_info(process_info_t * buf, int max_count);
 
+// syscalls para foreground process
+extern int sys_set_foreground_process(int pid);
+extern int sys_adopt_init_as_parent(int pid);
+extern int sys_get_foreground_process(void);
 
-/*-- SYSTEMCALLS DE SEMAFOROS --*/
+
+// syscalls de semaforos
 extern int64_t sys_sem_open(const char *name, int value);
 extern void sys_sem_close(const char *name);
 extern void sys_sem_wait(const char *name);
 extern void sys_sem_post(const char *name);
 
-/*-- SYSTEMCALLS DE PIPES --*/
+// syscalls de pipes
 extern int sys_create_pipe(int fds[2]);
 extern void sys_destroy_pipe(int fd);
-
-extern int sys_set_foreground_process(int pid);
-extern int sys_adopt_init_as_parent(int pid);
-extern int sys_get_foreground_process(void);
-
-// mas syscalls de pipes
 extern int sys_open_named_pipe(char * name, int fds[2]);
 extern int sys_close_fd(int fd);
 extern int sys_pipes_info(pipe_info_t * buf, int max_count);

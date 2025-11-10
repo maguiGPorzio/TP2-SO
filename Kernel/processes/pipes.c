@@ -30,6 +30,7 @@ static int get_free_idx() {
     return q_poll(free_indexes);
 }
 
+// devuelve el que seria el fd de read
 static int get_fd_from_idx(int idx) {
     if (idx < 0 || idx >= MAX_PIPES) {
         return -1;
@@ -37,12 +38,8 @@ static int get_fd_from_idx(int idx) {
     return (FIRST_FREE_FD + FIRST_FREE_FD % 2) + 2 * idx;
 }
 
+
 static int get_idx_from_fd(int fd) {
-    // la operacion inversa de get_fd_from_idx
-    // Acepta tanto el fd par (lectura) como el impar (escritura)
-    // Ejemplos con FIRST_FREE_FD = 3:
-    //   fd 4 o 5 -> idx 0
-    //   fd 6 o 7 -> idx 1
     
     int base = FIRST_FREE_FD + FIRST_FREE_FD % 2;  // primer fd par disponible
     int fd_par = fd - fd % 2;
@@ -108,9 +105,9 @@ int create_pipe(int fds[2]) {
     pipe->writer_count = 1;
     pipe->name[0] = '\0';  // Pipe anónimo (sin nombre)
     
-    // Asignar los FDs usando la nueva función
-    pipe->read_fd = get_fd_from_idx(idx);      // FD par (lectura)
-    pipe->write_fd = pipe->read_fd + 1;         // FD impar (escritura)
+    
+    pipe->read_fd = get_fd_from_idx(idx);      // fd par (lectura)
+    pipe->write_fd = pipe->read_fd + 1;         // fd impar (escritura)
     fds[0] = pipe->read_fd;
     fds[1] = pipe->write_fd;
 
@@ -155,15 +152,15 @@ int open_pipe(char *name, int fds[2]) {
         return -1;  // Nombre inválido
     }
     
-    // Buscar si ya existe un pipe con ese nombre
+    
     int idx = find_pipe_by_name(name);
     
     if (idx >= 0) {
-        // Pipe ya existe, devolver sus FDs
+        // ya existe
         pipe_t *pipe = pipes[idx];
         
-        // Si el pipe ya cerró todos sus writers, no permitir reabrirlo
-        // (los readers pueden haber visto EOF)
+        // si ya cerraron los writers no permitir reabrir
+        // puede haber readers que hayan visto eof
         if (pipe->writer_count == 0) {
             return -1;
         }
@@ -175,13 +172,12 @@ int open_pipe(char *name, int fds[2]) {
         return idx;
     }
     
-    // No existe, crear uno nuevo
+    // no existe -> crearlo
     idx = create_pipe(fds);
     if (idx < 0) {
         return -1;
     }
     
-    // Asignarle el nombre
     pipe_t *pipe = pipes[idx];
     strncpy(pipe->name, name, MAX_PIPE_NAME_LENGTH - 1);
     pipe->name[MAX_PIPE_NAME_LENGTH - 1] = '\0';
@@ -189,6 +185,7 @@ int open_pipe(char *name, int fds[2]) {
     return idx;
 }
 
+// este solo va a ser llamado desde kernel cuando se pipean procesos
 int open_fd(int fd) {
     int idx = get_idx_from_fd(fd);
     if (idx < 0) {
@@ -207,8 +204,6 @@ int open_fd(int fd) {
 
     if (fd == pipe->write_fd) {
         // Si ya no hay writers (llegó a 0), no permitir nuevos writers
-        // Esto evita problemas con EOF: ya se hicieron posts para despertar readers
-        // y permitir un nuevo writer podría causar inconsistencias
         if (pipe->writer_count == 0) {
             return -1;  // No se pueden agregar writers después de que todos cerraron
         }
@@ -246,13 +241,9 @@ int close_fd(int fd) {
         if (pipe->writer_count > 0) {
             pipe->writer_count--;
             
-            // Si era el último writer, despertar a los readers bloqueados
-            // Les damos un "token" para que puedan despertar y verificar EOF
-            // Si hay datos en el buffer, estos posts se usarán para leer esos datos
-            // Si no hay datos, el reader verá EOF inmediatamente
+            // si era el ultimo writer, despertar readers potencialmente bloqueados para que vean eof
             if (pipe->writer_count == 0) {
-                // Despertar a todos los readers que puedan estar bloqueados
-                // Usamos reader_count como estimación de cuántos pueden estar esperando
+                
                 for (int i = 0; i < pipe->reader_count; i++) {
                     sem_post(pipe->read_sem);
                 }
@@ -284,23 +275,19 @@ int read_pipe(int fd, char * buf, int count) {
         return -1;
     }
     
-    // TODO: Validar que el proceso actual tenga este FD abierto
-    // Requiere implementar open_fds[] en el PCB
 
     for (int i = 0; i < count; i++) {
-        // Primero verificar EOF sin bloquear: si no hay writers y buffer vacío
+        // verificar eof sin bloquear
         if (pipe->writer_count == 0 && pipe->read_idx == pipe->write_idx) {
-            return i;  // EOF: retornar cuántos bytes se leyeron hasta ahora
+            return i;
         }
         
-        // Si hay writers o hay datos, intentar leer (puede bloquear)
         sem_wait(pipe->read_sem);
         
-        // Re-verificar EOF después de despertar (por si el último writer cerró mientras esperábamos)
+        // volvemos a chequear por las dudas de que haya cerrado mientras estabamos bloqueados
         if (pipe->writer_count == 0 && pipe->read_idx == pipe->write_idx) {
-            // Re-post para que otros readers también puedan ver el EOF
             sem_post(pipe->read_sem);
-            return i;  // EOF: retornar cuántos bytes se leyeron antes del EOF
+            return i;
         }
         
         buf[i] = pipe->buffer[pipe->read_idx];
@@ -326,12 +313,6 @@ int write_pipe(int fd, char * buf, int count) {
         return -1;
     }
     
-    // Permitir escritura aunque no haya readers todavía
-    // Los datos quedarán en el buffer esperando a que lleguen
-    
-    // TODO: Validar que el proceso actual tenga este FD abierto
-    // Requiere implementar open_fds[] en el PCB
-    // Por ahora confiamos en que el proceso no intente escribir después de close_fd
 
     for (int i = 0; i < count; i++) {
         sem_wait(pipe->write_sem);
