@@ -7,8 +7,8 @@
 #include "naiveConsole.h"
 
 #define MIN_ORDER 5        // 2^5 = 32 bytes (tamaño mínimo)
-#define MAX_ORDER 25       // 2^20 = 1 MB (tamaño máximo de bloque)
-#define NUM_ORDERS (MAX_ORDER - MIN_ORDER + 1)  // 16 niveles
+#define MAX_ORDER 25       // 2^25 = 32 MB (tamaño máximo de bloque)
+#define NUM_ORDERS (MAX_ORDER - MIN_ORDER + 1)  // 21 niveles
 
 // Nodo de la lista libre para cada orden
 typedef struct buddy_node_t {
@@ -119,10 +119,14 @@ static buddy_node_t* split_block(memory_manager_ADT memory_manager, uint8_t orde
     uint8_t index = order - MIN_ORDER;
     
     // Si no hay bloques de este orden, dividir uno más grande
-    if (memory_manager->free_lists[index] == NULL) {
+    if (memory_manager->free_lists[index] == NULL && order < MAX_ORDER) {
         if (split_block(memory_manager, order + 1) == NULL) {
             return NULL;  // No hay bloques más grandes
         }
+    }
+
+    if (memory_manager->free_lists[index] == NULL) {
+        return NULL;  // No hay bloques de este orden
     }
     
     // Tomar el primer bloque de este orden
@@ -201,11 +205,11 @@ memory_manager_ADT create_memory_manager(void* start_address, size_t size) {
     // Crear bloques iniciales con la memoria disponible
     size_t remaining_size = memory_manager->total_size;
     void* current_address = memory_manager->base_address;
+    uint8_t order = MAX_ORDER;
+    size_t block_size = order_to_size(order);
     
     // Dividir la memoria en bloques del máximo orden posible
     while (remaining_size >= (1ULL << MIN_ORDER)) {
-        uint8_t order = MAX_ORDER;
-        size_t block_size = order_to_size(order);
         
         // Encontrar el bloque más grande que cabe
         while (block_size > remaining_size && order > MIN_ORDER) {
@@ -239,10 +243,14 @@ void* alloc_memory(memory_manager_ADT memory_manager, size_t size) {
     uint8_t index = order - MIN_ORDER;
     
     // Si no hay bloques del orden exacto, dividir uno más grande
-    if (memory_manager->free_lists[index] == NULL) {
+    if (memory_manager->free_lists[index] == NULL && order < MAX_ORDER) {
         if (split_block(memory_manager, order + 1) == NULL) {
             return NULL;  // Sin memoria
         }
+    }
+
+    if (memory_manager->free_lists[index] == NULL) {
+        return NULL;  // Sin memoria
     }
     
     // Tomar el primer bloque del orden
