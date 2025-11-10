@@ -9,9 +9,6 @@
 #include "videoDriver.h"
 #include "ready_queue.h"
 
-// ============================================
-//           ESTRUCTURAS INTERNAS
-// ============================================
 
 typedef struct {
     uint32_t pids[MAX_PROCESSES]; // Array de PIDs circular
@@ -22,31 +19,19 @@ typedef struct {
 
 typedef struct {
     int value; // Contador del semáforo
-    //1 libre
-    //0 ocupado
-    uint32_t owner_pids[MAX_PROCESSES]; // PIDs de procesos que poseen el semáforo
+    uint32_t owner_pids[MAX_PROCESSES]; 
     int ref_count;  // Cantidad de procesos usando este semáforo
-    char name[MAX_SEM_NAME_LENGTH]; // Nombre del semáforo
+    char name[MAX_SEM_NAME_LENGTH]; 
     circular_buffer_t queue;
-    //1 libre
-    //0 ocupado
     int lock;  // Spinlock simple para proteger acceso concurrente
 } semaphore_t;
 
 typedef struct {
-    semaphore_t *semaphores[MAX_SEMAPHORES]; // Array de punteros a semáforos
+    semaphore_t *semaphores[MAX_SEMAPHORES]; 
     int semaphore_count; // Cantidad de semáforos activos
 } semaphore_manager_t;
 
-// ============================================
-//         VARIABLES GLOBALES
-// ============================================
-
 static semaphore_manager_t *sem_manager = NULL;
-
-// ============================================
-//        DECLARACIONES AUXILIARES
-// ============================================
 
 static int64_t get_free_id(void);
 static uint64_t pop_from_queue(semaphore_t *sem);
@@ -55,18 +40,15 @@ static semaphore_t *get_sem_by_name(const char *name);
 static int get_idx_by_name(const char *name);
 static int remove_process_from_queue(semaphore_t *sem, uint32_t pid);
 static int64_t sem_close_by_pid(char *name, uint32_t pid);
+static void init_semaphore_struct(semaphore_t *sem, const char *name, int initial_value, uint32_t owner_pid);
 
 static int pid_present_in_semaphore(semaphore_t *sem, uint32_t pid) {
     return sem->owner_pids[pid];
 }
 
-// ============================================
-//           INICIALIZACIÓN
-// ============================================
-
 void init_semaphore_manager(void) {
     if (sem_manager != NULL) {
-        return;  // Ya inicializado
+        return;  
     }
     
     memory_manager_ADT mm = get_kernel_memory_manager();
@@ -83,16 +65,13 @@ void init_semaphore_manager(void) {
     sem_manager->semaphore_count = 0;
 }
 
-// ============================================
-//        FUNCIONES PÚBLICAS
-// ============================================
 
 int64_t sem_open(char *name, int initial_value) {
     if (sem_manager == NULL || name == NULL) {
         return -1;
     }
     
-     // 1. Primero verificar si ya existe
+     // primero verificar si ya existe
     semaphore_t *sem = get_sem_by_name(name);
     if (sem != NULL) {
         // Ya existe, solo incrementar contador si no es un proceso que ya lo creo
@@ -119,20 +98,8 @@ int64_t sem_open(char *name, int initial_value) {
         return ERROR;
     }
     
-    // Inicializar
-    sem->value = initial_value;
-    strncpy(sem->name, name, MAX_SEM_NAME_LENGTH - 1);
-    sem->name[MAX_SEM_NAME_LENGTH - 1] = '\0';
-    sem->queue.read_index = 0;
-    sem->queue.write_index = 0;
-    sem->queue.size = 0;
-    sem->lock = 1;  // Spinlock desbloqueado
-    sem->ref_count = 1;
-    for (int i=0 ; i<MAX_PROCESSES ; i++) {
-        sem->owner_pids[i] = FREE;
-    }
-    sem->owner_pids[scheduler_get_current_pid()] = OCCUPIED;
-    
+    init_semaphore_struct(sem, name, initial_value, scheduler_get_current_pid());
+
     sem_manager->semaphores[id] = sem;
     sem_manager->semaphore_count++;
     
@@ -197,13 +164,13 @@ int64_t sem_wait(char *name) {
         return ERROR;
     }
 
-    _cli(); //deshabilitar interrupciones
+    _cli(); 
 
     release_lock(&sem->lock);
 
     scheduler_block_process(pid);
     
-    _sti(); //habilitar interrupciones
+    _sti();
     
     return 0;
 }
@@ -261,9 +228,20 @@ int remove_process_from_all_semaphore_queues(uint32_t pid) {
     return OK;
 }
 
-// ============================================
-//        FUNCIONES AUXILIARES PRIVADAS
-// ============================================
+static void init_semaphore_struct(semaphore_t *sem, const char *name, int initial_value, uint32_t owner_pid) {
+    sem->value = initial_value;
+    strncpy(sem->name, name, MAX_SEM_NAME_LENGTH - 1);
+    sem->name[MAX_SEM_NAME_LENGTH - 1] = '\0';
+    sem->queue.read_index = 0;
+    sem->queue.write_index = 0;
+    sem->queue.size = 0;
+    sem->lock = 1;  // Spinlock desbloqueado
+    sem->ref_count = 1;
+    for (int i = 0; i < MAX_PROCESSES; i++) {
+        sem->owner_pids[i] = FREE;
+    }
+    sem->owner_pids[owner_pid] = OCCUPIED;
+}
 
 static int64_t get_free_id(void) {
     for (int i = 0; i < MAX_SEMAPHORES; i++) {

@@ -20,8 +20,7 @@ struct vbe_mode_info_structure {
 	uint16_t segment_a;
 	uint16_t segment_b;
 	uint32_t win_func_ptr;		// deprecated; used to switch banks from protected mode without returning to real mode
-	
-	// IMPORTA
+
 	uint16_t pitch;			// number of bytes per horizontal line
 	uint16_t width;			// width in pixels
 	uint16_t height;			// height in pixels
@@ -30,7 +29,6 @@ struct vbe_mode_info_structure {
 	uint8_t y_char;			// ...
 	uint8_t planes;
 
-	// IMPORTA
 	uint8_t bpp;			// bits per pixel in this mode
 
 	uint8_t banks;			// deprecated; total number of banks in this mode
@@ -48,8 +46,7 @@ struct vbe_mode_info_structure {
 	uint8_t reserved_mask;
 	uint8_t reserved_position;
 	uint8_t direct_color_attributes;
- 
-	// IMPORTA
+
 	uint32_t framebuffer;		// physical address of the linear frame buffer; write here to draw to the screen
 
 	uint32_t off_screen_mem_off;
@@ -61,13 +58,12 @@ typedef struct vbe_mode_info_structure * VBEInfoPtr;
 
 VBEInfoPtr VBE_mode_info = (VBEInfoPtr) 0x0000000000005C00;
 
-static int is_valid(uint64_t x, uint64_t y) {
+static int is_within_screen_bounds(uint64_t x, uint64_t y) {
     return x < VBE_mode_info->width && y < VBE_mode_info->height;
 }
 
 void put_pixel(uint32_t hex_color, uint64_t x, uint64_t y) {
-	// agregamos chequeo de que el pixel este dentro de los limites de la pantalla
-	if (!is_valid(x, y)) {
+	if (!is_within_screen_bounds(x, y)) {
 		return;
 	}
     uint8_t * framebuffer = (uint8_t *) (uintptr_t) VBE_mode_info->framebuffer;
@@ -156,7 +152,7 @@ void newline() {
 }
 
 static void update_cursor() {
-    if(!is_valid(cursor_x + FONT_WIDTH*text_size, cursor_y + FONT_HEIGHT*text_size)) {
+    if(!is_within_screen_bounds(cursor_x + FONT_WIDTH*text_size, cursor_y + FONT_HEIGHT*text_size)) {
         newline();
     }
 }
@@ -240,7 +236,6 @@ void vd_clear() {
     if (!text_mode) {
         return;
     }
-    // fill_rectangle(0, 0, VBE_mode_info->width, VBE_mode_info->width, BKG_COLOR);
     uint64_t length = get_screen_height() * get_screen_width() * VBE_mode_info->bpp / 8;
     memset64((void *) (uintptr_t) VBE_mode_info->framebuffer, 0, length); // hardcodeado que el background color es negro
     cursor_x = 0;
@@ -306,7 +301,7 @@ void vd_draw_line(uint64_t x0, uint64_t y0, uint64_t x1, uint64_t y1, uint32_t c
     while (!done) {
         put_pixel(color, x0, y0);  
 
-		if ((x0 == x1 && y0 == y1) || !is_valid(x0, y0)) { 
+		if ((x0 == x1 && y0 == y1) || !is_within_screen_bounds(x0, y0)) { 
 			done = 1;
 		} else {
 			int64_t error2 = 2 * error;

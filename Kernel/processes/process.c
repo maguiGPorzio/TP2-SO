@@ -8,18 +8,12 @@
 #include "interrupts.h"
 #include "pipes.h"
 
-// Funciones ASM para context switching
-extern void *setup_initial_stack(void *caller, int pid, void *stack_pointer, void *rcx);
 
-// ============================================
-//        DECLARACIONES AUXILIARES
-// ============================================
+extern void *setup_initial_stack(void *caller, int pid, void *stack_pointer, void *rcx);
 static char **duplicateArgv(const char **argv, int argc, memory_manager_ADT mm);
 static void process_caller(int pid);
 
-// ============================================
-//         LIFECYCLE DE PROCESOS
-// ============================================
+
 PCB* proc_create(int pid, process_entry_t entry, int argc, const char **argv,
                 const char *name, bool killable, int fds[2]) {
 
