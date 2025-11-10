@@ -241,15 +241,6 @@ void * schedule(void * prev_rsp) {
     next->last_tick = total_cpu_ticks;
     next->effective_priority = next->priority;
 
-    // TODO: borrar
-    // Debug: solo mostrar PID del proceso que corre
-    // if (next->pid >= 3 && next->pid <= 5) {
-    //     char debug_msg[10];
-    //     decimal_to_str(next->pid, debug_msg);
-    //     vd_print(debug_msg, 0x00ff00);
-    //     vd_print(" ", 0x00ff00);
-    // }
-
     current_pid = next->pid;
     next->status = PS_RUNNING;
     force_reschedule = false;

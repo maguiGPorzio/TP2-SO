@@ -1,15 +1,15 @@
 -- RODRI
 
 
-
+revisar lo del aging (sospecho de que no se esta guardando bien el ultimo tick en el que corrio)
 
 ordenar las syscalls
 
 ver todos y comentarios 
 
-README -> agregar futura mejora de como se liberan los recursos
+README -> agregar futura mejora de como se liberan los recursos, de como declaramos la memoria libre
 
-
+ 
 
 
 
