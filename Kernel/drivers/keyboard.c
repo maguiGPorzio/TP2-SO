@@ -50,14 +50,14 @@ static const char * scancode_to_ascii[] = {lower_keys, upper_keys};
 
 static uint8_t pressed_keys[LETTERS] = {0};
 
-// Inicializa el semáforo del teclado
+
 void init_keyboard_sem() {
     sem_open(KEYBOARD_SEM_NAME, 0);  // Empieza en 0 (sin caracteres disponibles)
 }
-// Static porque no queremos que se pueda acceder desde otro archivo
+
 static void write_buffer(unsigned char c) {
     buffer[buffer_end] = c;
-    buffer_end = (buffer_end + 1) % BUFFER_LENGTH; // si hay buffer overflow, se pisa lo del principio (jodete usuario)
+    buffer_end = (buffer_end + 1) % BUFFER_LENGTH; // si hay buffer overflow, se pisa lo del principio 
     buffer_current_size = (buffer_current_size + 1) % BUFFER_LENGTH;
     
     // Post al semáforo para indicar que hay un carácter disponible
@@ -95,7 +95,7 @@ uint64_t read_keyboard_buffer (char * buff_copy, uint64_t count) {
 
 
 void handle_pressed_key() {
-    unsigned char scancode = get_pressed_key(); // this function retrieves the pressed key's scancode
+    unsigned char scancode = get_pressed_key(); 
 
     if (scancode == LEFT_SHIFT || scancode == RIGHT_SHIFT){ 
         shift = 1;
@@ -105,7 +105,7 @@ void handle_pressed_key() {
         control = 1;
     } else if (scancode == LEFT_CONTROL + BREAKCODE_OFFSET || scancode == RIGHT_CONTROL + BREAKCODE_OFFSET) {
         control = 0;
-    } else if (scancode == SNAPSHOT_KEY) {  // Usa la variable global
+    } else if (scancode == SNAPSHOT_KEY) {  
         copied_registers = 1;
         store_snapshot();
         return; 
@@ -162,7 +162,6 @@ void handle_pressed_key() {
         }
 
         write_buffer(scancode_to_ascii[index][scancode]);
-		// vd_put_char(scancode_to_ascii[index][scancode], 0xffffff);
     }
 
     return;
@@ -199,7 +198,6 @@ void store_snapshot(){
     reg_buff[j++] = '\n';
   }
   reg_buff[j] = 0;
-  // print_registers();
 }
 
 // devuelve la cantidad de caracteres escritos
@@ -229,7 +227,7 @@ uint32_t uint64_to_register_format(uint64_t value, char *dest) {
 }
 
 
-//devuelve 1 si ya se llamo a ctrl s y 0 si todavia no se llamo
+//devuelve 1 si ya se presionó la SNAPSHOT_KEY y 0 si todavia no se llamo
 //dejamos en copy un string con el nombre del registro y su valor (cada registro separado por un n)
 uint64_t copy_registers(char * copy){
     if (!copied_registers){
@@ -242,10 +240,3 @@ uint64_t copy_registers(char * copy){
     copy[i] = 0;
     return 1;
 }
-
-// void print_registers() {
-//     ncClear();
-//     for (int i = 0; reg_buff[i] != 0; i++) {
-//         ncPrintChar(reg_buff[i]);
-//     }
-// }
