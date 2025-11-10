@@ -1,5 +1,8 @@
 include Makefile.inc
 
+# Activar advertencias de compilación
+GCCFLAGS += -Wall
+
 MODULE=0000-sampleCodeModule.bin
 SAMPLE_DATA=0001-sampleDataModule.bin
 

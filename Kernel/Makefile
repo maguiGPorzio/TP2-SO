@@ -1,5 +1,8 @@
 include Makefile.inc
 
+# Activar advertencias de compilación
+GCCFLAGS += -Wall
+
 KERNEL=kernel.bin
 SOURCES=$(wildcard *.c)
 SOURCES_IDT=$(wildcard idt/*.c)
