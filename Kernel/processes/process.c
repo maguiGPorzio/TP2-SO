@@ -124,6 +124,9 @@ void free_process_resources(PCB * p) {
         p->stack_pointer = NULL;
     }
 
+    q_destroy(p->open_fds);
+    p->open_fds = NULL;
+
     // Liberar PCB
     free_memory(mm, p);
 }

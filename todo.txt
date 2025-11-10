@@ -1,20 +1,15 @@
--- AZU
+-- RODRI
 
-que la shell no tenga builtins, que sean todos procesos y ordenarlos facha con help facha
 
-que memoria, procesos y pipes tengan una syscall de info (falta la de los pipes)
-y un proceso que imprima esta info
+revisar lo del aging (sospecho de que no se esta guardando bien el ultimo tick en el que corrio)
 
 ordenar las syscalls
 
 ver todos y comentarios 
 
-PVS
+README -> agregar futura mejora de como se liberan los recursos, de como declaramos la memoria libre
 
-README
-
-
-
+ 
 
 
 
