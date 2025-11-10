@@ -105,5 +105,16 @@ Implementamos un mini kernel de 64 bits con scheduler de prioridades, administra
 - Memoria dinámica: allocator por lista libre (first‑fit con coalescing y guard `MAGIC_NUMBER`); alternativa Buddy (bloques 2^k) activable con `./compile.sh buddy`.
 - Servicios del kernel: RTC (`sys_time/date`), timer/sleep, video texto (tamaño de fuente), speaker/beep y primitivas gráficas.
 
-## Citas de código y uso de IA
+## Citas de código 
 - `Userland/tests/test_mm.c`, `test_prio.c`, `test_processes.c` y `test_sync.c` se basan en los tests de la cátedra y se adaptaron mínimamente.
+
+
+## Errores de PVS que dejamos
+- Los referidos a bmfs.c, naiveConsole.c, main.c porque son del repositorio base de la cátedra de Arquitectura de Computadoras
+- En keyboard.c: 
+VER CON MAGUI
+128: "Array overrun is possible. The value of 'scancode' index could reach 128."
+Se ignora pues sino en la línea 116 entraría en el else if (scancode > BREAKCODE_OFFSET)
+
+- En rainbow.c, red.c, wc.c, cat.c y filter.c: "EOF should not be compared with a value of the 'char' type. The '(c = getchar())' should be of the 'int' type.""
+Se ignora porque en el entorno de compilación del TP (gcc en Linux 64 bits), el tipo char es signed por defecto, por lo que la comparación con EOF (−1) funciona correctamente. El warning aplica solo a entornos donde char es unsigned, lo cual no ocurre en nuestra plataforma

@@ -32,6 +32,7 @@ static ExternalProgram programs[] = {
     { "date", "prints system date to STDOUT", &date_main },
     { "echo", "prints to STDOUT its params", &echo_main },
     { "printa", "prints the letter 'a' indefinitely to STDOUT with a delay", &print_a_main },
+    { "printb", "prints the letter 'b' indefinitely to STDOUT with a delay", &print_b_main },
     { "cat", "reads from STDIN and prints it to STDOUT", &cat_main },
     { "red", "reads from STDIN and prints it to STDERR", &red_main },
     { "rainbow", "reads from STDIN and prints one char to each color fd", &rainbow_main},
@@ -150,8 +151,7 @@ static int try_external_program(char *name, int argc, char **argv, bool backgrou
 }
 
 // Ejecuta dos comandos conectados por pipe: left_cmd | right_cmd
-static int execute_piped_commands(char **left_tokens, int left_count, 
-                                    char **right_tokens, int right_count, bool background) {
+static int execute_piped_commands(char **left_tokens, int left_count, char **right_tokens, int right_count, bool background) {
     // Validar que ambos comandos existen
     char *left_cmd = left_tokens[0];
     char *right_cmd = right_tokens[0];
