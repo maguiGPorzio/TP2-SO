@@ -1,5 +1,10 @@
 # TP2 - Sistemas Operativos (ramOS)
 
+![logo](./ramos_logo.png)
+
+An Operating Sistem by Rodri, Azu and Magui
+
+
 Implementamos un mini kernel de 64 bits con scheduler de prioridades, administración de memoria dinámica (dos variantes), semáforos con nombre, pipes (anónimos y nombrados) y una shell con soporte de procesos en foreground/background, pipes y atajos de teclado. Incluimos los tests de la cátedra y programas de usuario propios para demostrar cada requerimiento.
 
 ## Instrucciones de compilación y ejecución
