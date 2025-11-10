@@ -428,6 +428,9 @@ int scheduler_set_priority(pid_t pid, uint8_t new_priority) {
         process->priority = new_priority;
         process->effective_priority = new_priority;
         
+        // Actualizar last_tick: el cambio manual de prioridad cuenta como "atención" del scheduler
+        process->last_tick = total_cpu_ticks;
+        
         // Agregar a la nueva cola
         if (!q_add(ready_queue[new_priority], pid)) {
             // Si falla, volver a poner en la cola antigua
@@ -576,6 +579,10 @@ int scheduler_unblock_process(pid_t pid) {
     // Al desbloquearse, el proceso vuelve a su prioridad base
     // (por si fue promovido por aging mientras esperaba ser seleccionado, antes de bloquearse)
     process->effective_priority = process->priority;
+    
+    // Actualizar last_tick: el tiempo bloqueado no cuenta para aging
+    // El proceso debe esperar en READY para acumular tiempo y ser promovido
+    process->last_tick = total_cpu_ticks;
     
     // Agregar a la cola correspondiente a su prioridad efectiva
     if (!q_add(ready_queue[process->effective_priority], pid)) {
