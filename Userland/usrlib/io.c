@@ -132,7 +132,6 @@ uint64_t printf_aux(const char *fmt, const uint64_t *intArgs, const uint64_t *st
                     case 'a':                      
                         break;
                     default:   
-                        // TODO: EXCEPCIÓN???
                         break;
  
                 }

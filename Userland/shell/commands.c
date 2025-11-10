@@ -7,7 +7,7 @@
 #include <stdbool.h>
 #include "syscalls.h"
 
-#define NO_PID -1 // TODO: ver esto donde lo ponemos porque lo comparte con Kernel
+#define NO_PID -1 
 #define MAX_ARGS 16
 
 // ============================================

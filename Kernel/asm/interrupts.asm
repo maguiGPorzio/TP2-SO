@@ -208,10 +208,7 @@ _irq04Handler:
 _irq05Handler:
 	irqHandlerMaster 5
 
-; antes validabamos que el rax sea de una syscall por si habia un 
-; index out of bounds
-; lo saque por ahora 
-; TODO: evaluar si lo queremos volver a poner
+
 _irq128Handler:
 	pushState
     call [syscalls + rax * 8] ; llamamos a la syscall
