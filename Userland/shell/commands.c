@@ -10,11 +10,6 @@
 #define NO_PID -1 
 #define MAX_ARGS 16
 
-// ============================================
-//           COMANDOS BUILTIN
-// ============================================
-
-
 static void cls(int argc, char * argv[]);
 static void help(int argc, char * argv[]);
 static void username_cmd(int argc, char * argv[]);
@@ -28,12 +23,6 @@ static BuiltinCommand builtins[] = {
 
     { NULL, NULL, NULL }
 };
-
-// ============================================
-//           PROGRAMAS EXTERNOS
-// ============================================
-
-
 
 static ExternalProgram programs[] = {
     { "ps", "prints to STDOUT information about current processes", &ps_main },
@@ -60,12 +49,6 @@ static ExternalProgram programs[] = {
     { "test_pipes", "runs a named pipes test", &test_pipes},
     { NULL, NULL }
 };
-
-
-
-// ============================================
-//           PARSING Y EJECUCIÓN
-// ============================================
 
 // Busca el operador '|' en los tokens y retorna su índice, o -1 si no existe
 static int find_pipe_operator(char **tokens, int token_count) {
@@ -329,10 +312,6 @@ void process_line(char *line) {
     print_err(ERROR_MSG);
 }
 
-// ============================================
-//      IMPLEMENTACIÓN DE BUILTINS
-// ============================================
-
 static void cls(int argc, char * argv[]) {
     sys_clear();
 }
@@ -394,14 +373,3 @@ static void username_cmd(int argc, char * argv[]) {
     print(new_name);
     putchar('\n');
 }
-
-
-
-// static void print_test_use() {
-//     print("Use: test <test_name> [test_params]\n");
-//     print("Available test names:\n");
-//     print("  mm         - memory manager test\n");
-//     print("  prio       - priority scheduling test\n");
-//     print("  processes  - process management test\n");
-//     print("  sync       - synchronization test\n");
-// }

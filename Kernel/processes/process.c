@@ -33,8 +33,7 @@ static int init_pcb_stack(PCB *p, memory_manager_ADT mm) {
     if (p->stack_base == NULL) {
         return ERROR;
     }
-    p->stack_pointer = setup_initial_stack(&process_caller, p->pid, 
-                                          (char *)p->stack_base + PROCESS_STACK_SIZE, 0);
+    p->stack_pointer = setup_initial_stack(&process_caller, p->pid, (char *)p->stack_base + PROCESS_STACK_SIZE, 0);
     return OK;
 }
 
@@ -73,8 +72,7 @@ static void init_pcb_file_descriptors(PCB *p, int fds[2]) {
 }
 
 
-PCB* proc_create(int pid, process_entry_t entry, int argc, const char **argv,
-                const char *name, bool killable, int fds[2]) {
+PCB* proc_create(int pid, process_entry_t entry, int argc, const char **argv, const char *name, bool killable, int fds[2]) {
 
     if (!entry || !name || argc < 0) {
         return NULL;
@@ -106,14 +104,7 @@ PCB* proc_create(int pid, process_entry_t entry, int argc, const char **argv,
 }
 
 
-void free_process_resources(PCB * p) {
-    if (p == NULL) {
-        return;
-    }
-
-    memory_manager_ADT mm = get_kernel_memory_manager();
-
-    // Liberar argv y sus strings
+static void free_pcb_argv(PCB *p, memory_manager_ADT mm) {
     if (p->argv != NULL) {
         for (int i = 0; i < p->argc; i++) {
             if (p->argv[i] != NULL) {
@@ -123,13 +114,26 @@ void free_process_resources(PCB * p) {
         free_memory(mm, p->argv);
         p->argv = NULL;
     }
+}
 
-    // Liberar stack
+static void free_pcb_stack(PCB *p, memory_manager_ADT mm) {
     if (p->stack_base != NULL) {
         free_memory(mm, p->stack_base);
         p->stack_base = NULL;
         p->stack_pointer = NULL;
     }
+}
+
+
+void free_process_resources(PCB * p) {
+    if (p == NULL) {
+        return;
+    }
+
+    memory_manager_ADT mm = get_kernel_memory_manager();
+
+    free_pcb_argv(p, mm);
+    free_pcb_stack(p, mm);
 
     q_destroy(p->open_fds);
     p->open_fds = NULL;

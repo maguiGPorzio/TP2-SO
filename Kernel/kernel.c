@@ -2,7 +2,6 @@
 // PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 
 #include <stdint.h>
-// #include <string.h>
 #include <lib.h>
 #include <moduleLoader.h>
 #include "keyboard.h"
@@ -74,8 +73,6 @@ int main() {
 	init_scheduler();
 
 	init_semaphore_manager();
-	
-	//((EntryPoint)sampleCodeModuleAddress)();
 
 	init_pipes();
 	
