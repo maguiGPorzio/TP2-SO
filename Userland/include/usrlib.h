@@ -44,7 +44,7 @@ void draw_line(uint64_t x0, uint64_t y0, uint64_t x1, uint64_t y1, uint32_t colo
 
 
 /*-- FUNCIONES DE STRINGS --*/
-uint64_t strlen(char * str);
+uint64_t strlen(const char * str);
 int strcmp(char * s1, char * s2);
 uint64_t num_to_str_base(uint64_t value, char * buffer, uint32_t base);
 int64_t satoi(char *str);

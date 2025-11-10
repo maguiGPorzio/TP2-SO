@@ -70,7 +70,7 @@ void put_pixel(uint32_t hex_color, uint64_t x, uint64_t y) {
 	if (!is_valid(x, y)) {
 		return;
 	}
-    uint8_t * framebuffer = (uint8_t *) VBE_mode_info->framebuffer;
+    uint8_t * framebuffer = (uint8_t *) (uintptr_t) VBE_mode_info->framebuffer;
     uint64_t offset = (x * ((VBE_mode_info->bpp)/8)) + (y * VBE_mode_info->pitch);
     framebuffer[offset]     =  (hex_color) & 0xFF;
     framebuffer[offset+1]   =  (hex_color >> 8) & 0xFF;
@@ -122,7 +122,7 @@ uint8_t vd_get_text_size() {
 
 static void scroll_up() {
     uint64_t line_height = text_size * FONT_HEIGHT;
-    uint8_t * framebuffer = (uint8_t *) VBE_mode_info->framebuffer;
+    uint8_t * framebuffer = (uint8_t *) (uintptr_t) VBE_mode_info->framebuffer;
     
     // Usar memcpy para copiar cada línea completa
     // desde la segunda línea de texto hasta el final hacia arriba
@@ -242,7 +242,7 @@ void vd_clear() {
     }
     // fill_rectangle(0, 0, VBE_mode_info->width, VBE_mode_info->width, BKG_COLOR);
     uint64_t length = get_screen_height() * get_screen_width() * VBE_mode_info->bpp / 8;
-    memset64((void *) VBE_mode_info->framebuffer, 0, length); // hardcodeado que el background color es negro
+    memset64((void *) (uintptr_t) VBE_mode_info->framebuffer, 0, length); // hardcodeado que el background color es negro
     cursor_x = 0;
     cursor_y = 0;
 }

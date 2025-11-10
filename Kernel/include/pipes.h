@@ -32,7 +32,7 @@ int create_pipe(int fds[2]);
 int read_pipe(int fd, char * buf, int count);
 
 // devuelve cuantos bytes escribio, -1 si falla
-int write_pipe(int fd, char * buf, int count);
+int write_pipe(int fd, const char * buf, int count);
 
 // libera los recursos del pipe
 void destroy_pipe(int idx); 

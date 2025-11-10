@@ -298,7 +298,7 @@ int read_pipe(int fd, char * buf, int count) {
     return count;
 }
 
-int write_pipe(int fd, char * buf, int count) {
+int write_pipe(int fd, const char * buf, int count) {
     int idx = get_idx_from_fd(fd);
     if (idx < 0) {
         return -1; 

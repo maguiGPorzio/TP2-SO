@@ -30,7 +30,7 @@ uint64_t num_to_str_base(uint64_t value, char * buffer, uint32_t base) {
 	return digits;
 }
 
-uint64_t strlen(char * str) {
+uint64_t strlen(const char * str) {
     uint64_t len = 0;
     while (str[len] != 0) {
         len++;
