@@ -1,82 +1,96 @@
 # TP2 - Sistemas Operativos (ramOS)
 
+Implementamos un mini kernel de 64 bits con scheduler de prioridades, administración de memoria dinámica (dos variantes), semáforos con nombre, pipes (anónimos y nombrados) y una shell con soporte de procesos en foreground/background, pipes y atajos de teclado. Incluimos los tests de la cátedra y programas de usuario propios para demostrar cada requerimiento.
+
 ## Instrucciones de compilación y ejecución
-1. **Requisitos**: Docker Desktop activo.
-2. **Crear el contenedor** (una sola vez): `./create.sh` genera el container `tpe_so_2q2025` montando el repo en `/root`.
-3. **Compilar**:
-   - `./compile.sh` reconstruye `Toolchain/` y el kernel dentro del container anterior.
-   - `./compile.sh buddy` recompila habilitando el allocator buddy.
-4. **Ejecutar**: `./run.sh` levanta `qemu-system-x86_64` con `Image/x64BareBonesImage.qcow2`. 
-5. **Workflow recomendado**: `./compile.sh && ./run.sh` luego de modificar kernel o userland. Para un full clean manual puede usarse `docker exec -it tpe_so_2q2025 make -C /root clean`.
+1. Requisitos: Docker activo y QEMU instalado en el host.
+2. Crear contenedor (una vez): `./create.sh` crea `tpe_so_2q2025` y monta el repo en `/root`.
+3. Compilar:
+   - `./compile.sh` construye Toolchain, Userland y Kernel en el contenedor.
+   - `./compile.sh buddy` compila activando el Buddy allocator (`USE_BUDDY`).
+4. Ejecutar: `./run.sh` lanza `qemu-system-x86_64` con `Image/x64BareBonesImage.qcow2` (512 MB) y backend de audio adecuado. Al boot, `init` crea la `shell` y luego queda en `hlt` como proceso idle.
+5. Ciclo de trabajo: `./compile.sh && ./run.sh` tras cambios. Limpieza manual: `docker exec -it tpe_so_2q2025 make -C /root clean`.
 
 ## Instrucciones de replicación
 ### Comandos builtin de la shell
 | Comando | Parámetros | Descripción |
 | --- | --- | --- |
-| `clear` | — | Limpia el framebuffer en modo texto.
-| `help` | — | Lista builtins, programas de usuario y recuerda que `&` lanza procesos en background.
-| `kill` | `<pid>` | Envía `sys_kill` al PID indicado. Protege `init` y la shell; reporta códigos de error diferenciados.
+| `clear` | — | Limpia la pantalla en modo texto.
+| `help` | — | Lista builtins y programas (recuerda que `&` corre en background).
+| `kill` | `<pid>` | Matar proceso. Protege `init`/`shell`. Devuelve errores específicos.
 
 ### Programas de usuario
 | Programa | Parámetros | Descripción / Uso |
 | --- | --- | --- |
-| `cat` | `[args...]` | Imprime los argumentos a STDOUT y emite EOF para destrabar pipes.
-| `red` | — | Copia STDIN a STDERR; útil para probar dualidad de file descriptors.
-| `rainbow` | — | Lee STDIN y reparte cada char round-robin entre STDOUT, STDBLUE, STDMAGENTA, etc.
-| `time` | — | Lee la RTC vía `sys_time` y muestra hh:mm:ss en BCD.
-| `date` | — | Similar a `time` pero muestra dd/mm/yy.
-| `ps` | — | Snapshot de procesos (`PID`, estado, prio, PPID, FDs, stack pointers) usando `sys_processes_info`.
-| `printa` | — | Loop infinito que imprime `a` en verde (stress de scheduler). Igual para `printb` con `b` magenta.
-| `text` | — | Mensaje fijo "Hola 1", pensado para pipes sencillos.
-| `loop` | — | Imprime "Hola" con el PID cada 2 s; sirve para ver `sys_sleep`.
-| `nice` | `<pid> <prio>` | Cambia prioridad (1–10) del proceso objetivo mediante `sys_nice`.
+| `cat` | `[args...]` | Imprime argumentos a STDOUT y emite EOF.
+| `red` | — | Copia STDIN a STDERR; útil para testear FDs.
+| `rainbow` | — | Enruta caracteres de STDIN round‑robin por FDs de color.
+| `time` | — | Muestra hh:mm:ss vía `sys_time`.
+| `date` | — | Muestra dd/mm/yy vía `sys_date`.
+| `ps` | — | Lista procesos: PID, estado, prio, PPID, FDs, stack pointers.
+| `printa`/`printb` | — | Loops que imprimen ‘a’/‘b’ (stress de planificación).
+| `text` | — | Imprime “Hola 1” (útil para pipes simples).
+| `loop` | — | PID + mensaje cada 2 s (`sys_sleep`).
+| `nice` | `<pid> <prio>` | Cambia prioridad del proceso (0 alta, 2 baja).
 | `wc` | — | Cuenta líneas de STDIN hasta EOF.
-| `mem` | — | Consulta `sys_mem_info` e imprime memoria total/usada/libre y bloques asignados.
-| `block` | `<pid>` | Llama a `sys_block` para pausar el proceso indicado.
-| `unblock` | `<pid>` | Reactiva un proceso previamente bloqueado.
-| `filter` | — | Consume STDIN y emite solo consonantes hasta leer `-`.
-| `mvar` | `<writers> <readers>` | Test de sincronización multivariable: comparte un char mediante dos semáforos nombrados.
+| `mem` | — | Usa `sys_mem_info` para total/usada/libre y bloques.
+| `block` | `<pid>` | `sys_block` del PID.
+| `unblock` | `<pid>` | `sys_unblock` del PID.
+| `filter` | — | Filtra vocales de STDIN hasta leer `-`.
+| `mvar` | `<writers> <readers>` | MVARS con semáforos nombrados por PID.
 
 ### Tests de la cátedra
 | Test | Parámetros | Descripción |
 | --- | --- | --- |
-| `test_mm` | `<max_memory>` | Stress del memory manager: reserva/libera bloques hasta el límite pedido y reporta `sys_mem_info`.
-| `test_prio` | `<max_iterations>` | Crea 3 procesos que cuentan hasta `max_iterations`, varía prioridades y verifica fairness/blocking.
-| `test_processes` | `<max_processes>` | Spawnea `max_processes` instancias de `endless_loop` y luego las mata/bloquea/desbloquea aleatoriamente.
-| `test_sync` | `<iterations> <use_semaphore>` | Corre pares de productores/consumidores sobre `global`. Valor 0 reproduce race condition; 1 sincroniza con semáforo `sem`.
+| `test_mm` | `<max_memory>` | Stress de memoria: alloc/set/check/free + métricas.
+| `test_prio` | `<max_iterations>` | Muestra fairness y efecto de `nice` (incluye bloqueados).
+| `test_processes` | `<max_processes>` | Crear muchos, matar/bloquear/desbloquear aleatoriamente con `wait` de limpieza.
+| `test_sync` | `<iterations> <use_semaphore>` | `0` reproduce carrera, `1` sincroniza con semáforo `sem`.
 
 ### Caracteres especiales para pipes y background
-- Pipe: un único `|` en la línea separa dos programas. Solo se admite un pipe por comando (`left | right`).
-- Background: un `&` al final del comando (luego de los argumentos) marca el proceso o pipeline como background. La shell quita el `&` antes de parsear y adopta los PID vía `sys_adopt_init_as_parent` para que `init` recoja los zombies.
+- Pipe: un `|` separa dos programas. Un solo pipe por línea (`left | right`). Kernel: buffer circular con semáforos por FD; al cerrar el último writer se despierta a los readers para que observen EOF.
+- Background: `&` al final corre el proceso/pipeline en background. La shell adopta con `sys_adopt_init_as_parent` para que `init` recolecte.
+- Pipes nombrados: expuestos por syscalls `sys_open_named_pipe`, `sys_close_fd`, `sys_pipes_info` para compartir por nombre entre procesos no relacionados. Aún no hay comando de shell para abrirlos, pero están disponibles para programas.
 
 ### Atajos de teclado
-- `Ctrl+C`: `Kernel/drivers/keyboard.c` invoca `scheduler_kill_foreground_process()`; solo afecta al proceso en foreground.
-- `Ctrl+D`: inyecta un EOF en el FD en foreground. Si es STDIN escribe directamente en el buffer; si viene de un pipe, envía `EOF` al write-end correspondiente.
-- `+` / `-`: atajos propios de la shell para agrandar o achicar la fuente (redibuja prompt e input actual).
+- `Ctrl+C`: mata el proceso en foreground (`scheduler_kill_foreground_process()`), devolviendo la `shell` al foreground.
+- `Ctrl+D`: inyecta EOF al lector en foreground (STDIN o extremo de pipe).
+- `+` / `-`: aumentan/reducen tamaño de fuente y redibujan prompt+input.
 
-### Ejemplos de uso (extra tests)
-```bash
-# Mostrar procesos y memoria disponibles
-ps
-mem
-
-# Probar pipes y filtros de colores
-rainbow | wc
-cat hola mundo | filter
-
-# Sincronización multi-lector/escritor
-mvar 2 3
+### Ejemplos, por fuera de los tests
+- Planificación y prioridades:
+  - `printa &` y `printb &` luego `ps` para ver RUNNING; `nice <pid_a> 2` baja prioridad de ‘a’.
+  - `test_prio 10000000` y observar orden de finalización; repetir con `&` y ajustar con `nice`.
+- Pipes y filtros:
+  - `rainbow | wc` cuenta caracteres coloreados provenientes de STDIN.
+  - `cat hola mundo | filter` produce `hl mnd` (sin vocales).
+- Sincronización:
+  - `test_sync 10000 0` suele terminar con `Final value != 0`.
+  - `test_sync 10000 1` termina con `Final value: 0`.
+- Memoria:
+  - `mem` muestra total/used/free/blocks; `test_mm 1048576` imprime estado en cada iteración.
 
 ### Requerimientos faltantes o parcialmente implementados
-- Solo se soporta un pipe por línea. Falta el encadenado `cmd1 | cmd2 | cmd3`.
-- No hay historial ni navegación con flechas; el teclado ignora UP/DOWN, por lo que no se puede re-ejecutar el último comando.
-- No existe soporte para pipes nombrados ni para compartir un identificador acordado entre procesos no relacionados (requisito opcional del enunciado).
+- Solo un pipe por línea; falta encadenado `cmd1 | cmd2 | cmd3` en la shell.
+- Sin historial de comandos ni navegación con flechas.
+- Algunos programas (p.ej. `printa/printb`) no ceden CPU explícitamente; pueden sesgar la planificación si se abusan en foreground.
+- Pipes nombrados: implementados en kernel/syscalls; falta comando de shell para abrir/cerrar por nombre.
+- La shell permite background para programas dependientes de STDIN (ej. `red`/`filter`) y pueden quedar bloqueados sin input.
 
-## Limitaciones conocidas
-- `INPUT_MAX` es 128 bytes; líneas más largas se truncan silenciosamente.
-- Los builtins siempre se ejecutan foreground y no heredan pipes, por lo que `clear | wc` no tiene efecto.
-- El parser no valida comillas ni escape de espacios; cada argumento se separa únicamente por whitespace.
-- Las métricas de `mem` reportan enteros truncados (no double), solo útiles como orientación.
+## Limitaciones
+- `INPUT_MAX` 128 bytes; líneas más largas se truncan.
+- Builtins no participan en pipelines (no leen/escriben por FDs redirigidos).
+- Parser simple sin comillas ni escapes; separación por espacios.
+- `mem` muestra métricas enteras aproximadas; no hay fraccionarios.
 
-## Citas y uso de IA
-- `Userland/tests/test_mm.c`, `test_prio.c`, `test_processes.c` y `test_sync.c` derivan directamente de los tests publicados por la cátedra y fueron adaptados mínimamente.
+## Arquitectura y diseño (qué hicimos)
+- Scheduler multicolas con prioridades y aging: tres colas (0 alta, 1 media, 2 baja), promoción por `AGING_THRESHOLD` y selección round‑robin por cola. `nice` reubica y ajusta `effective_priority`.
+- Gestión de foreground/terminal: sólo el proceso foreground puede leer teclado; `Ctrl+C` mata foreground y resetea a shell; `Ctrl+D` envía EOF al consumidor correcto (STDIN o pipe).
+- Procesos: `sys_create_process`, `sys_wait`, `sys_exit`, `sys_kill`, `sys_block/unblock`, `sys_nice`, adopción por `init` para background, y cierre de FDs abiertos al terminar.
+- Pipes: anónimos y nombrados con buffer circular, semáforos por FD, conteo de readers/writers, propagación de EOF y limpieza consistente al matar procesos conectados.
+- Semáforos con nombre: API `sys_sem_*` usada en `test_sync` y `mvar`.
+- Memoria dinámica: allocator por lista libre (first‑fit con coalescing y guard `MAGIC_NUMBER`); alternativa Buddy (bloques 2^k) activable con `./compile.sh buddy`.
+- Servicios del kernel: RTC (`sys_time/date`), timer/sleep, video texto (tamaño de fuente), speaker/beep y primitivas gráficas.
+
+## Citas de código y uso de IA
+- `Userland/tests/test_mm.c`, `test_prio.c`, `test_processes.c` y `test_sync.c` se basan en los tests de la cátedra y se adaptaron mínimamente.
