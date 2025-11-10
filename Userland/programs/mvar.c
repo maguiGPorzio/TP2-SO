@@ -77,21 +77,23 @@ static void build_sem_name(char *target, const char *suffix, uint64_t pid) {
 
     int idx = 0;
     const char *prefix = SEM_PREFIX;
-
-    while (idx < MAX_SEM_NAME_LENGTH - 1 && prefix[idx] != 0 ) {
-        target[idx] = prefix[idx];
-        idx++;
+    
+    // Copiar prefijo con bounds checking
+    for (int i = 0; prefix[i] != 0 && idx < MAX_SEM_NAME_LENGTH - 1; i++) {
+        target[idx++] = prefix[i];
     }
 
+    // Copiar sufijo con bounds checking
     for (int i = 0; suffix[i] != 0 && idx < MAX_SEM_NAME_LENGTH - 1; i++) {
         target[idx++] = suffix[i];
     }
 
+    // Copiar PID con bounds checking
     for (int i = 0; pid_buf[i] != 0 && idx < MAX_SEM_NAME_LENGTH - 1; i++) {
         target[idx++] = pid_buf[i];
     }
 
-    target[idx] = 0;
+    target[idx] = 0;  // Este acceso es seguro porque idx <= 63
 }
 
 static void setup_sem_names(void) {
