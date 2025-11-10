@@ -14,12 +14,7 @@
 
 extern void timer_tick();
 
-#define SHELL_ADDRESS ((void *) 0x400000)      // direccion donde empieza userland
-
-
-// ============================================
-//         ESTADO DEL SCHEDULER
-// ============================================
+#define SHELL_ADDRESS ((void *) 0x400000)     
 
 static PCB *processes[MAX_PROCESSES];
 static queue_t ready_queue[PRIORITY_COUNT] = {0};
@@ -31,9 +26,6 @@ static bool force_reschedule = false;
 static bool scheduler_initialized = false;
 static pid_t foreground_process_pid = NO_PID;
 
-// ============================================
-//        DECLARACIONES AUXILIARES
-// ============================================
 
 static PCB *pick_next_process(void);
 static void reparent_children_to_init(pid_t pid);
@@ -57,8 +49,7 @@ static void close_open_fds(PCB * p) {
     }
 }
 
-// Proceso init: arranca la shell y se queda haciendo halt para no consumir CPU. Se lo elige siempre que no haya otro proceso para correr!!!!
-// funciona tambien como idle
+// Proceso init: arranca la shell y se queda haciendo halt para no consumir CPU (actúa como proceso idle). Se lo elige siempre que no haya otro proceso para correr!!!!
 static int init(int argc, char **argv) {
 
     if (create_shell() != 0) {
@@ -74,7 +65,7 @@ static int init(int argc, char **argv) {
     return -1;
 }
 
-// Devuelve el PID del proceso en foreground o NO_PID si no está inicializado
+
 pid_t scheduler_get_foreground_pid(void) {
     if (!scheduler_initialized) {
         return NO_PID;
@@ -82,8 +73,7 @@ pid_t scheduler_get_foreground_pid(void) {
     return foreground_process_pid;
 }
 
-// Establece el PID del proceso en foreground.
-// Devuelve 0 en éxito, -1 en error (scheduler no inicializado o pid inválido).
+
 int scheduler_set_foreground_process(pid_t pid) {
     if (!scheduler_initialized) {
         return -1;
@@ -97,12 +87,6 @@ int scheduler_set_foreground_process(pid_t pid) {
     foreground_process_pid = pid;
     return 0;
 }
-
-
-
-// ============================================
-//           INICIALIZACIÓN
-// ============================================
 
 static int create_shell(){
     PCB *pcb_shell = proc_create(SHELL_PID, (process_entry_t) SHELL_ADDRESS, 0, NULL, "shell", false, NULL);
@@ -125,7 +109,6 @@ static int create_shell(){
     return 0;
 }
 
-// Agrega el proceso al array de procesos y a la cola READY
 static int scheduler_add_init() {
     if (process_count != 0) { // si no es el primer proceso en ser creado está mal
         return -1;
@@ -136,17 +119,14 @@ static int scheduler_add_init() {
         return -1;
     }
 
-    pcb_init->priority = MIN_PRIORITY; // no importa pues no va a ninguna queue
+    pcb_init->priority = MIN_PRIORITY; 
     pcb_init->effective_priority = MIN_PRIORITY;
     pcb_init->status = PS_READY; 
     pcb_init->cpu_ticks = 0;
-    pcb_init->last_tick = 0; // no importa pues no va a ninguna queue
+    pcb_init->last_tick = 0; 
 
     processes[INIT_PID] = pcb_init;
     process_count++;
-
-    //timer_tick();
-
     return 0;
 }
 
@@ -187,9 +167,6 @@ int init_scheduler(void) {
     return 0;
 }
 
-// ============================================
-//        SCHEDULER PRINCIPAL
-// ============================================
 
 void * schedule(void * prev_rsp) {
     if (!scheduler_initialized) {
@@ -201,7 +178,7 @@ void * schedule(void * prev_rsp) {
     if (current) {
         current->stack_pointer = prev_rsp; // actualiza el rsp del proceso que estuvo corriendo hasta ahora en su pcb
         
-        current->cpu_ticks++; // cuantas veces interrumpimos este proceso que estuvo corrriendo hasta ahora
+        current->cpu_ticks++; 
         total_cpu_ticks++;
 
         // Cuando un proceso deja de correr (por cualquier razón), vuelve a su prioridad base
@@ -252,9 +229,6 @@ void * schedule(void * prev_rsp) {
 
 }
 
-// ============================================
-//    ALGORITMO: MULTICOLA CON PRIORIDADES
-// ============================================
 
 // Devuelve null si no hay proceso listo para correr en ninguna cola
 // Recorre las colas de mayor prioridad (0) a menor (PRIORITY_COUNT-1)
@@ -287,10 +261,6 @@ static PCB *pick_next_process(void) {
 }
 
 
-// ============================================
-//              AGING SYSTEM
-// ============================================
-
 // Aplica aging: promueve procesos que llevan mucho tiempo sin correr
 static void apply_aging(void) {
     // Recorrer desde MIN_PRIORITY hasta MAX_PRIORITY+1 (no promovemos desde MAX_PRIORITY)
@@ -322,10 +292,6 @@ static void apply_aging(void) {
     }
 }
 
-
-// ============================================
-//        GESTIÓN DE PROCESOS
-// ============================================
 
 // Agrega el proceso al array de procesos y a la cola READY
 int scheduler_add_process(process_entry_t entry, int argc, const char **argv, const char *name, int fds[2]) {
@@ -533,10 +499,6 @@ int scheduler_kill_process(pid_t pid) {
 }
 
 
-// ============================================
-//   FUNCIONES AUXILIARES PARA BLOQUEO
-// ============================================
-
 // Llamar desde proc_block() en processes.c
 int scheduler_block_process(pid_t pid) {
     if (!scheduler_initialized || !pid_is_valid(pid)) {
@@ -663,9 +625,6 @@ int scheduler_get_processes(process_info_t *buffer, int max_count) {
     return count;
 }
 
-// ============================================
-//   TERMINACIÓN INMEDIATA DEL PROCESO ACTUAL
-// ============================================
 
 void scheduler_exit_process(int64_t ret_value) {
     if(!scheduler_initialized) {
