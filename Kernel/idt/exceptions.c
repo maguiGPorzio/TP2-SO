@@ -3,7 +3,7 @@
 
 #include "exceptions.h"
 #include "keyboard.h"
-#include "videoDriver.h"
+#include "video_driver.h"
 
 static void zero_division();
 static void invalid_opcode();

@@ -19,7 +19,7 @@
 <a name="ln10">#include &quot;pipes.h&quot;</a>
 <a name="ln11"> </a>
 <a name="ln12">#define KEYBOARD_SEM_NAME &quot;keyboard&quot;</a>
-<a name="ln13">const uint8_t SNAPSHOT_KEY = LEFT_CONTROL; // TODO: cambiarlo por otra</a>
+<a name="ln13">const uint8_t SNAPSHOT_KEY = 0x3B; // TODO: cambiarlo por otra</a>
 <a name="ln14"> </a>
 <a name="ln15">static int shift = 0 ;</a>
 <a name="ln16">static int caps_lock = 0;</a>
@@ -128,132 +128,126 @@
 <a name="ln119">            pressed_keys[raw-'a'] = 0; // marcamos la tecla como no presionada</a>
 <a name="ln120">        }</a>
 <a name="ln121">        return;</a>
-<a name="ln122">    } </a>
-<a name="ln123">    else if (scancode == UP_ARROW || scancode == DOWN_ARROW || scancode == LEFT_ARROW || scancode == RIGHT_ARROW || scancode==0){  </a>
-<a name="ln124">        return;</a>
-<a name="ln125">    } </a>
-<a name="ln126">    else {</a>
-<a name="ln127">        int index;                      </a>
-<a name="ln128">        char raw = lower_keys[scancode]; </a>
-<a name="ln129">        int is_letter = (raw &gt;= 'a' &amp;&amp; raw &lt;= 'z');  </a>
-<a name="ln130"> </a>
-<a name="ln131">        if (is_letter &amp;&amp; raw == 'c' &amp;&amp; control) {</a>
-<a name="ln132">            if (!pressed_keys['c' - 'a']) {            // para que solo se llame una vez</a>
-<a name="ln133">                scheduler_kill_foreground_process();</a>
-<a name="ln134">            }</a>
-<a name="ln135">            pressed_keys['c' - 'a'] = 1;               // marcamos como presionada</a>
-<a name="ln136">            return;                                   // para no meter la 'c' en el buffer</a>
-<a name="ln137">        }</a>
-<a name="ln138"> </a>
-<a name="ln139">        if (is_letter &amp;&amp; raw == 'd' &amp;&amp; control) {</a>
-<a name="ln140">            if (!pressed_keys['d' - 'a']) {            // para que solo se llame una vez</a>
-<a name="ln141">                pid_t fg_pid = scheduler_get_foreground_pid();</a>
-<a name="ln142">                PCB * fg_process = scheduler_get_process(fg_pid);</a>
-<a name="ln143">                if (fg_process){</a>
-<a name="ln144">                    if(fg_process-&gt;read_fd == STDIN) {</a>
-<a name="ln145">                    write_buffer(EOF);</a>
-<a name="ln146">                    } else{</a>
-<a name="ln147">                        char c = EOF;</a>
-<a name="ln148">                        write_pipe(fg_process-&gt;read_fd + 1, &amp;c, 1);</a>
-<a name="ln149">                    }</a>
-<a name="ln150"> </a>
-<a name="ln151">                }</a>
-<a name="ln152">            }</a>
-<a name="ln153">            pressed_keys['d' - 'a'] = 1;               // marcamos como presionada</a>
-<a name="ln154">            return;                                   // para no meter la 'd' en el buffer</a>
-<a name="ln155">        }</a>
-<a name="ln156"> </a>
-<a name="ln157">        if (is_letter) {</a>
-<a name="ln158">            index = shift ^ caps_lock;</a>
-<a name="ln159">            pressed_keys[raw-'a'] = 1;</a>
-<a name="ln160">        } else {</a>
-<a name="ln161">            index = shift;                      </a>
-<a name="ln162">        }</a>
-<a name="ln163"> </a>
-<a name="ln164">        write_buffer(scancode_to_ascii[index][scancode]);</a>
-<a name="ln165">    }</a>
-<a name="ln166"> </a>
-<a name="ln167">    return;</a>
-<a name="ln168">}</a>
-<a name="ln169"> </a>
-<a name="ln170">void write_string_in_buffer(const char *str) {</a>
-<a name="ln171">    while (*str) {</a>
-<a name="ln172">        write_buffer((unsigned char)*str);</a>
-<a name="ln173">        str++;</a>
-<a name="ln174">    }</a>
-<a name="ln175">}</a>
-<a name="ln176"> </a>
-<a name="ln177">uint8_t is_pressed_key(char c) {</a>
-<a name="ln178">    if ((c &gt;= 'A' &amp;&amp; c &lt;= 'Z') || (c &gt;= 'a' &amp;&amp; c &lt;= 'z')) { </a>
-<a name="ln179">        c = (c &gt;= 'A' &amp;&amp; c &lt;= 'Z') ? c - 'A' + 'a' : c; // Convertir a minúscula si es mayúscula</a>
-<a name="ln180">        return pressed_keys[c-'a']; // Devuelve 1 si la tecla está presionada, 0 si no</a>
-<a name="ln181">    }</a>
-<a name="ln182">    return 0; // Si el char es inválido, retornamos 0</a>
-<a name="ln183">}</a>
-<a name="ln184"> </a>
-<a name="ln185">void store_snapshot(){</a>
-<a name="ln186">  char * reg_labels[] = {&quot;RAX:    0x&quot;, &quot;RBX:    0x&quot;, &quot;RCX:    0x&quot;, &quot;RDI:    0x&quot;, &quot;RBP:    0x&quot;, &quot;RDI:    0x&quot;, &quot;RSI:    0x&quot;,  </a>
-<a name="ln187">    &quot;R8:     0x&quot;, &quot;R9:     0x&quot;, &quot;R10:    0x&quot;, &quot;R11:    0x&quot;, &quot;R12:    0x&quot;, &quot;R13:    0x&quot;, &quot;R14:    0x&quot;, &quot;R15:    0x&quot;,&quot;RIP:    0x&quot;,&quot;CS:     0x&quot;,&quot;RFLAGS: 0x&quot;,&quot;RSP:    0x&quot;, &quot;SS:     0x&quot;, 0};</a>
-<a name="ln188">  uint32_t j = 0; //índice de reg_buff</a>
-<a name="ln189"> </a>
-<a name="ln190">  for(int i=0 ; reg_labels[i] ; ++i){</a>
-<a name="ln191">    //Agregamos el string al buffer</a>
-<a name="ln192">    for(int m=0; reg_labels[i][m]; ++m){</a>
-<a name="ln193">      reg_buff[j++] = reg_labels[i][m];</a>
-<a name="ln194">    }</a>
-<a name="ln195"> </a>
-<a name="ln196">    //Agregamos el nro al buffer. Quiero que todos me queden con 16 dígitos hexadecimales</a>
-<a name="ln197">    j += uint64_to_register_format(reg_array[i], reg_buff + j);</a>
-<a name="ln198">    reg_buff[j++] = '\n';</a>
-<a name="ln199">  }</a>
-<a name="ln200">  reg_buff[j] = 0;</a>
-<a name="ln201">}</a>
-<a name="ln202"> </a>
-<a name="ln203">// devuelve la cantidad de caracteres escritos</a>
-<a name="ln204">uint32_t uint64_to_register_format(uint64_t value, char *dest) {</a>
-<a name="ln205">    int64_t zeros_to_pad = 16;</a>
-<a name="ln206">    uint64_t aux = value;</a>
-<a name="ln207"> </a>
-<a name="ln208">    // Calcular cuántos ceros hay que agregar</a>
-<a name="ln209">    while (aux) {</a>
-<a name="ln210">        aux &gt;&gt;= 4;</a>
-<a name="ln211">        zeros_to_pad--;</a>
-<a name="ln212">    }</a>
-<a name="ln213"> </a>
-<a name="ln214">    uint32_t j = 0;</a>
-<a name="ln215">    // Agregar los ceros necesarios</a>
-<a name="ln216">    for (int i = 0; i &lt; zeros_to_pad; i++) {</a>
-<a name="ln217">        dest[j++] = '0';</a>
-<a name="ln218">    }</a>
-<a name="ln219"> </a>
-<a name="ln220">    // Escribir la parte significativa si value ≠ 0</a>
-<a name="ln221">    if (value) {</a>
-<a name="ln222">        j += uintToBase(value, dest + j, 16);</a>
-<a name="ln223">    }</a>
+<a name="ln122">    } else {</a>
+<a name="ln123">        int index;                      </a>
+<a name="ln124">        char raw = lower_keys[scancode]; </a>
+<a name="ln125">        int is_letter = (raw &gt;= 'a' &amp;&amp; raw &lt;= 'z');  </a>
+<a name="ln126"> </a>
+<a name="ln127">        if (is_letter &amp;&amp; raw == 'c' &amp;&amp; control) {</a>
+<a name="ln128">            if (!pressed_keys['c' - 'a']) {            // para que solo se llame una vez</a>
+<a name="ln129">                scheduler_kill_foreground_process();</a>
+<a name="ln130">            }</a>
+<a name="ln131">            pressed_keys['c' - 'a'] = 1;               // marcamos como presionada</a>
+<a name="ln132">            return;                                   // para no meter la 'c' en el buffer</a>
+<a name="ln133">        }</a>
+<a name="ln134"> </a>
+<a name="ln135">        if (is_letter &amp;&amp; raw == 'd' &amp;&amp; control) {</a>
+<a name="ln136">            if (!pressed_keys['d' - 'a']) {            // para que solo se llame una vez</a>
+<a name="ln137">                pid_t fg_pid = scheduler_get_foreground_pid();</a>
+<a name="ln138">                PCB * fg_process = scheduler_get_process(fg_pid);</a>
+<a name="ln139">                if (fg_process){</a>
+<a name="ln140">                    if(fg_process-&gt;read_fd == STDIN) {</a>
+<a name="ln141">                    write_buffer(EOF);</a>
+<a name="ln142">                    } else{</a>
+<a name="ln143">                        char c = EOF;</a>
+<a name="ln144">                        write_pipe(fg_process-&gt;read_fd + 1, &amp;c, 1);</a>
+<a name="ln145">                    }</a>
+<a name="ln146"> </a>
+<a name="ln147">                }</a>
+<a name="ln148">            }</a>
+<a name="ln149">            pressed_keys['d' - 'a'] = 1;               // marcamos como presionada</a>
+<a name="ln150">            return;                                   // para no meter la 'd' en el buffer</a>
+<a name="ln151">        }</a>
+<a name="ln152"> </a>
+<a name="ln153">        if (is_letter) {</a>
+<a name="ln154">            index = shift ^ caps_lock;</a>
+<a name="ln155">            pressed_keys[raw-'a'] = 1;</a>
+<a name="ln156">        } else {</a>
+<a name="ln157">            index = shift;                      </a>
+<a name="ln158">        }</a>
+<a name="ln159"> </a>
+<a name="ln160">        write_buffer(scancode_to_ascii[index][scancode]);</a>
+<a name="ln161">    }</a>
+<a name="ln162"> </a>
+<a name="ln163">    return;</a>
+<a name="ln164">}</a>
+<a name="ln165"> </a>
+<a name="ln166">void write_string_in_buffer(const char *str) {</a>
+<a name="ln167">    while (*str) {</a>
+<a name="ln168">        write_buffer((unsigned char)*str);</a>
+<a name="ln169">        str++;</a>
+<a name="ln170">    }</a>
+<a name="ln171">}</a>
+<a name="ln172"> </a>
+<a name="ln173">uint8_t is_pressed_key(char c) {</a>
+<a name="ln174">    if ((c &gt;= 'A' &amp;&amp; c &lt;= 'Z') || (c &gt;= 'a' &amp;&amp; c &lt;= 'z')) { </a>
+<a name="ln175">        c = (c &gt;= 'A' &amp;&amp; c &lt;= 'Z') ? c - 'A' + 'a' : c; // Convertir a minúscula si es mayúscula</a>
+<a name="ln176">        return pressed_keys[c-'a']; // Devuelve 1 si la tecla está presionada, 0 si no</a>
+<a name="ln177">    }</a>
+<a name="ln178">    return 0; // Si el char es inválido, retornamos 0</a>
+<a name="ln179">}</a>
+<a name="ln180"> </a>
+<a name="ln181">void store_snapshot(){</a>
+<a name="ln182">  char * reg_labels[] = {&quot;RAX:    0x&quot;, &quot;RBX:    0x&quot;, &quot;RCX:    0x&quot;, &quot;RDI:    0x&quot;, &quot;RBP:    0x&quot;, &quot;RDI:    0x&quot;, &quot;RSI:    0x&quot;,  </a>
+<a name="ln183">    &quot;R8:     0x&quot;, &quot;R9:     0x&quot;, &quot;R10:    0x&quot;, &quot;R11:    0x&quot;, &quot;R12:    0x&quot;, &quot;R13:    0x&quot;, &quot;R14:    0x&quot;, &quot;R15:    0x&quot;,&quot;RIP:    0x&quot;,&quot;CS:     0x&quot;,&quot;RFLAGS: 0x&quot;,&quot;RSP:    0x&quot;, &quot;SS:     0x&quot;, 0};</a>
+<a name="ln184">  uint32_t j = 0; //índice de reg_buff</a>
+<a name="ln185"> </a>
+<a name="ln186">  for(int i=0 ; reg_labels[i] ; ++i){</a>
+<a name="ln187">    //Agregamos el string al buffer</a>
+<a name="ln188">    for(int m=0; reg_labels[i][m]; ++m){</a>
+<a name="ln189">      reg_buff[j++] = reg_labels[i][m];</a>
+<a name="ln190">    }</a>
+<a name="ln191"> </a>
+<a name="ln192">    //Agregamos el nro al buffer. Quiero que todos me queden con 16 dígitos hexadecimales</a>
+<a name="ln193">    j += uint64_to_register_format(reg_array[i], reg_buff + j);</a>
+<a name="ln194">    reg_buff[j++] = '\n';</a>
+<a name="ln195">  }</a>
+<a name="ln196">  reg_buff[j] = 0;</a>
+<a name="ln197">}</a>
+<a name="ln198"> </a>
+<a name="ln199">// devuelve la cantidad de caracteres escritos</a>
+<a name="ln200">uint32_t uint64_to_register_format(uint64_t value, char *dest) {</a>
+<a name="ln201">    int64_t zeros_to_pad = 16;</a>
+<a name="ln202">    uint64_t aux = value;</a>
+<a name="ln203"> </a>
+<a name="ln204">    // Calcular cuántos ceros hay que agregar</a>
+<a name="ln205">    while (aux) {</a>
+<a name="ln206">        aux &gt;&gt;= 4;</a>
+<a name="ln207">        zeros_to_pad--;</a>
+<a name="ln208">    }</a>
+<a name="ln209"> </a>
+<a name="ln210">    uint32_t j = 0;</a>
+<a name="ln211">    // Agregar los ceros necesarios</a>
+<a name="ln212">    for (int i = 0; i &lt; zeros_to_pad; i++) {</a>
+<a name="ln213">        dest[j++] = '0';</a>
+<a name="ln214">    }</a>
+<a name="ln215"> </a>
+<a name="ln216">    // Escribir la parte significativa si value ≠ 0</a>
+<a name="ln217">    if (value) {</a>
+<a name="ln218">        j += uintToBase(value, dest + j, 16);</a>
+<a name="ln219">    }</a>
+<a name="ln220"> </a>
+<a name="ln221">    dest[j] = 0; // null-terminador por si hace falta usarlo como string</a>
+<a name="ln222">    return j;    // devuelve la cantidad de caracteres escritos</a>
+<a name="ln223">}</a>
 <a name="ln224"> </a>
-<a name="ln225">    dest[j] = 0; // null-terminador por si hace falta usarlo como string</a>
-<a name="ln226">    return j;    // devuelve la cantidad de caracteres escritos</a>
-<a name="ln227">}</a>
-<a name="ln228"> </a>
-<a name="ln229"> </a>
-<a name="ln230">//devuelve 1 si ya se presionó la SNAPSHOT_KEY y 0 si todavia no se llamo</a>
-<a name="ln231">//dejamos en copy un string con el nombre del registro y su valor (cada registro separado por un n)</a>
-<a name="ln232">uint64_t copy_registers(char * copy){</a>
-<a name="ln233">    if (!copied_registers){</a>
-<a name="ln234">        return 0;</a>
+<a name="ln225"> </a>
+<a name="ln226">//devuelve 1 si ya se presionó la SNAPSHOT_KEY y 0 si todavia no se llamo</a>
+<a name="ln227">//dejamos en copy un string con el nombre del registro y su valor (cada registro separado por un n)</a>
+<a name="ln228">uint64_t copy_registers(char * copy){</a>
+<a name="ln229">    if (!copied_registers){</a>
+<a name="ln230">        return 0;</a>
+<a name="ln231">    }</a>
+<a name="ln232">    int i;</a>
+<a name="ln233">    for (i=0 ; reg_buff[i] ; i++){</a>
+<a name="ln234">        copy[i]=reg_buff[i];</a>
 <a name="ln235">    }</a>
-<a name="ln236">    int i;</a>
-<a name="ln237">    for (i=0 ; reg_buff[i] ; i++){</a>
-<a name="ln238">        copy[i]=reg_buff[i];</a>
-<a name="ln239">    }</a>
-<a name="ln240">    copy[i] = 0;</a>
-<a name="ln241">    return 1;</a>
-<a name="ln242">}</a>
+<a name="ln236">    copy[i] = 0;</a>
+<a name="ln237">    return 1;</a>
+<a name="ln238">}</a>
 </code></pre>
-<div class="balloon" rel="108"><p><span style="font-size:18px">&uarr;</span> <a href="https://pvs-studio.com/en/docs/warnings/v547/" target="_blank">V547</a> Expression 'scancode == SNAPSHOT_KEY' is always false.</p></div>
-<div class="balloon" rel="128"><p><span style="font-size:18px">&uarr;</span> <a href="https://pvs-studio.com/en/docs/warnings/v557/" target="_blank">V557</a> Array overrun is possible. The value of 'scancode' index could reach 128.</p></div>
-<div class="balloon" rel="123"><p><span style="font-size:18px">&uarr;</span> <a href="https://pvs-studio.com/en/docs/warnings/v560/" target="_blank">V560</a> A part of conditional expression is always false: scancode == 0.</p></div>
-<div class="balloon" rel="179"><p><span style="font-size:18px">&uarr;</span> <a href="https://pvs-studio.com/en/docs/warnings/v560/" target="_blank">V560</a> A part of conditional expression is always true: c &gt;= 'A'.</p></div>
+<div class="balloon" rel="124"><p><span style="font-size:18px">&uarr;</span> <a href="https://pvs-studio.com/en/docs/warnings/v557/" target="_blank">V557</a> Array overrun is possible. The value of 'scancode' index could reach 128.</p></div>
+<div class="balloon" rel="175"><p><span style="font-size:18px">&uarr;</span> <a href="https://pvs-studio.com/en/docs/warnings/v560/" target="_blank">V560</a> A part of conditional expression is always true: c &gt;= 'A'.</p></div>
 <link rel="stylesheet" href="highlight.css">
 <script src="highlight.pack.js"></script>
 <script src="highlightjs-line-numbers.js"></script>

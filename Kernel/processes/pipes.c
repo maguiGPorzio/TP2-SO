@@ -7,7 +7,7 @@
 #include "lib.h"
 #include "synchro.h"
 #include "queue.h"
-#include "videoDriver.h"
+#include "video_driver.h"
 
 typedef struct pipe {
     char buffer[PIPE_BUFFER_SIZE]; // buffer circular

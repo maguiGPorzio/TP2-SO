@@ -1,8 +1,8 @@
 {
     "files.associations": {
-        "videodriver.h": "c",
+        "video_driver.h": "c",
         "processes.h": "c",
-        "memorymanager.h": "c",
+        "memory_manager.h": "c",
         "shell.h": "c",
         "usrlib.h": "c",
         "test_mm.h": "c",

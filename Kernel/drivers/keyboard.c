@@ -4,7 +4,7 @@
 #include "keyboard.h"
 #include "lib.h"
 #include "naiveConsole.h"
-#include "videoDriver.h"
+#include "video_driver.h"
 #include "synchro.h"
 #include "scheduler.h"
 #include "pipes.h"

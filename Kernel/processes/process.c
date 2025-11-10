@@ -2,7 +2,7 @@
 // PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 
 #include <process.h>
-#include <memoryManager.h>
+#include <memory_manager.h>
 #include "lib.h"
 #include "scheduler.h"
 #include "interrupts.h"

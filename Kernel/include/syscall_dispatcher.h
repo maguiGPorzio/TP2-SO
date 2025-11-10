@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include "memoryManager.h"
+#include "memory_manager.h"
 #include "process.h"
 #include "pipes.h"
 

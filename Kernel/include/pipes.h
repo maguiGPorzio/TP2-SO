@@ -2,7 +2,7 @@
 #define PIPES_H
 
 #include <stdint.h>
-#include "memoryManager.h"
+#include "memory_manager.h"
 #include "fds.h"
 #include "scheduler.h"
 

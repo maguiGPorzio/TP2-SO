@@ -3,12 +3,12 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include "videoDriver.h"
+#include "video_driver.h"
 #include "time.h"
 #include "keyboard.h"
 #include "sound.h"
 #include "syscall_dispatcher.h"
-#include "memoryManager.h"
+#include "memory_manager.h"
 #include "scheduler.h"
 #include "synchro.h"
 

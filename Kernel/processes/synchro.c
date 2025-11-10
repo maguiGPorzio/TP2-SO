@@ -3,10 +3,10 @@
 
 #include "synchro.h"
 #include "scheduler.h"
-#include "memoryManager.h"
+#include "memory_manager.h"
 #include "lib.h"
 #include "process.h"
-#include "videoDriver.h"
+#include "video_driver.h"
 
 
 

@@ -2,7 +2,7 @@
 // PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 
 #include "queue.h"
-#include "memoryManager.h"
+#include "memory_manager.h"
 
 typedef struct node {
     int value;

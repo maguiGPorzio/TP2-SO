@@ -2,7 +2,7 @@
 // PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 
 #include "time.h"
-#include "videoDriver.h"
+#include "video_driver.h"
 #include "scheduler.h"
 
 extern uint8_t get_hour();
