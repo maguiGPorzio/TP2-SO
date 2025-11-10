@@ -34,3 +34,10 @@ plog-converter -a 'GA:1,2;64' -t fullhtml -o /root/PVS-report /root/PVS-report.l
 ls -lah /root/PVS-report | head
 ls
 exit
+pvs-studio-analyzer analyze -o PVS-report.log
+plog-converter -a 'GA:1,2;64' -t fullhtml -o PVS-report.html PVS-report.log
+plog-converter -a 'GA:1,2;64' -t fullhtml -o PVS-report1.html PVS-report.log
+ls
+exit
+ls
+exit

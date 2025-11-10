@@ -1,6 +1,6 @@
 <html>
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII" />
   <title>mvar.c</title>
   <link rel="stylesheet" href="../style.css"/>
   <script src="../jquery-3.5.1.min.js"></script>
@@ -42,7 +42,7 @@
 <a name="ln33"> </a>
 <a name="ln34">int mvar_main(int argc, char *argv[]) {</a>
 <a name="ln35">    if (argc != 2) {</a>
-<a name="ln36">        print_err(&quot;Uso: mvar &lt;num_escritores&gt; &lt;num_lectores&gt;\n&quot;);</a>
+<a name="ln36">        print_err(&quot;Use: mvar &lt;num_writers&gt; &lt;num_readers&gt;\n&quot;);</a>
 <a name="ln37">        return ERROR;</a>
 <a name="ln38">    }</a>
 <a name="ln39"> </a>
@@ -50,13 +50,13 @@
 <a name="ln41">    int num_readers = satoi(argv[1]);</a>
 <a name="ln42"> </a>
 <a name="ln43">    if (num_writers &lt;= 0 || num_readers &lt;= 0) {</a>
-<a name="ln44">        print_err(&quot;mvar: los parámetros deben ser enteros positivos.\n&quot;);</a>
-<a name="ln45">        print_err(&quot;Uso: mvar &lt;num_escritores&gt; &lt;num_lectores&gt;\n&quot;);</a>
+<a name="ln44">        print_err(&quot;mvar: paramers must be greater than 0.\n&quot;);</a>
+<a name="ln45">        print_err(&quot;Use: mvar &lt;num_writers&gt; &lt;num_readers&gt;\n&quot;);</a>
 <a name="ln46">        return ERROR;</a>
 <a name="ln47">    }</a>
 <a name="ln48"> </a>
 <a name="ln49">    if (num_writers &gt; (int)LETTER_POOL_SIZE) {</a>
-<a name="ln50">        print_err(&quot;mvar: cantidad máxima de escritores soportada es 62.\n&quot;);</a>
+<a name="ln50">        print_err(&quot;mvar: maximum number of readers is 62.\n&quot;);</a>
 <a name="ln51">        return ERROR;</a>
 <a name="ln52">    }</a>
 <a name="ln53"> </a>
@@ -64,19 +64,19 @@
 <a name="ln55"> </a>
 <a name="ln56">    for (int i = 0; i &lt; num_writers; i++) {</a>
 <a name="ln57">        if (spawn_writer(i) &lt; 0) {</a>
-<a name="ln58">            print_err(&quot;mvar: error creando un escritor.\n&quot;);</a>
+<a name="ln58">            print_err(&quot;mvar: error creating a writer.\n&quot;);</a>
 <a name="ln59">            return ERROR;</a>
 <a name="ln60">        }</a>
 <a name="ln61">    }</a>
 <a name="ln62"> </a>
 <a name="ln63">    for (int i = 0; i &lt; num_readers; i++) {</a>
 <a name="ln64">        if (spawn_reader(i) &lt; 0) {</a>
-<a name="ln65">            print_err(&quot;mvar: error creando un lector.\n&quot;);</a>
+<a name="ln65">            print_err(&quot;mvar: error creating a reader.\n&quot;);</a>
 <a name="ln66">            return ERROR;</a>
 <a name="ln67">        }</a>
 <a name="ln68">    }</a>
 <a name="ln69"> </a>
-<a name="ln70">    printf(&quot;mvar: %d escritores y %d lectores lanzados.\n&quot;, num_writers, num_readers);</a>
+<a name="ln70">    printf(&quot;mvar: %d writers y %d readers created.\n&quot;, num_writers, num_readers);</a>
 <a name="ln71">    return OK;</a>
 <a name="ln72">}</a>
 <a name="ln73"> </a>
@@ -87,7 +87,7 @@
 <a name="ln78">    int idx = 0;</a>
 <a name="ln79">    const char *prefix = SEM_PREFIX;</a>
 <a name="ln80"> </a>
-<a name="ln81">    while (prefix[idx] != 0 &amp;&amp; idx &lt; MAX_SEM_NAME_LENGTH - 1) {</a>
+<a name="ln81">    while (idx &lt; MAX_SEM_NAME_LENGTH - 1 &amp;&amp; prefix[idx] != 0 ) {</a>
 <a name="ln82">        target[idx] = prefix[idx];</a>
 <a name="ln83">        idx++;</a>
 <a name="ln84">    }</a>
@@ -155,7 +155,7 @@
 <a name="ln146">    }</a>
 <a name="ln147"> </a>
 <a name="ln148">    if (attach_to_sync_objects() &lt; 0) {</a>
-<a name="ln149">        print_err(&quot;writer: no se pudieron abrir los semáforos.\n&quot;);</a>
+<a name="ln149">        print_err(&quot;writer: could not open semaphores.\n&quot;);</a>
 <a name="ln150">        return ERROR;</a>
 <a name="ln151">    }</a>
 <a name="ln152"> </a>
@@ -178,7 +178,7 @@
 <a name="ln169">    }</a>
 <a name="ln170"> </a>
 <a name="ln171">    if (attach_to_sync_objects() &lt; 0) {</a>
-<a name="ln172">        print_err(&quot;reader: no se pudieron abrir los semáforos.\n&quot;);</a>
+<a name="ln172">        print_err(&quot;reader: could not open semaphores.\n&quot;);</a>
 <a name="ln173">        return ERROR;</a>
 <a name="ln174">    }</a>
 <a name="ln175"> </a>
@@ -203,7 +203,7 @@
 <a name="ln194">    return OK;</a>
 <a name="ln195">}</a>
 </code></pre>
-<div class="balloon" rel="81"><p><span style="font-size:18px">&uarr;</span> <a href="https://pvs-studio.com/en/docs/warnings/v781/" target="_blank">V781</a> The value of the 'idx' index is checked after it was used. Perhaps there is a mistake in program logic.</p></div>
+<div class="balloon" rel="81"><p><span style="font-size:18px">&uarr;</span> <a href="https://pvs-studio.com/en/docs/warnings/v557/" target="_blank">V557</a> Array overrun is possible. The value of 'idx' index could reach 62.</p></div>
 <div class="balloon" rel="82"><p><span style="font-size:18px">&uarr;</span> <a href="https://pvs-studio.com/en/docs/warnings/v557/" target="_blank">V557</a> Array overrun is possible. The value of 'idx' index could reach 62.</p></div>
 <link rel="stylesheet" href="highlight.css">
 <script src="highlight.pack.js"></script>
