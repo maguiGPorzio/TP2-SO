@@ -1,6 +1,7 @@
 // This is a personal academic project. Dear PVS-Studio, please check it.
 // PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 
+
 #include "scheduler.h"
 #include "process.h" 
 #include "lib.h"
@@ -213,15 +214,15 @@ void * schedule(void * prev_rsp) {
             // Si el status es RUNNING, cambiar a READY
             // Si fue bloqueado, terminado o matado, el status ya se cambió en otras funciones
             current->status = PS_READY;
-
-            if (current->pid != INIT_PID) {
-                // Agregar a la cola correspondiente a su prioridad efectiva
-                queue_t target_queue = ready_queue[current->effective_priority];
-                if (!q_add(target_queue, current->pid)) {
-                    current->status = PS_RUNNING;
-                    force_reschedule = false;
-                    return prev_rsp;
-                }
+        }
+        
+        if (current->status == PS_READY && current->pid != INIT_PID) {
+            // Agregar a la cola correspondiente a su prioridad efectiva (que ya fue reseteada a priority)
+            queue_t target_queue = ready_queue[current->effective_priority];
+            if (!q_add(target_queue, current->pid)) {
+                current->status = PS_RUNNING;
+                force_reschedule = false;
+                return prev_rsp;
             }
         }
     }
