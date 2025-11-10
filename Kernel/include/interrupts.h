@@ -11,7 +11,7 @@ extern void *syscall_frame_ptr; // RSP of shell at time of syscall
 #ifndef INTERRUPS_H_
 #define INTERRUPS_H_
 
-#include <idtLoader.h>
+#include <idt_loader.h>
 
 void _irq00Handler(void);
 void _irq01Handler(void);

@@ -10,7 +10,7 @@
 #include "pipes.h"
 
 #define KEYBOARD_SEM_NAME "keyboard"
-const uint8_t SNAPSHOT_KEY = LEFT_CONTROL; // TODO: cambiarlo por otra
+const uint8_t SNAPSHOT_KEY = 0x3B; // TODO: cambiarlo por otra
 
 static int shift = 0 ;
 static int caps_lock = 0;

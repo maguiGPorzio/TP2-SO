@@ -5,7 +5,7 @@
 #include <lib.h>
 #include <moduleLoader.h>
 #include "keyboard.h"
-#include "idtLoader.h"
+#include "idt_loader.h"
 #include "time.h"
 #include "videoDriver.h"
 #include "sound.h"

@@ -2,7 +2,7 @@
 // PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 
 #include <stdint.h>
-#include "idtLoader.h"
+#include "idt_loader.h"
 #include "defs.h"
 #include "interrupts.h"
 
