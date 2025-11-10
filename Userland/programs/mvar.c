@@ -78,7 +78,7 @@ static void build_sem_name(char *target, const char *suffix, uint64_t pid) {
     int idx = 0;
     const char *prefix = SEM_PREFIX;
 
-    while (prefix[idx] != 0 && idx < MAX_SEM_NAME_LENGTH - 1) {
+    while (idx < MAX_SEM_NAME_LENGTH - 1 && prefix[idx] != 0 ) {
         target[idx] = prefix[idx];
         idx++;
     }

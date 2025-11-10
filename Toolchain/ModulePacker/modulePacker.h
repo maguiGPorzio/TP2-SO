@@ -30,13 +30,13 @@ struct arguments
 };
 
 
-int buildImage(array_t fileArray, char *output_file);
+int build_image(array_t fileArray, char *output_file);
 
 int write_size(FILE *target, char *filename);
 
 int write_file(FILE *target, FILE *source);
 
-int checkFiles(array_t fileArray);
+int check_files(array_t fileArray);
 
 static error_t
 parse_opt (int key, char *arg, struct argp_state *state);

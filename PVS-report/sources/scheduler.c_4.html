@@ -1,0 +1,818 @@
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <title>scheduler.c</title>
+  <link rel="stylesheet" href="../style.css"/>
+  <script src="../jquery-3.5.1.min.js"></script>
+</head>
+<body>
+<pre><code class = "cpp">
+<a name="ln1">// This is a personal academic project. Dear PVS-Studio, please check it.</a>
+<a name="ln2">// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com</a>
+<a name="ln3"> </a>
+<a name="ln4">#include &quot;scheduler.h&quot;</a>
+<a name="ln5">#include &quot;process.h&quot; </a>
+<a name="ln6">#include &quot;lib.h&quot;</a>
+<a name="ln7">#include &quot;queue.h&quot;</a>
+<a name="ln8">#include &quot;pipes.h&quot;</a>
+<a name="ln9">#include &quot;interrupts.h&quot; // lo incluí para usar _hlt()</a>
+<a name="ln10">#include &quot;videoDriver.h&quot;</a>
+<a name="ln11">#include &quot;../include/time.h&quot;</a>
+<a name="ln12">#include &lt;stddef.h&gt;</a>
+<a name="ln13"> </a>
+<a name="ln14">extern void timer_tick();</a>
+<a name="ln15"> </a>
+<a name="ln16">#define SHELL_ADDRESS ((void *) 0x400000)      // TODO: Esto ver si lo movemos a otro archivo (tipo memoryMap.h)</a>
+<a name="ln17"> </a>
+<a name="ln18"> </a>
+<a name="ln19">// ============================================</a>
+<a name="ln20">//         ESTADO DEL SCHEDULER</a>
+<a name="ln21">// ============================================</a>
+<a name="ln22"> </a>
+<a name="ln23">static PCB *processes[MAX_PROCESSES];       // Array para acceso por PID</a>
+<a name="ln24">static queue_t ready_queue[PRIORITY_COUNT] = {0};              // Array de queues</a>
+<a name="ln25"> </a>
+<a name="ln26">static pid_t current_pid = NO_PID;                // PID del proceso actual</a>
+<a name="ln27">static uint8_t process_count = 0;               // Cantidad total de procesos</a>
+<a name="ln28">static uint64_t total_cpu_ticks = 0;            // Total de ticks de CPU</a>
+<a name="ln29">static bool force_reschedule = false;           // Flag para forzar cambio de proceso</a>
+<a name="ln30">static bool scheduler_initialized = false;</a>
+<a name="ln31">static pid_t foreground_process_pid = NO_PID;                  // PID  del proceso que está corriendo en foreground</a>
+<a name="ln32"> </a>
+<a name="ln33">// ============================================</a>
+<a name="ln34">//        DECLARACIONES AUXILIARES</a>
+<a name="ln35">// ============================================</a>
+<a name="ln36"> </a>
+<a name="ln37">static PCB *pick_next_process(void);</a>
+<a name="ln38">static void reparent_children_to_init(pid_t pid);</a>
+<a name="ln39">static int init(int argc, char **argv);</a>
+<a name="ln40">static int scheduler_add_init();</a>
+<a name="ln41">static inline bool pid_is_valid(pid_t pid);</a>
+<a name="ln42">static void cleanup_all_processes(void);</a>
+<a name="ln43">static int create_shell();</a>
+<a name="ln44">static inline bool pid_is_valid(pid_t pid) ;</a>
+<a name="ln45">static void cleanup_resources(PCB * p);</a>
+<a name="ln46">static void apply_aging(void);</a>
+<a name="ln47"> </a>
+<a name="ln48">static inline bool pid_is_valid(pid_t pid) {</a>
+<a name="ln49">    return pid &gt;= 0 &amp;&amp; pid &lt;= MAX_PID;</a>
+<a name="ln50">}</a>
+<a name="ln51"> </a>
+<a name="ln52">static void cleanup_resources(PCB * p) {</a>
+<a name="ln53">    while (!q_is_empty(p-&gt;open_fds)) {</a>
+<a name="ln54">        int fd = q_poll(p-&gt;open_fds);</a>
+<a name="ln55">        close_fd(fd);</a>
+<a name="ln56">    }</a>
+<a name="ln57">}</a>
+<a name="ln58"> </a>
+<a name="ln59">// Proceso init: arranca la shell y se queda haciendo halt para no consumir CPU. Se lo elige siempre que no haya otro proceso para correr!!!!</a>
+<a name="ln60">static int init(int argc, char **argv) {</a>
+<a name="ln61"> </a>
+<a name="ln62">    if (create_shell() != 0) {</a>
+<a name="ln63">        return -1;</a>
+<a name="ln64">    }</a>
+<a name="ln65"> </a>
+<a name="ln66">    scheduler_set_foreground_process(SHELL_PID);</a>
+<a name="ln67"> </a>
+<a name="ln68">    while (1) {</a>
+<a name="ln69">		_hlt();</a>
+<a name="ln70">	}</a>
+<a name="ln71"> </a>
+<a name="ln72">    return -1;</a>
+<a name="ln73">}</a>
+<a name="ln74"> </a>
+<a name="ln75">// Devuelve el PID del proceso en foreground o NO_PID si no está inicializado</a>
+<a name="ln76">pid_t scheduler_get_foreground_pid(void) {</a>
+<a name="ln77">    if (!scheduler_initialized) {</a>
+<a name="ln78">        return NO_PID;</a>
+<a name="ln79">    }</a>
+<a name="ln80">    return foreground_process_pid;</a>
+<a name="ln81">}</a>
+<a name="ln82"> </a>
+<a name="ln83">// Establece el PID del proceso en foreground.</a>
+<a name="ln84">// Devuelve 0 en éxito, -1 en error (scheduler no inicializado o pid inválido).</a>
+<a name="ln85">int scheduler_set_foreground_process(pid_t pid) {</a>
+<a name="ln86">    if (!scheduler_initialized) {</a>
+<a name="ln87">        return -1;</a>
+<a name="ln88">    }</a>
+<a name="ln89"> </a>
+<a name="ln90">    // Permitimos limpiar el foreground pasando NO_PID</a>
+<a name="ln91">    if (pid != NO_PID &amp;&amp; !pid_is_valid(pid)) {</a>
+<a name="ln92">        return -1;</a>
+<a name="ln93">    }</a>
+<a name="ln94"> </a>
+<a name="ln95">    foreground_process_pid = pid;</a>
+<a name="ln96">    return 0;</a>
+<a name="ln97">}</a>
+<a name="ln98"> </a>
+<a name="ln99"> </a>
+<a name="ln100"> </a>
+<a name="ln101">// ============================================</a>
+<a name="ln102">//           INICIALIZACIÓN</a>
+<a name="ln103">// ============================================</a>
+<a name="ln104"> </a>
+<a name="ln105">static int create_shell(){</a>
+<a name="ln106">    PCB *pcb_shell = proc_create(SHELL_PID, (process_entry_t) SHELL_ADDRESS, 0, NULL, &quot;shell&quot;, false, NULL);</a>
+<a name="ln107">    if (pcb_shell == NULL) {</a>
+<a name="ln108">        return -1;</a>
+<a name="ln109">    }</a>
+<a name="ln110">    pcb_shell-&gt;priority = MAX_PRIORITY;</a>
+<a name="ln111">    pcb_shell-&gt;effective_priority = MAX_PRIORITY;</a>
+<a name="ln112">    pcb_shell-&gt;status = PS_READY; </a>
+<a name="ln113">    pcb_shell-&gt;cpu_ticks = 0;</a>
+<a name="ln114">    pcb_shell-&gt;last_tick = ticks_elapsed();</a>
+<a name="ln115">    processes[SHELL_PID] = pcb_shell;</a>
+<a name="ln116">    process_count++;</a>
+<a name="ln117">    if (!q_add(ready_queue[pcb_shell-&gt;effective_priority], SHELL_PID)) {</a>
+<a name="ln118">        processes[SHELL_PID] = NULL;</a>
+<a name="ln119">        process_count--;</a>
+<a name="ln120">        free_process_resources(pcb_shell);</a>
+<a name="ln121">        return -1;</a>
+<a name="ln122">    }</a>
+<a name="ln123">    return 0;</a>
+<a name="ln124">}</a>
+<a name="ln125"> </a>
+<a name="ln126">// Agrega el proceso al array de procesos y a la cola READY</a>
+<a name="ln127">static int scheduler_add_init() {</a>
+<a name="ln128">    if (process_count != 0) { // si no es el primer proceso en ser creado está mal</a>
+<a name="ln129">        return -1;</a>
+<a name="ln130">    }</a>
+<a name="ln131"> </a>
+<a name="ln132">    PCB *pcb_init = proc_create(INIT_PID, (process_entry_t) init, 0, NULL, &quot;init&quot;, false, NULL);</a>
+<a name="ln133">    if (pcb_init == NULL) {</a>
+<a name="ln134">        return -1;</a>
+<a name="ln135">    }</a>
+<a name="ln136"> </a>
+<a name="ln137">    pcb_init-&gt;priority = MIN_PRIORITY; // no importa pues no va a ninguna queue</a>
+<a name="ln138">    pcb_init-&gt;effective_priority = MIN_PRIORITY;</a>
+<a name="ln139">    pcb_init-&gt;status = PS_READY; </a>
+<a name="ln140">    pcb_init-&gt;cpu_ticks = 0;</a>
+<a name="ln141">    pcb_init-&gt;last_tick = 0; // no importa pues no va a ninguna queue</a>
+<a name="ln142"> </a>
+<a name="ln143">    processes[INIT_PID] = pcb_init;</a>
+<a name="ln144">    process_count++;</a>
+<a name="ln145"> </a>
+<a name="ln146">    //timer_tick();</a>
+<a name="ln147"> </a>
+<a name="ln148">    return 0;</a>
+<a name="ln149">}</a>
+<a name="ln150"> </a>
+<a name="ln151">int init_scheduler(void) {</a>
+<a name="ln152">    if (scheduler_initialized) { // para no crearlo más de una vez</a>
+<a name="ln153">        return 0;</a>
+<a name="ln154">    }</a>
+<a name="ln155"> </a>
+<a name="ln156">    // Inicializar array de procesos</a>
+<a name="ln157">    for (int i = 0; i &lt; MAX_PROCESSES; i++) {</a>
+<a name="ln158">        processes[i] = NULL;</a>
+<a name="ln159">    }</a>
+<a name="ln160">    </a>
+<a name="ln161">    // inicializamos las queues</a>
+<a name="ln162">    for (int i = MAX_PRIORITY; i &lt;= MIN_PRIORITY; i++) {</a>
+<a name="ln163">        ready_queue[i] = q_init();</a>
+<a name="ln164">        if (ready_queue[i] == NULL) {</a>
+<a name="ln165">            return -1;</a>
+<a name="ln166">        }</a>
+<a name="ln167">    }</a>
+<a name="ln168">    </a>
+<a name="ln169">   </a>
+<a name="ln170">    process_count = 0;</a>
+<a name="ln171">    total_cpu_ticks = 0;</a>
+<a name="ln172">    force_reschedule = false;</a>
+<a name="ln173">    current_pid = NO_PID; // NO le pongo INIT_PID porque el que lo tiene que elegir es el schedule la primera vez que se llama. </a>
+<a name="ln174">    //Sino, la primera llamada a scheudule va a tratar a init como current y va a pisar su stack_pointer con prev_rsp</a>
+<a name="ln175"> </a>
+<a name="ln176">    if(scheduler_add_init() != 0) {</a>
+<a name="ln177">        for (int i = MAX_PRIORITY; i &lt;= MIN_PRIORITY; i++) {</a>
+<a name="ln178">        q_destroy(ready_queue[i]);</a>
+<a name="ln179">    }</a>
+<a name="ln180"> </a>
+<a name="ln181">        return -1;</a>
+<a name="ln182">    }</a>
+<a name="ln183"> </a>
+<a name="ln184">    scheduler_initialized = true;</a>
+<a name="ln185">    return 0;</a>
+<a name="ln186">}</a>
+<a name="ln187"> </a>
+<a name="ln188">// ============================================</a>
+<a name="ln189">//        SCHEDULER PRINCIPAL</a>
+<a name="ln190">// ============================================</a>
+<a name="ln191"> </a>
+<a name="ln192">void * schedule(void * prev_rsp) {</a>
+<a name="ln193">    if (!scheduler_initialized) {</a>
+<a name="ln194">        return prev_rsp;</a>
+<a name="ln195">    }</a>
+<a name="ln196"> </a>
+<a name="ln197">    PCB *current = (pid_is_valid(current_pid)) ? processes[current_pid] : NULL;</a>
+<a name="ln198"> </a>
+<a name="ln199">    if (current) {</a>
+<a name="ln200">        current-&gt;stack_pointer = prev_rsp; // actualiza el rsp del proceso que estuvo corriendo hasta ahora en su pcb</a>
+<a name="ln201">        </a>
+<a name="ln202">        current-&gt;cpu_ticks++; // cuantas veces interrumpimos este proceso que estuvo corrriendo hasta ahora</a>
+<a name="ln203">        total_cpu_ticks++;</a>
+<a name="ln204"> </a>
+<a name="ln205">        // Con quantum de 1 tick, siempre forzamos reschedule después de cada tick</a>
+<a name="ln206">        // (a menos que el proceso ya no esté RUNNING por otra razón)</a>
+<a name="ln207">        </a>
+<a name="ln208">        if(current-&gt;status == PS_RUNNING){ </a>
+<a name="ln209">            // Si el status es RUNNING, cambiar a READY</a>
+<a name="ln210">            // Si fue bloqueado, terminado o matado, el status ya se cambió en otras funciones</a>
+<a name="ln211">            current-&gt;status = PS_READY;</a>
+<a name="ln212">        }</a>
+<a name="ln213">        </a>
+<a name="ln214">        if (current-&gt;status == PS_READY &amp;&amp; current-&gt;pid != INIT_PID) {</a>
+<a name="ln215">            // Agregar a la cola correspondiente a su prioridad efectiva</a>
+<a name="ln216">            queue_t target_queue = ready_queue[current-&gt;effective_priority];</a>
+<a name="ln217">            if (!q_add(target_queue, current-&gt;pid)) {</a>
+<a name="ln218">                current-&gt;status = PS_RUNNING;</a>
+<a name="ln219">                force_reschedule = false;</a>
+<a name="ln220">                return prev_rsp;</a>
+<a name="ln221">            }</a>
+<a name="ln222">        }</a>
+<a name="ln223">    }</a>
+<a name="ln224"> </a>
+<a name="ln225">    // Aplicar aging cada N ticks</a>
+<a name="ln226">    if (total_cpu_ticks % AGING_CHECK_INTERVAL == 0) {</a>
+<a name="ln227">        apply_aging();</a>
+<a name="ln228">    }</a>
+<a name="ln229"> </a>
+<a name="ln230">    // Si el proceso actual tiene que cambiar:</a>
+<a name="ln231">    PCB *next = pick_next_process();</a>
+<a name="ln232">    </a>
+<a name="ln233">    // Si no hay otro proceso listo, usar el proceso init como fallback</a>
+<a name="ln234">    if (!next) {</a>
+<a name="ln235">        next = processes[INIT_PID];</a>
+<a name="ln236">    }</a>
+<a name="ln237"> </a>
+<a name="ln238">    // Cuando un proceso va a correr:</a>
+<a name="ln239">    // 1. Actualizar su last_tick</a>
+<a name="ln240">    // 2. Resetear effective_priority a su priority base</a>
+<a name="ln241">    next-&gt;last_tick = total_cpu_ticks;</a>
+<a name="ln242">    next-&gt;effective_priority = next-&gt;priority;</a>
+<a name="ln243"> </a>
+<a name="ln244">    // TODO: borrar</a>
+<a name="ln245">    // Debug: solo mostrar PID del proceso que corre</a>
+<a name="ln246">    // if (next-&gt;pid &gt;= 3 &amp;&amp; next-&gt;pid &lt;= 5) {</a>
+<a name="ln247">    //     char debug_msg[10];</a>
+<a name="ln248">    //     decimal_to_str(next-&gt;pid, debug_msg);</a>
+<a name="ln249">    //     vd_print(debug_msg, 0x00ff00);</a>
+<a name="ln250">    //     vd_print(&quot; &quot;, 0x00ff00);</a>
+<a name="ln251">    // }</a>
+<a name="ln252"> </a>
+<a name="ln253">    current_pid = next-&gt;pid;</a>
+<a name="ln254">    next-&gt;status = PS_RUNNING;</a>
+<a name="ln255">    force_reschedule = false;</a>
+<a name="ln256">    return next-&gt;stack_pointer;</a>
+<a name="ln257"> </a>
+<a name="ln258">}</a>
+<a name="ln259"> </a>
+<a name="ln260">// ============================================</a>
+<a name="ln261">//    ALGORITMO: MULTICOLA CON PRIORIDADES</a>
+<a name="ln262">// ============================================</a>
+<a name="ln263"> </a>
+<a name="ln264">// Devuelve null si no hay proceso listo para correr en ninguna cola</a>
+<a name="ln265">// Recorre las colas de mayor prioridad (0) a menor (PRIORITY_COUNT-1)</a>
+<a name="ln266">static PCB *pick_next_process(void) {</a>
+<a name="ln267">    if (!scheduler_initialized || process_count == 0) {</a>
+<a name="ln268">        return NULL;</a>
+<a name="ln269">    }</a>
+<a name="ln270"> </a>
+<a name="ln271">    // Recorrer las colas por orden de prioridad</a>
+<a name="ln272">    for (int priority = MAX_PRIORITY; priority &lt;= MIN_PRIORITY; priority++) {</a>
+<a name="ln273">        if (q_is_empty(ready_queue[priority])) {</a>
+<a name="ln274">            continue;</a>
+<a name="ln275">        }</a>
+<a name="ln276">        </a>
+<a name="ln277">        // Buscar un proceso válido en esta cola de prioridad</a>
+<a name="ln278">        while (!q_is_empty(ready_queue[priority])) {</a>
+<a name="ln279">            pid_t next_pid = (pid_t) q_poll(ready_queue[priority]);</a>
+<a name="ln280">            if (!pid_is_valid(next_pid)) {</a>
+<a name="ln281">                continue;</a>
+<a name="ln282">            }</a>
+<a name="ln283">            PCB *candidate = processes[next_pid];</a>
+<a name="ln284">            if (candidate != NULL &amp;&amp; candidate-&gt;status == PS_READY) {</a>
+<a name="ln285">                return candidate;</a>
+<a name="ln286">            }</a>
+<a name="ln287">            // Si el proceso ya no está listo, seguimos buscando en esta cola</a>
+<a name="ln288">        }</a>
+<a name="ln289">    }</a>
+<a name="ln290"> </a>
+<a name="ln291">    return NULL;</a>
+<a name="ln292">}</a>
+<a name="ln293"> </a>
+<a name="ln294"> </a>
+<a name="ln295">// ============================================</a>
+<a name="ln296">//              AGING SYSTEM</a>
+<a name="ln297">// ============================================</a>
+<a name="ln298"> </a>
+<a name="ln299">// Aplica aging: promueve procesos que llevan mucho tiempo sin correr</a>
+<a name="ln300">static void apply_aging(void) {</a>
+<a name="ln301">    // Promover de prioridad 2 (MIN_PRIORITY) a 1 (MEDIUM)</a>
+<a name="ln302">    q_to_begin(ready_queue[2]);</a>
+<a name="ln303">    while (q_has_next(ready_queue[2])) {</a>
+<a name="ln304">        pid_t pid = q_next(ready_queue[2]);</a>
+<a name="ln305">        PCB *p = processes[pid];</a>
+<a name="ln306">        </a>
+<a name="ln307">        if (p != NULL &amp;&amp; total_cpu_ticks - p-&gt;last_tick &gt;= AGING_THRESHOLD) {</a>
+<a name="ln308">            q_remove_current(ready_queue[2]);</a>
+<a name="ln309">            p-&gt;effective_priority = 1;</a>
+<a name="ln310">            q_add(ready_queue[1], pid);</a>
+<a name="ln311">        }</a>
+<a name="ln312">    }</a>
+<a name="ln313">    </a>
+<a name="ln314">    // Promover de prioridad 1 (MEDIUM) a 0 (MAX_PRIORITY)</a>
+<a name="ln315">    q_to_begin(ready_queue[1]);</a>
+<a name="ln316">    while (q_has_next(ready_queue[1])) {</a>
+<a name="ln317">        pid_t pid = q_next(ready_queue[1]);</a>
+<a name="ln318">        PCB *p = processes[pid];</a>
+<a name="ln319">        </a>
+<a name="ln320">        if (p != NULL &amp;&amp; total_cpu_ticks - p-&gt;last_tick &gt;= AGING_THRESHOLD) {</a>
+<a name="ln321">            q_remove_current(ready_queue[1]);</a>
+<a name="ln322">            p-&gt;effective_priority = 0;</a>
+<a name="ln323">            q_add(ready_queue[0], pid);</a>
+<a name="ln324">        }</a>
+<a name="ln325">    }</a>
+<a name="ln326">}</a>
+<a name="ln327"> </a>
+<a name="ln328"> </a>
+<a name="ln329">// ============================================</a>
+<a name="ln330">//        GESTIÓN DE PROCESOS</a>
+<a name="ln331">// ============================================</a>
+<a name="ln332"> </a>
+<a name="ln333">// Agrega el proceso al array de procesos y a la cola READY</a>
+<a name="ln334">int scheduler_add_process(process_entry_t entry, int argc, const char **argv, const char *name, int fds[2]) {</a>
+<a name="ln335">    if (!scheduler_initialized || process_count &gt;= MAX_PROCESSES) {</a>
+<a name="ln336">        return -1;</a>
+<a name="ln337">    }</a>
+<a name="ln338"> </a>
+<a name="ln339">    // Buscar primer PID libre</a>
+<a name="ln340">    pid_t pid = NO_PID;</a>
+<a name="ln341">    for (int i = 0; i &lt; MAX_PROCESSES; i++) {</a>
+<a name="ln342">        if (processes[i] == NULL) {</a>
+<a name="ln343">            pid = i;</a>
+<a name="ln344">            break;</a>
+<a name="ln345">        }</a>
+<a name="ln346">    }</a>
+<a name="ln347">    if (!pid_is_valid(pid)) {</a>
+<a name="ln348">        return -1;</a>
+<a name="ln349">    }</a>
+<a name="ln350"> </a>
+<a name="ln351">    PCB *process = proc_create(pid, entry, argc, argv, name, true, fds);</a>
+<a name="ln352">    if (process == NULL) {</a>
+<a name="ln353">        return -1;</a>
+<a name="ln354">    }</a>
+<a name="ln355"> </a>
+<a name="ln356">    // Inicializar campos relacionados con scheduling</a>
+<a name="ln357">    process-&gt;priority = DEFAULT_PRIORITY; // Asignar prioridad por defecto</a>
+<a name="ln358">    process-&gt;effective_priority = DEFAULT_PRIORITY; // Inicialmente igual a priority</a>
+<a name="ln359">    process-&gt;status = PS_READY; </a>
+<a name="ln360">    process-&gt;cpu_ticks = 0;</a>
+<a name="ln361"> </a>
+<a name="ln362"> </a>
+<a name="ln363">    processes[pid] = process;</a>
+<a name="ln364">    process_count++;</a>
+<a name="ln365"> </a>
+<a name="ln366">    if (!q_add(ready_queue[process-&gt;effective_priority], pid)) {</a>
+<a name="ln367">        processes[pid] = NULL;</a>
+<a name="ln368">        process_count--;</a>
+<a name="ln369">        free_process_resources(process);</a>
+<a name="ln370">        return -1;</a>
+<a name="ln371">    }</a>
+<a name="ln372"> </a>
+<a name="ln373">    return pid;</a>
+<a name="ln374">}</a>
+<a name="ln375"> </a>
+<a name="ln376">int scheduler_remove_process(pid_t pid) {</a>
+<a name="ln377">    if (!scheduler_initialized || !pid_is_valid(pid)) {</a>
+<a name="ln378">        return -1;</a>
+<a name="ln379">    }</a>
+<a name="ln380"> </a>
+<a name="ln381">    PCB *process = processes[pid];</a>
+<a name="ln382">    if (!process) {</a>
+<a name="ln383">        return -1;</a>
+<a name="ln384">    }</a>
+<a name="ln385"> </a>
+<a name="ln386">    // Remover de la cola de procesos listos para correr</a>
+<a name="ln387">    if (process-&gt;status == PS_READY || process-&gt;status == PS_RUNNING) {</a>
+<a name="ln388">        // Buscar en la cola correspondiente a su prioridad efectiva</a>
+<a name="ln389">        q_remove(ready_queue[process-&gt;effective_priority], process-&gt;pid);</a>
+<a name="ln390">    }</a>
+<a name="ln391"> </a>
+<a name="ln392">    // Remover del array</a>
+<a name="ln393">    processes[pid] = NULL;</a>
+<a name="ln394">    process_count--;</a>
+<a name="ln395"> </a>
+<a name="ln396">    // Si estábamos ejecutando este proceso, forzar reschedule</a>
+<a name="ln397">    if (current_pid == pid) {</a>
+<a name="ln398">        current_pid = -1;</a>
+<a name="ln399">        scheduler_force_reschedule(); </a>
+<a name="ln400">    }</a>
+<a name="ln401"> </a>
+<a name="ln402">    // Liberar recursos del proceso</a>
+<a name="ln403">    free_process_resources(process);</a>
+<a name="ln404"> </a>
+<a name="ln405">    return 0;</a>
+<a name="ln406">}</a>
+<a name="ln407"> </a>
+<a name="ln408">int scheduler_set_priority(pid_t pid, uint8_t new_priority) {</a>
+<a name="ln409">   if (!scheduler_initialized || !pid_is_valid(pid) || </a>
+<a name="ln410">        processes[pid] == NULL || </a>
+<a name="ln411">        new_priority &lt; MAX_PRIORITY || new_priority &gt; MIN_PRIORITY) { // mas chico el numero, mayor la prioridad</a>
+<a name="ln412">        return -1;</a>
+<a name="ln413">    }</a>
+<a name="ln414"> </a>
+<a name="ln415">    PCB *process = processes[pid];</a>
+<a name="ln416">    uint8_t old_priority = process-&gt;priority;</a>
+<a name="ln417">    uint8_t old_effective_priority = process-&gt;effective_priority;</a>
+<a name="ln418">    </a>
+<a name="ln419">    // Si la prioridad no cambia, no hacer nada</a>
+<a name="ln420">    if (old_priority == new_priority) {</a>
+<a name="ln421">        return 0;</a>
+<a name="ln422">    }</a>
+<a name="ln423">    </a>
+<a name="ln424">    // Si el proceso está READY, hay que moverlo de una cola a otra</a>
+<a name="ln425">    if (process-&gt;status == PS_READY) { </a>
+<a name="ln426">        // Remover de la cola actual (usa effective_priority porque ahí está realmente)</a>
+<a name="ln427">        q_remove(ready_queue[old_effective_priority], pid);</a>
+<a name="ln428">        </a>
+<a name="ln429">        // Cambiar ambas prioridades</a>
+<a name="ln430">        process-&gt;priority = new_priority;</a>
+<a name="ln431">        process-&gt;effective_priority = new_priority;</a>
+<a name="ln432">        </a>
+<a name="ln433">        // Agregar a la nueva cola</a>
+<a name="ln434">        if (!q_add(ready_queue[new_priority], pid)) {</a>
+<a name="ln435">            // Si falla, volver a poner en la cola antigua</a>
+<a name="ln436">            process-&gt;priority = old_priority;</a>
+<a name="ln437">            process-&gt;effective_priority = old_effective_priority;</a>
+<a name="ln438">            q_add(ready_queue[old_effective_priority], pid);</a>
+<a name="ln439">            return -1;</a>
+<a name="ln440">        }</a>
+<a name="ln441">    } else {</a>
+<a name="ln442">        // Si está RUNNING, BLOCKED o TERMINATED, solo cambiar la prioridad base</a>
+<a name="ln443">        // effective_priority se reseteará cuando vuelva a correr</a>
+<a name="ln444">        process-&gt;priority = new_priority;</a>
+<a name="ln445">        process-&gt;effective_priority = new_priority;</a>
+<a name="ln446">    }</a>
+<a name="ln447">    </a>
+<a name="ln448">    return 0;</a>
+<a name="ln449">}</a>
+<a name="ln450"> </a>
+<a name="ln451">int scheduler_get_priority(pid_t pid) {</a>
+<a name="ln452">    if (!scheduler_initialized || !pid_is_valid(pid) || processes[pid] == NULL) {</a>
+<a name="ln453">        return -1;</a>
+<a name="ln454">    }</a>
+<a name="ln455">    PCB *process = processes[pid];</a>
+<a name="ln456">    return process-&gt;priority;</a>
+<a name="ln457">}</a>
+<a name="ln458"> </a>
+<a name="ln459">void scheduler_force_reschedule(void) {</a>
+<a name="ln460">    if (scheduler_initialized) {</a>
+<a name="ln461">        force_reschedule = true;</a>
+<a name="ln462">        timer_tick();</a>
+<a name="ln463">    }</a>
+<a name="ln464"> </a>
+<a name="ln465">}</a>
+<a name="ln466"> </a>
+<a name="ln467">int scheduler_get_current_pid(void) {</a>
+<a name="ln468">    if (scheduler_initialized) {</a>
+<a name="ln469">        return current_pid;</a>
+<a name="ln470">    }</a>
+<a name="ln471">    return -1;</a>
+<a name="ln472">}</a>
+<a name="ln473"> </a>
+<a name="ln474"> </a>
+<a name="ln475">void scheduler_yield(void) {</a>
+<a name="ln476">    scheduler_force_reschedule(); </a>
+<a name="ln477">}</a>
+<a name="ln478"> </a>
+<a name="ln479">int scheduler_kill_process(pid_t pid) {</a>
+<a name="ln480">    if(!scheduler_initialized) {</a>
+<a name="ln481">        return -1; // Scheduler not initialized</a>
+<a name="ln482">    }</a>
+<a name="ln483">    </a>
+<a name="ln484">    if (!pid_is_valid(pid)) {</a>
+<a name="ln485">        return -2; // Invalid PID</a>
+<a name="ln486">    }</a>
+<a name="ln487">    </a>
+<a name="ln488">    PCB *killed_process = processes[pid];</a>
+<a name="ln489">    if (!killed_process) {</a>
+<a name="ln490">        return -3; // No process found with this PID</a>
+<a name="ln491">    }</a>
+<a name="ln492"> </a>
+<a name="ln493">    if (!killed_process-&gt;killable) {</a>
+<a name="ln494">        return -4; // Process is protected (init or shell)</a>
+<a name="ln495">    }</a>
+<a name="ln496"> </a>
+<a name="ln497">    reparent_children_to_init(killed_process-&gt;pid);</a>
+<a name="ln498"> </a>
+<a name="ln499">    remove_process_from_all_semaphore_queues(killed_process-&gt;pid);</a>
+<a name="ln500"> </a>
+<a name="ln501">    if (pid == foreground_process_pid) {</a>
+<a name="ln502">        foreground_process_pid = SHELL_PID;</a>
+<a name="ln503">        pipe_on_process_killed(killed_process-&gt;pid); // matamos el foreground group si estaba pipeado</a>
+<a name="ln504">    }</a>
+<a name="ln505"> </a>
+<a name="ln506">    killed_process-&gt;status = PS_TERMINATED;</a>
+<a name="ln507">    killed_process-&gt;return_value = KILLED_RET_VALUE;</a>
+<a name="ln508">    </a>
+<a name="ln509">    // cierra los fds abiertos</a>
+<a name="ln510">    cleanup_resources(killed_process);</a>
+<a name="ln511"> </a>
+<a name="ln512"> </a>
+<a name="ln513">    if(killed_process-&gt;parent_pid == INIT_PID) {</a>
+<a name="ln514">        scheduler_remove_process(killed_process-&gt;pid); </a>
+<a name="ln515">    } else { // si el padre no es init, no vamos a eliminarlo porque su padre podria hacerle un wait</a>
+<a name="ln516">        // Lo sacamos de la cola de procesos ready para que no vuelva a correr PERO NO  del array de procesos (para que el padre pueda acceder a su ret_value)</a>
+<a name="ln517">        if (killed_process-&gt;status == PS_READY || killed_process-&gt;status == PS_RUNNING) {</a>
+<a name="ln518">            q_remove(ready_queue[killed_process-&gt;effective_priority], killed_process-&gt;pid);</a>
+<a name="ln519">        }</a>
+<a name="ln520">        killed_process-&gt;status = PS_TERMINATED; // Le cambio el estado despues de hacer el dequeue o sino no va a entrar en la condición del if</a>
+<a name="ln521">        killed_process-&gt;return_value = KILLED_RET_VALUE;</a>
+<a name="ln522">        PCB* parent = processes[killed_process-&gt;parent_pid];</a>
+<a name="ln523"> </a>
+<a name="ln524">        if (parent != NULL &amp;&amp; parent-&gt;status == PS_BLOCKED &amp;&amp; parent-&gt;waiting_on == killed_process-&gt;pid) {</a>
+<a name="ln525">            scheduler_unblock_process(parent-&gt;pid);</a>
+<a name="ln526">        }</a>
+<a name="ln527">    }</a>
+<a name="ln528">    if(pid == current_pid){</a>
+<a name="ln529">        scheduler_yield();</a>
+<a name="ln530">    }</a>
+<a name="ln531">    return 0;</a>
+<a name="ln532">}</a>
+<a name="ln533"> </a>
+<a name="ln534"> </a>
+<a name="ln535">// ============================================</a>
+<a name="ln536">//   FUNCIONES AUXILIARES PARA BLOQUEO</a>
+<a name="ln537">// ============================================</a>
+<a name="ln538"> </a>
+<a name="ln539">// Llamar desde proc_block() en processes.c</a>
+<a name="ln540">int scheduler_block_process(pid_t pid) {</a>
+<a name="ln541">    if (!scheduler_initialized || !pid_is_valid(pid)) {</a>
+<a name="ln542">        return -1;</a>
+<a name="ln543">    }</a>
+<a name="ln544">    </a>
+<a name="ln545">    PCB *process = processes[pid];</a>
+<a name="ln546">    if (process == NULL) {</a>
+<a name="ln547">        return -1;</a>
+<a name="ln548">    }</a>
+<a name="ln549">    </a>
+<a name="ln550">    // Remover de cola READY (si está ahí)</a>
+<a name="ln551">    if (process-&gt;status == PS_READY || process-&gt;status == PS_RUNNING) {</a>
+<a name="ln552">        q_remove(ready_queue[process-&gt;effective_priority], process-&gt;pid);</a>
+<a name="ln553">    }</a>
+<a name="ln554">    </a>
+<a name="ln555">    process-&gt;status = PS_BLOCKED;</a>
+<a name="ln556">    </a>
+<a name="ln557">    // Si es el proceso actual, forzar reschedule</a>
+<a name="ln558">    if (pid == current_pid) {</a>
+<a name="ln559">        scheduler_force_reschedule();</a>
+<a name="ln560">    }</a>
+<a name="ln561">    </a>
+<a name="ln562">    return 0;</a>
+<a name="ln563">}</a>
+<a name="ln564"> </a>
+<a name="ln565"> </a>
+<a name="ln566">int scheduler_unblock_process(pid_t pid) {</a>
+<a name="ln567">    if (!scheduler_initialized || !pid_is_valid(pid)) {</a>
+<a name="ln568">        return -1;</a>
+<a name="ln569">    }</a>
+<a name="ln570">    </a>
+<a name="ln571">    PCB *process = processes[pid];</a>
+<a name="ln572">    if (!process || process-&gt;status != PS_BLOCKED) {</a>
+<a name="ln573">        return -1;</a>
+<a name="ln574">    }</a>
+<a name="ln575">    </a>
+<a name="ln576">    process-&gt;status = PS_READY;</a>
+<a name="ln577">    </a>
+<a name="ln578">    // Agregar a la cola correspondiente a su prioridad efectiva</a>
+<a name="ln579">    if (!q_add(ready_queue[process-&gt;effective_priority], pid)) {</a>
+<a name="ln580">        process-&gt;status = PS_BLOCKED;</a>
+<a name="ln581">        return -1;</a>
+<a name="ln582">    }</a>
+<a name="ln583">    </a>
+<a name="ln584">    return 0;</a>
+<a name="ln585">}</a>
+<a name="ln586"> </a>
+<a name="ln587">static void cleanup_all_processes(void) {</a>
+<a name="ln588">    if (!scheduler_initialized) {</a>
+<a name="ln589">        return;</a>
+<a name="ln590">    }</a>
+<a name="ln591"> </a>
+<a name="ln592">    for (int i = 0; i &lt; MAX_PROCESSES; i++) {</a>
+<a name="ln593">        PCB *p = processes[i];</a>
+<a name="ln594">        if (p) {</a>
+<a name="ln595">            free_process_resources(p);</a>
+<a name="ln596">            processes[i] = NULL;</a>
+<a name="ln597">        }</a>
+<a name="ln598">    }</a>
+<a name="ln599">}</a>
+<a name="ln600"> </a>
+<a name="ln601">void scheduler_destroy(void) {</a>
+<a name="ln602">    if (!scheduler_initialized) {</a>
+<a name="ln603">        return;</a>
+<a name="ln604">    }</a>
+<a name="ln605"> </a>
+<a name="ln606">    // Limpiar todas las colas de prioridades liberando nodos</a>
+<a name="ln607">    for (int i = MAX_PRIORITY; i &lt;= MIN_PRIORITY; i++) {</a>
+<a name="ln608">        q_destroy(ready_queue[i]);</a>
+<a name="ln609">        ready_queue[i] = NULL;</a>
+<a name="ln610">    }</a>
+<a name="ln611"> </a>
+<a name="ln612">    cleanup_all_processes();</a>
+<a name="ln613"> </a>
+<a name="ln614">    process_count = 0;</a>
+<a name="ln615">    total_cpu_ticks = 0;</a>
+<a name="ln616">    force_reschedule = false;</a>
+<a name="ln617">    current_pid = NO_PID;</a>
+<a name="ln618">    scheduler_initialized = false;</a>
+<a name="ln619">}</a>
+<a name="ln620"> </a>
+<a name="ln621">// En scheduler.c</a>
+<a name="ln622">PCB *scheduler_get_process(pid_t pid) {</a>
+<a name="ln623">    if (!scheduler_initialized || !pid_is_valid(pid)) {</a>
+<a name="ln624">        return NULL;</a>
+<a name="ln625">    }</a>
+<a name="ln626">    </a>
+<a name="ln627">    return processes[pid];</a>
+<a name="ln628">}</a>
+<a name="ln629"> </a>
+<a name="ln630"> </a>
+<a name="ln631">int scheduler_get_processes(process_info_t *buffer, int max_count) {</a>
+<a name="ln632">    if (!scheduler_initialized || buffer == NULL || max_count &lt;= 0) {</a>
+<a name="ln633">        return -1;</a>
+<a name="ln634">    }</a>
+<a name="ln635"> </a>
+<a name="ln636">    int count = 0;</a>
+<a name="ln637">    for (int i = 0; i &lt; MAX_PROCESSES &amp;&amp; count &lt; max_count; i++) {</a>
+<a name="ln638">        PCB *p = processes[i];</a>
+<a name="ln639">        if (p) {</a>
+<a name="ln640">            buffer[count].pid = p-&gt;pid;</a>
+<a name="ln641">            strncpy(buffer[count].name, p-&gt;name, MAX_PROCESS_NAME_LENGTH);</a>
+<a name="ln642">            buffer[count].status = p-&gt;status;</a>
+<a name="ln643">            buffer[count].priority = p-&gt;priority;</a>
+<a name="ln644">            buffer[count].parent_pid = p-&gt;parent_pid;</a>
+<a name="ln645">            buffer[count].read_fd = p-&gt;read_fd;</a>
+<a name="ln646">            buffer[count].write_fd = p-&gt;write_fd;</a>
+<a name="ln647">            buffer[count].stack_base = (uint64_t)p-&gt;stack_base;</a>
+<a name="ln648">            buffer[count].stack_pointer = (uint64_t)p-&gt;stack_pointer;</a>
+<a name="ln649">            </a>
+<a name="ln650">            count++;</a>
+<a name="ln651">        }</a>
+<a name="ln652">    }</a>
+<a name="ln653"> </a>
+<a name="ln654">    return count;</a>
+<a name="ln655">}</a>
+<a name="ln656"> </a>
+<a name="ln657">// ============================================</a>
+<a name="ln658">//   TERMINACIÓN INMEDIATA DEL PROCESO ACTUAL</a>
+<a name="ln659">// ============================================</a>
+<a name="ln660"> </a>
+<a name="ln661">void scheduler_exit_process(int64_t ret_value) {</a>
+<a name="ln662">    if(!scheduler_initialized) {</a>
+<a name="ln663">        return;</a>
+<a name="ln664">    }</a>
+<a name="ln665">    </a>
+<a name="ln666">    PCB * current_process = processes[current_pid];</a>
+<a name="ln667">    </a>
+<a name="ln668">    reparent_children_to_init(current_process-&gt;pid);</a>
+<a name="ln669"> </a>
+<a name="ln670">    if (current_pid == foreground_process_pid) {</a>
+<a name="ln671">        foreground_process_pid = SHELL_PID;</a>
+<a name="ln672">    }</a>
+<a name="ln673">    remove_process_from_all_semaphore_queues(current_process-&gt;pid);</a>
+<a name="ln674">    </a>
+<a name="ln675">    // limpia los fds abiertos</a>
+<a name="ln676">    cleanup_resources(current_process);</a>
+<a name="ln677"> </a>
+<a name="ln678">    if(current_process-&gt;parent_pid == INIT_PID) { // si el padre es init, no hace falta mantener su pcb para guardarnos ret_value pues nadie le va a hacer waitpid</a>
+<a name="ln679">        scheduler_remove_process(current_process-&gt;pid); </a>
+<a name="ln680">    } else{ // si el padre no es init, no vamos a eliminarlo porque su padre podria hacerle un wait</a>
+<a name="ln681">        // Lo sacamos de la cola de procesos ready para que no vuelva a correr PERO NO  del array de procesos (para que el padre pueda acceder a su ret_value)</a>
+<a name="ln682">        if (current_process-&gt;status == PS_READY || current_process-&gt;status == PS_RUNNING) {</a>
+<a name="ln683">            q_remove(ready_queue[current_process-&gt;effective_priority], current_process-&gt;pid);</a>
+<a name="ln684">        }</a>
+<a name="ln685">        current_process-&gt;status = PS_TERMINATED; // Le cambio el estado despues de hacer el dequeue o sino no va a entrar en la condición del if</a>
+<a name="ln686">        current_process-&gt;return_value = ret_value;</a>
+<a name="ln687">        PCB* parent = processes[current_process-&gt;parent_pid];</a>
+<a name="ln688"> </a>
+<a name="ln689">        // Si el padre estaba bloqueado haciendo waitpid, lo desbloqueamos</a>
+<a name="ln690">        if (parent-&gt;status == PS_BLOCKED &amp;&amp; parent-&gt;waiting_on == current_process-&gt;pid) {</a>
+<a name="ln691">            scheduler_unblock_process(parent-&gt;pid);</a>
+<a name="ln692">        }</a>
+<a name="ln693">    </a>
+<a name="ln694">    }</a>
+<a name="ln695">    scheduler_yield();</a>
+<a name="ln696">}</a>
+<a name="ln697"> </a>
+<a name="ln698"> </a>
+<a name="ln699">// Bloquea al proceso actual hasta que el hijo indicado termine. Devuelve el status del hijo si ya terminó o 0.</a>
+<a name="ln700">int scheduler_waitpid(pid_t child_pid) {</a>
+<a name="ln701">    if (!scheduler_initialized || !pid_is_valid(child_pid) || </a>
+<a name="ln702">        processes[child_pid] == NULL || </a>
+<a name="ln703">        processes[child_pid]-&gt;parent_pid != current_pid) {</a>
+<a name="ln704">        return -1;</a>
+<a name="ln705">    }</a>
+<a name="ln706">    </a>
+<a name="ln707">    // Si el proceso hijo no termino, bloqueamos el proceso actual hasta que termine</a>
+<a name="ln708">    if (processes[child_pid]-&gt;status != PS_TERMINATED) {</a>
+<a name="ln709">        processes[current_pid]-&gt;waiting_on = child_pid;</a>
+<a name="ln710">        scheduler_block_process(current_pid);</a>
+<a name="ln711">    }</a>
+<a name="ln712"> </a>
+<a name="ln713">    // Llega acá cuando el hijo terminó y lo desbloqueo o si el hijo ya había terminado</a>
+<a name="ln714">    </a>
+<a name="ln715">    processes[current_pid]-&gt;waiting_on = NO_PID;</a>
+<a name="ln716">    int ret_value = processes[child_pid]-&gt;return_value;</a>
+<a name="ln717">    scheduler_remove_process(child_pid);</a>
+<a name="ln718"> </a>
+<a name="ln719">    return ret_value;</a>
+<a name="ln720">}</a>
+<a name="ln721"> </a>
+<a name="ln722">int adopt_init_as_parent(pid_t pid) {</a>
+<a name="ln723">    if(!scheduler_initialized || !pid_is_valid(pid)) {</a>
+<a name="ln724">        return -1;</a>
+<a name="ln725">    }</a>
+<a name="ln726">    PCB *init_process = processes[INIT_PID];</a>
+<a name="ln727">    if (init_process == NULL) {</a>
+<a name="ln728">        return -1;</a>
+<a name="ln729">    }</a>
+<a name="ln730"> </a>
+<a name="ln731">    PCB *orphan_process = processes[pid];</a>
+<a name="ln732">    if (orphan_process == NULL) {</a>
+<a name="ln733">        return -1;</a>
+<a name="ln734">    }</a>
+<a name="ln735"> </a>
+<a name="ln736">    orphan_process-&gt;parent_pid = INIT_PID;</a>
+<a name="ln737">    return 0;</a>
+<a name="ln738">}</a>
+<a name="ln739"> </a>
+<a name="ln740">static void reparent_children_to_init(pid_t pid) {</a>
+<a name="ln741">    if(!scheduler_initialized || !pid_is_valid(pid)) {</a>
+<a name="ln742">        return;</a>
+<a name="ln743">    }</a>
+<a name="ln744">	for (int i = 0; i &lt; MAX_PROCESSES; i++) {</a>
+<a name="ln745">		if (processes[i] != NULL &amp;&amp;</a>
+<a name="ln746">			processes[i]-&gt;parent_pid == pid) {</a>
+<a name="ln747">            // Asignar el proceso huérfano al init</a>
+<a name="ln748">            if(processes[i]-&gt;status == PS_TERMINATED){</a>
+<a name="ln749">                // Si el hijo ya estaba terminado, lo removemos directamente</a>
+<a name="ln750">                scheduler_remove_process(processes[i]-&gt;pid);</a>
+<a name="ln751">            } else{</a>
+<a name="ln752">                processes[i]-&gt;parent_pid = INIT_PID;</a>
+<a name="ln753">            }   </a>
+<a name="ln754">        }</a>
+<a name="ln755">	}</a>
+<a name="ln756">}</a>
+<a name="ln757"> </a>
+<a name="ln758"> </a>
+<a name="ln759">// Mata el proceso que está en foreground. Devuelve 0 en éxito, -1 en error.</a>
+<a name="ln760">int scheduler_kill_foreground_process(void) {</a>
+<a name="ln761">    if (!scheduler_initialized) {</a>
+<a name="ln762">        return -1;</a>
+<a name="ln763">    }</a>
+<a name="ln764"> </a>
+<a name="ln765">    // Si no hay proceso en foreground, retornar error</a>
+<a name="ln766">    if (foreground_process_pid == NO_PID) {</a>
+<a name="ln767">        return -1;</a>
+<a name="ln768">    }</a>
+<a name="ln769"> </a>
+<a name="ln770">    int result = scheduler_kill_process(foreground_process_pid);</a>
+<a name="ln771">    // Después de matar el proceso en foreground, establecer la shell como proceso en foreground</a>
+<a name="ln772">    foreground_process_pid = SHELL_PID;</a>
+<a name="ln773">    </a>
+<a name="ln774">    return result;</a>
+<a name="ln775">}</a>
+</code></pre>
+<div class="balloon" rel="363"><p><span style="font-size:18px">&uarr;</span> <a href="https://pvs-studio.com/en/docs/warnings/v557/" target="_blank">V557</a> Array underrun is possible. The value of 'pid' index could reach -1.</p></div>
+<div class="balloon" rel="367"><p><span style="font-size:18px">&uarr;</span> <a href="https://pvs-studio.com/en/docs/warnings/v557/" target="_blank">V557</a> Array underrun is possible. The value of 'pid' index could reach -1.</p></div>
+<div class="balloon" rel="499"><p><span style="font-size:18px">&uarr;</span> <a href="https://pvs-studio.com/en/docs/warnings/v1031/" target="_blank">V1031</a> The 'remove_process_from_all_semaphore_queues' function is not declared. Passing data to or from this function can be affected.</p></div>
+<div class="balloon" rel="673"><p><span style="font-size:18px">&uarr;</span> <a href="https://pvs-studio.com/en/docs/warnings/v1031/" target="_blank">V1031</a> The 'remove_process_from_all_semaphore_queues' function is not declared. Passing data to or from this function can be affected.</p></div>
+<link rel="stylesheet" href="highlight.css">
+<script src="highlight.pack.js"></script>
+<script src="highlightjs-line-numbers.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>hljs.initLineNumbersOnLoad();</script>
+<script>
+  $(document).ready(function() {
+      $('.balloon').each(function () {
+          var bl = $(this);
+          var line = bl.attr('rel');
+          var text = $('a[name="ln'+line+'"]').text();
+
+          var space_count = 0;
+          for(var i = 0; i<text.length; i++){
+              var char = text[i];
+              if((char !== ' ')&&(char !== '\t'))break;
+              if(char === '\t')space_count++;
+              space_count++;
+          }
+
+          bl.css('margin-left', space_count*8);
+          $('a[name="ln'+line+'"]').after(bl);
+      });
+
+      window.location = window.location;
+  });
+</script>
+</body>
+</html>
