@@ -2,8 +2,7 @@
 
 An Operating Sistem by Rodri, Azu and Magui
 
-
-Implementamos un mini kernel de 64 bits con scheduler de prioridades, administración de memoria dinámica (dos variantes), semáforos con nombre, pipes (anónimos y nombrados) y una shell con soporte de procesos en foreground/background, pipes y atajos de teclado. Incluimos los tests de la cátedra y programas de usuario propios para demostrar cada requerimiento.
+Implementamos un mini kernel de 64 bits con scheduler de prioridades, administración de memoria dinámica (dos variantes), semáforos con nombre, pipes (anónimos y nombrados) y una shell con soporte de procesos en foreground/background y atajos de teclado. Incluimos los tests de la cátedra y programas de usuario propios para demostrar cada requerimiento.
 
 ## Instrucciones de compilación y ejecución
 1. Requisitos: Docker activo y QEMU instalado en el host.
@@ -11,15 +10,15 @@ Implementamos un mini kernel de 64 bits con scheduler de prioridades, administra
 3. Compilar:
    - `./compile.sh` construye Toolchain, Userland y Kernel en el contenedor con memory manager default.
    - `./compile.sh buddy` compila activando el Buddy allocator (`USE_BUDDY`).
-4. Ejecutar: `./run.sh` lanza `qemu-system-x86_64` con `Image/x64BareBonesImage.qcow2` (512 MB) y backend de audio adecuado. Al boot, `init` crea la `shell` y luego queda en `hlt` como proceso idle.
-5. Ciclo de trabajo: `./compile.sh && ./run.sh` tras cambios. Limpieza manual: `docker exec -it tpe_so_2q2025 make -C /root clean`.
+4. Ejecutar: `./run.sh` lanza `qemu-system-x86_64` con `Image/x64BareBonesImage.qcow2` (512 MB) y backend de audio adecuado. 
+5. Limpieza manual: `docker exec -it tpe_so_2q2025 make -C /root clean`.
 
 ## Instrucciones de replicación
 ### Comandos builtin de la shell
 | Comando | Parámetros | Descripción |
 | --- | --- | --- |
-| `clear` | — | Limpia la pantalla en modo texto.
-| `help` | — | Lista builtins y programas y explica como mandar un proceso a background y como conectar procesos mediante un pipe.
+| `clear` | — | Limpia la pantalla.
+| `help` | — | Lista builtins, programas y explica como mandar un proceso a background y como conectar procesos mediante un pipe.
 | `username` | `<new_name>` | Permite cambiar el nombre de usuario que se ve como prompt en la shell.
 
 ### Programas de usuario
@@ -54,7 +53,7 @@ Implementamos un mini kernel de 64 bits con scheduler de prioridades, administra
 
 ### Caracteres especiales para pipes y background
 - Pipe: un `|` separa dos programas. Un solo pipe por línea (`left | right`). Kernel: buffer circular con semáforos por FD; al cerrar el último writer se despierta a los readers para que observen EOF.
-- Background: `&` al final corre el proceso/pipeline en background. La shell adopta con `sys_adopt_init_as_parent` para que `init` recolecte.
+- Background: `&` al final corre el proceso/pipeline en background. Se hace que `init` los adopte con `sys_adopt_init_as_parent`.
 
 
 ### Atajos de teclado
@@ -117,23 +116,6 @@ Implementamos un mini kernel de 64 bits con scheduler de prioridades, administra
 
 ## Citas de código 
 - `Userland/tests/test_mm.c`, `test_prio.c`, `test_processes.c` y `test_sync.c` se basan en los tests de la cátedra y se adaptaron mínimamente.
-
-
-## Errores de PVS que dejamos
-- Los referidos a bmfs.c, naiveConsole.c, main.c porque son del repositorio base de la cátedra de Arquitectura de Computadoras
-
-- En keyboard.c: 
-"Array overrun is possible. The value of 'scancode' index could reach 128."
-Se ignora pues sino en la línea 116 entraría en el else if (scancode > BREAKCODE_OFFSET)
-
-- En scheduler.c:
-"A part of conditional expression is always true: c >= 'A'."
-
-"Array underrun is possible. The value of 'pid' index could reach -1."
-Esto nunca ocurre porque antes llamamos a pid_is_valid(pid)
-
-- En rainbow.c, red.c, wc.c, cat.c y filter.c: "EOF should not be compared with a value of the 'char' type. The '(c = getchar())' should be of the 'int' type."
-Se ignora porque en el entorno de compilación del TP, el tipo char es signed por defecto, por lo que la comparación con EOF (−1) funciona correctamente. El warning aplica solo a entornos donde char es unsigned, lo cual no ocurre en nuestra plataforma
 
 ## Errores de PVS ignorados y justificación
 
