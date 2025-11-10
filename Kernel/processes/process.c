@@ -10,68 +10,51 @@
 
 
 extern void *setup_initial_stack(void *caller, int pid, void *stack_pointer, void *rcx);
-static char **duplicateArgv(const char **argv, int argc, memory_manager_ADT mm);
+static char **duplicate_argv(const char **argv, int argc, memory_manager_ADT mm);
 static void process_caller(int pid);
+static void init_pcb_base_fields(PCB *p, int pid, process_entry_t entry, const char *name, bool killable);
+static int init_pcb_stack(PCB *p, memory_manager_ADT mm);
+static int init_pcb_argv(PCB *p, int argc, const char **argv, memory_manager_ADT mm);
+static void init_pcb_file_descriptors(PCB *p, int fds[2]);
 
-
-PCB* proc_create(int pid, process_entry_t entry, int argc, const char **argv,
-                const char *name, bool killable, int fds[2]) {
-
-    if (!entry || !name || argc < 0) {
-        return NULL;
-    }
-
-    memory_manager_ADT mm = get_kernel_memory_manager();
-
-    // Alocar PCB
-    PCB *p = alloc_memory(mm, sizeof(PCB));
-    if (!p) {
-        return NULL;
-    }
-
-    // ============================
-    // Inicialización de campos base
-    // ============================
+static void init_pcb_base_fields(PCB *p, int pid, process_entry_t entry, const char *name, bool killable) {
     p->pid = pid;
     p->parent_pid = scheduler_get_current_pid();
     strncpy(p->name, name, MAX_PROCESS_NAME_LENGTH - 1);
     p->name[MAX_PROCESS_NAME_LENGTH - 1] = '\0';
     p->entry = entry;
-    p->return_value = 0; 
+    p->return_value = 0;
     p->waiting_on = NO_PID;
     p->killable = killable;
+}
 
-    // ============================
-    // Pila del proceso
-    // ============================
+static int init_pcb_stack(PCB *p, memory_manager_ADT mm) {
     p->stack_base = alloc_memory(mm, PROCESS_STACK_SIZE);
     if (p->stack_base == NULL) {
-        free_memory(mm, p);
-        return NULL;
+        return ERROR;
     }
+    p->stack_pointer = setup_initial_stack(&process_caller, p->pid, 
+                                          (char *)p->stack_base + PROCESS_STACK_SIZE, 0);
+    return OK;
+}
 
-    // El stack crece hacia abajo, por lo tanto el puntero inicial está al final del bloque
-    p->stack_pointer = setup_initial_stack(&process_caller, p->pid, (char *)p->stack_base + PROCESS_STACK_SIZE, 0 );
 
-    // ============================
-    // Argumentos (argv / argc)
-    // ============================
+static int init_pcb_argv(PCB *p, int argc, const char **argv, memory_manager_ADT mm) {
     p->argc = argc;
     if (argc > 0 && argv != NULL) {
-        p->argv = duplicateArgv(argv, argc, mm);
+        p->argv = duplicate_argv(argv, argc, mm);
         if (p->argv == NULL) {
-            free_memory(mm, p->stack_base);
-            free_memory(mm, p);
-            return NULL;
+            return ERROR;
         }
     } else {
         p->argv = NULL;
     }
+    return OK;
+}
 
-    // file descriptors
+static void init_pcb_file_descriptors(PCB *p, int fds[2]) {
     p->open_fds = q_init();
-
-
+    
     if (fds == NULL) {
         p->read_fd = STDIN;
         p->write_fd = STDOUT;
@@ -86,12 +69,42 @@ PCB* proc_create(int pid, process_entry_t entry, int argc, const char **argv,
             open_fd(fds[1]);
             q_add(p->open_fds, fds[1]);
         }
-        
-
     }
+}
+
+
+PCB* proc_create(int pid, process_entry_t entry, int argc, const char **argv,
+                const char *name, bool killable, int fds[2]) {
+
+    if (!entry || !name || argc < 0) {
+        return NULL;
+    }
+
+    memory_manager_ADT mm = get_kernel_memory_manager();
+
+    PCB *p = alloc_memory(mm, sizeof(PCB));
+    if (!p) {
+        return NULL;
+    }
+
+    init_pcb_base_fields(p, pid, entry, name, killable);
+
+    if (init_pcb_stack(p, mm) == ERROR) {
+        free_memory(mm, p);
+        return NULL;
+    }
+
+    if (init_pcb_argv(p, argc, argv, mm) == ERROR) {
+        free_memory(mm, p->stack_base);
+        free_memory(mm, p);
+        return NULL;
+    }
+
+    init_pcb_file_descriptors(p, fds);
 
     return p;
 }
+
 
 void free_process_resources(PCB * p) {
     if (p == NULL) {
@@ -125,11 +138,8 @@ void free_process_resources(PCB * p) {
     free_memory(mm, p);
 }
 
-// ============================================
-//        FUNCIONES AUXILIARES PRIVADAS
-// ============================================
 
-static char **duplicateArgv(const char **argv, int argc, memory_manager_ADT mm) {
+static char **duplicate_argv(const char **argv, int argc, memory_manager_ADT mm) {
     // Caso argv vacío o NULL: crear argv minimal con solo NULL
     if (argv == NULL || argc == 0 || (argc > 0 && argv[0] == NULL)) {
         char **new_argv = alloc_memory(mm, sizeof(char *));
