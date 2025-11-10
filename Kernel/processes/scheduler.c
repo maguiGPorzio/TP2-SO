@@ -35,7 +35,6 @@ static int scheduler_add_init();
 static inline bool pid_is_valid(pid_t pid);
 static void cleanup_all_processes(void);
 static int create_shell();
-static inline bool pid_is_valid(pid_t pid) ;
 static void close_open_fds(PCB * p);
 static void apply_aging(void);
 

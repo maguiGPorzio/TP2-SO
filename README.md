@@ -123,12 +123,16 @@ Implementamos un mini kernel de 64 bits con scheduler de prioridades, administra
 
 ## Errores de PVS que dejamos
 - Los referidos a bmfs.c, naiveConsole.c, main.c porque son del repositorio base de la cátedra de Arquitectura de Computadoras
+
 - En keyboard.c: 
-
-VER CON MAGUI
-
-128: "Array overrun is possible. The value of 'scancode' index could reach 128."
+"Array overrun is possible. The value of 'scancode' index could reach 128."
 Se ignora pues sino en la línea 116 entraría en el else if (scancode > BREAKCODE_OFFSET)
 
-- En rainbow.c, red.c, wc.c, cat.c y filter.c: "EOF should not be compared with a value of the 'char' type. The '(c = getchar())' should be of the 'int' type.""
-Se ignora porque en el entorno de compilación del TP (gcc en Linux 64 bits), el tipo char es signed por defecto, por lo que la comparación con EOF (−1) funciona correctamente. El warning aplica solo a entornos donde char es unsigned, lo cual no ocurre en nuestra plataforma
+- En scheduler.c:
+"A part of conditional expression is always true: c >= 'A'."
+
+"Array underrun is possible. The value of 'pid' index could reach -1."
+Esto nunca ocurre porque antes llamamos a pid_is_valid(pid)
+
+- En rainbow.c, red.c, wc.c, cat.c y filter.c: "EOF should not be compared with a value of the 'char' type. The '(c = getchar())' should be of the 'int' type."
+Se ignora porque en el entorno de compilación del TP, el tipo char es signed por defecto, por lo que la comparación con EOF (−1) funciona correctamente. El warning aplica solo a entornos donde char es unsigned, lo cual no ocurre en nuestra plataforma
