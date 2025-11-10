@@ -16,6 +16,8 @@ static void init_pcb_base_fields(PCB *p, int pid, process_entry_t entry, const c
 static int init_pcb_stack(PCB *p, memory_manager_ADT mm);
 static int init_pcb_argv(PCB *p, int argc, const char **argv, memory_manager_ADT mm);
 static void init_pcb_file_descriptors(PCB *p, int fds[2]);
+static void free_pcb_argv(PCB *p, memory_manager_ADT mm);
+static void free_pcb_stack(PCB *p, memory_manager_ADT mm);
 
 static void init_pcb_base_fields(PCB *p, int pid, process_entry_t entry, const char *name, bool killable) {
     p->pid = pid;
