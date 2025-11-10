@@ -123,7 +123,7 @@ uint64_t decimal_to_str(uint64_t value, char * buffer) {
 	//Calculate characters for each digit
 	do{
 		uint32_t remainder = value % 10;
-		*p++ = (remainder < 10) ? remainder + '0' : remainder + 'A' - 10;
+		*p++ = remainder + '0';
 		digits++;
 	}
 	while (value /= 10);

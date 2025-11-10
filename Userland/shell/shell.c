@@ -101,7 +101,7 @@ void incfont()  {
     fprint(STDCYAN, user_name);
     print(PROMPT);
     // Imprimir el input actual
-    for (int i = 0; current_input[i] != '\0' && i < INPUT_MAX; i++) {
+    for (int i = 0;  i < INPUT_MAX && current_input[i] != '\0'; i++) {
         putchar(current_input[i]);
     }
     // Un solo cursor al final
@@ -115,7 +115,7 @@ void decfont()  {
     fprint(STDCYAN, user_name);
     print(PROMPT);
     // Imprimir el input actual
-    for (int i = 0; current_input[i] != '\0' && i < INPUT_MAX; i++) {
+    for (int i = 0; i < INPUT_MAX && current_input[i] != '\0'; i++) {
         putchar(current_input[i]);
     }
     // Un solo cursor al final
