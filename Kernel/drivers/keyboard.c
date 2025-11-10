@@ -172,7 +172,7 @@ void write_string_in_buffer(const char *str) {
 
 uint8_t is_pressed_key(char c) {
     if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) { 
-        c = (c >= 'A' && c <= 'Z') ? c - 'A' + 'a' : c; // Convertir a minúscula si es mayúscula
+        c = (c < 'a') ? c - 'A' + 'a' : c; // Convertir a minúscula si es mayúscula
         return pressed_keys[c-'a']; // Devuelve 1 si la tecla está presionada, 0 si no
     }
     return 0; // Si el char es inválido, retornamos 0
