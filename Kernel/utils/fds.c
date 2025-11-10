@@ -3,7 +3,6 @@
 
 #include "fds.h"
 
-// Definición del array de colores para cada FD estándar
 uint32_t fd_colors[] = {
     0x000000, // STDIN (no se usa para escritura)
     0xFFFFFF, // STDOUT - white

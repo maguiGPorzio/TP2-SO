@@ -16,9 +16,6 @@ typedef struct queue_cdt {
     node_t * prev_current; // Para iterador: nodo previo al actual (para poder remover)
 } queue_cdt;
 
-
-
-// constructor
 queue_t q_init() {
     memory_manager_ADT mm = get_kernel_memory_manager();
     queue_t q = alloc_memory(mm, sizeof(queue_cdt));
@@ -70,7 +67,7 @@ int q_poll(queue_t q) {
     return res;
 }
 
-// elemina la primer aparicion de value, devuelve 1 si lo removio, 0 sino
+// elimina la primer aparicion de value, devuelve 1 si lo removio, 0 sino
 int q_remove(queue_t q, int value) {
     if (q_is_empty(q)) {
         return 0;
@@ -142,9 +139,6 @@ void q_destroy(queue_t q) {
     free_memory(mm, q);
 }
 
-// ============================================
-//             ITERADOR
-// ============================================
 
 // Inicializa el iterador al comienzo de la queue
 void q_to_begin(queue_t q) {
