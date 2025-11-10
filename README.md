@@ -1,7 +1,5 @@
 # TP2 - Sistemas Operativos (ramOS)
 
-![logo](./ramos_logo.png)
-
 An Operating Sistem by Rodri, Azu and Magui
 
 

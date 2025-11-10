@@ -18,34 +18,10 @@ typedef struct {
 	size_t allocated_blocks;
 } mem_info_t;
 
-/**
- * @brief Reserva un bloque de memoria
- * @param memory_manager Handler del memory manager
- * @param size Tamaño en bytes a reservar
- * @return Puntero al bloque reservado o NULL si no hay memoria
- */
 void *alloc_memory(memory_manager_ADT memory_manager, size_t size);
-
-/**
- * @brief Libera un bloque de memoria previamente reservado
- * @param memory_manager Handler del memory manager
- * @param ptr Puntero al bloque a liberar
- */
 void free_memory(memory_manager_ADT memory_manager, void *ptr);
-
-/**
- * @brief Obtiene estadísticas del estado de la memoria
- * @param memory_manager Handler del memory manager
- * @return Estructura con información de memoria
- */
 mem_info_t get_mem_status(memory_manager_ADT memory_manager);
-
-/**
- * @brief Inicializa el memory manager del kernel
- * Se llama una sola vez durante el boot
- */
 void init_kernel_memory_manager(void);
-
 memory_manager_ADT get_kernel_memory_manager(void);
 
-#endif // MEMORY_MANAGER_ADT_H
+#endif 

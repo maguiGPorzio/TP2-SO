@@ -27,10 +27,6 @@ int q_is_empty(queue_t q);
 // libera los recursos de la queue
 void q_destroy(queue_t q);
 
-// ============================================
-//             ITERADOR
-// ============================================
-
 // Inicializa el iterador al comienzo de la queue
 void q_to_begin(queue_t q);
 

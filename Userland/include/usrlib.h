@@ -19,7 +19,7 @@
 
 extern void generate_invalid_opcode();
 
-/*-- FUNCIONES DE I/O --*/
+// FUNCIONES DE I/O 
 uint64_t        print(char *str);
 uint64_t        print_err(char *str);
 uint64_t        putchar(char c);
@@ -33,7 +33,7 @@ uint64_t        fprint(uint64_t fd, char *str);
 extern uint64_t printf(const char *fmt, ...);
 extern uint64_t scanf(const char *fmt, ...);
 
-/*-- FUNCIONES PARA DIBUJAR --*/
+// FUNCIONES PARA DIBUJAR 
 void draw_rectangle(uint64_t x0, uint64_t y0, uint64_t x1, uint64_t y1, uint32_t color);
 void fill_rectangle(uint64_t x0, uint64_t y0, uint64_t x1, uint64_t y1, uint32_t color);
 void draw_circle(uint64_t x_center, uint64_t y_center, uint64_t radius, uint32_t color);
@@ -41,13 +41,13 @@ void fill_circle(uint64_t x_center, uint64_t y_center, uint64_t radius, uint32_t
 void draw_string(char *str, uint64_t x, uint64_t y, uint64_t size, uint32_t color);
 void draw_line(uint64_t x0, uint64_t y0, uint64_t x1, uint64_t y1, uint32_t color);
 
-/*-- FUNCIONES DE STRINGS --*/
+// FUNCIONES DE STRINGS 
 uint64_t strlen(const char *str);
 int      strcmp(char *s1, char *s2);
 uint64_t num_to_str_base(uint64_t value, char *buffer, uint32_t base);
 int64_t  satoi(char *str);
 
-/*-- FUNCIONES DE MATEMATICAS --*/
+//FUNCIONES DE MATEMATICAS 
 float    inv_sqrt(float number);
 uint32_t get_uint();
 uint32_t get_uniform(uint32_t max);
