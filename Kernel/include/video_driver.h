@@ -33,4 +33,4 @@ void fill_rectangle(uint64_t x0, uint64_t y0, uint64_t x1, uint64_t y1, uint32_t
 void draw_circle(uint64_t x_center, uint64_t y_center, uint64_t radius, uint32_t color);
 void fill_circle(uint64_t x_center, uint64_t y_center, uint64_t radius, uint32_t color);
 
-#endif // _VIDEO_DRIVER_H_
+#endif 

@@ -54,4 +54,4 @@ int   scheduler_kill_foreground_process(void);
 // Reparent single process to INIT
 int adopt_init_as_parent(pid_t pid);
 
-#endif // SCHEDULER_H
+#endif 
