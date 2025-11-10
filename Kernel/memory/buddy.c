@@ -7,7 +7,7 @@
 #include "naiveConsole.h"
 
 #define MIN_ORDER 5        // 2^5 = 32 bytes (tamaño mínimo)
-#define MAX_ORDER 20       // 2^20 = 1 MB (tamaño máximo de bloque)
+#define MAX_ORDER 25       // 2^20 = 1 MB (tamaño máximo de bloque)
 #define NUM_ORDERS (MAX_ORDER - MIN_ORDER + 1)  // 16 niveles
 
 // Nodo de la lista libre para cada orden
@@ -39,20 +39,25 @@ static memory_manager_ADT kernel_mm = NULL;
 
 // Calcula el tamaño de un bloque dado su orden
 static size_t order_to_size(uint8_t order) {
-    return (1ULL << order);
+    return (1ULL << order); // 2^order
 }
 
 // Calcula el orden necesario para un tamaño dado
 static uint8_t size_to_order(size_t size) {
     // Incluir espacio para el header
-    size += sizeof(buddy_node_t);
+    size += sizeof(buddy_node_t); 
     
-    uint8_t order = MIN_ORDER;
+    uint8_t order = MIN_ORDER; 
     size_t block_size = order_to_size(order);
     
+    // Buscar el orden más pequeño que entre
     while (block_size < size && order < MAX_ORDER) {
         order++;
         block_size = order_to_size(order);
+    }
+
+    if (order > MAX_ORDER) {
+        return 0xFF; // Indicar que no hay suficiente espacio
     }
     
     return order;
@@ -107,7 +112,7 @@ static buddy_node_t* split_block(memory_manager_ADT memory_manager, uint8_t orde
         return NULL;  // No se puede dividir más
     }
     
-    if (order > MAX_ORDER) {
+    if (order > MAX_ORDER || order < MIN_ORDER) {
         return NULL;  // Orden inválido
     }
     
