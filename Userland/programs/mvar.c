@@ -13,7 +13,7 @@
 
 #define COLOR_COUNT 5
 #define MIN_SLEEP_MS 100
-#define SLEEP_JITTER_MS 250
+#define MAX_RANDOM_SLEEP_OFFSET_MS 1000
 
 static char volatile mvar_value = 0;
 static char sem_empty_name[MAX_SEM_NAME_LENGTH];
@@ -118,7 +118,7 @@ static int attach_to_sync_objects(void)
 
 static void random_pause(void)
 {
-	uint64_t delay = MIN_SLEEP_MS + get_uniform(SLEEP_JITTER_MS);
+	uint64_t delay = MIN_SLEEP_MS + get_uniform(MAX_RANDOM_SLEEP_OFFSET_MS);
 	sys_sleep(delay);
 }
 
