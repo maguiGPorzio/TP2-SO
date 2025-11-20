@@ -307,35 +307,6 @@ mem_info_t get_mem_status(memory_manager_ADT memory_manager)
 	return status;
 }
 
-// TODO: esto no lo usamos
-void print_mem_state(memory_manager_ADT memory_manager)
-{
-	if (memory_manager == NULL) {
-		return;
-	}
-
-	for (int i = 0; i < NUM_ORDERS; i++) {
-		uint8_t       order = MIN_ORDER + i;
-		int           count = 0;
-		buddy_node_t *node  = memory_manager->free_lists[i];
-
-		while (node != NULL) {
-			count++;
-			node = node->next;
-		}
-	}
-}
-
-void init_kernel_memory_manager(void)
-{
-	kernel_mm = create_memory_manager((void *)HEAP_START_ADDRESS, HEAP_SIZE);
-
-	if (kernel_mm == NULL) {
-		while (1) {
-			_hlt();
-		}
-	}
-}
 
 memory_manager_ADT get_kernel_memory_manager(void)
 {

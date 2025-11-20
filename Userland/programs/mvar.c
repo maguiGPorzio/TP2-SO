@@ -3,7 +3,7 @@
 
 #include "usrlib.h"
 
-#define MAX_SEM_NAME_LENGTH 64 // TODO: se comparte con Kernel
+#define MAX_SEM_NAME_LENGTH 64 
 #define SEM_PREFIX "mvar_"
 #define SEM_EMPTY_SUFFIX "empty_"
 #define SEM_FULL_SUFFIX "full_"
